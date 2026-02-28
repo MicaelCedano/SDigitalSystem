@@ -1,0 +1,500 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                      Int                            @id @default(autoincrement())
+  username                String                         @unique @db.VarChar(80)
+  name                    String?                        @db.VarChar(100)
+  email                   String?                        @unique @db.VarChar(100)
+  passwordHash            String                         @map("password_hash") @db.VarChar(200)
+  role                    String                         @db.VarChar(20)
+  canCreateGarantias      Boolean?                       @map("can_create_garantias")
+  profileImage            String?                        @map("profile_image") @db.VarChar(200)
+  conducesCancelados      ConduceEnvio[]                 @relation("ConduceCancelado")
+  conducesGenerados       ConduceEnvio[]                 @relation("ConduceGenerado")
+  equipos                 Equipo[]
+  equipoHistorial         EquipoHistorial[]
+  garantiasCreadas        Garantia[]                     @relation("GarantiaAdmin")
+  garantiasAsignadas      Garantia[]                     @relation("GarantiaTecnico")
+  cambiosGarantia         GarantiaHistorial[]
+  lotesGarantiaIngresados GarantiaLoteIngreso[]
+  facturasGeneradas       HistorialFactura[]
+  lotes                   Lote[]
+  notificaciones          Notification[]
+  pagosGarantias          PagoGarantia[]
+  penalidadesCreadas      Penalidad[]                    @relation("PenalidadAdmin")
+  penalidades             Penalidad[]                    @relation("PenalidadTecnico")
+  penalidadesExternas     PenalidadExterna[]
+  configuracionCreadas    TecnicoGarantiaPago[]          @relation("ConfiguracionCreadas")
+  configuracionPagos      TecnicoGarantiaPago[]          @relation("ConfiguracionPagos")
+  trabajosLoteCreados     TrabajoGarantiaLote[]          @relation("TrabajoAdmin")
+  trabajosLoteAsignados   TrabajoGarantiaLote[]          @relation("TrabajoTecnico")
+  cambiosTrabajoLote      TrabajoGarantiaLoteHistorial[]
+  ultimosClientes         UltimoClienteUsado[]
+  achievements            UserAchievement[]
+  wallet                  Wallet[]
+  walletTransactions      WalletTransaction[]
+  conversations           Conversation[]
+  sentMessages            Message[]            @relation("SentMessages")
+
+  @@map("users")
+}
+
+model Conversation {
+  id            Int       @id @default(autoincrement())
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  isGlobal      Boolean   @default(false) @map("is_global")
+  
+  participants  User[]
+  messages      Message[]
+
+  @@map("conversation")
+}
+
+model Message {
+  id             Int          @id @default(autoincrement())
+  content        String
+  createdAt      DateTime     @default(now()) @map("created_at")
+  
+  senderId       Int          @map("sender_id")
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id])
+  
+  conversationId Int          @map("conversation_id")
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  read           Boolean      @default(false)
+
+  @@map("message")
+}
+
+model Supplier {
+  id          Int        @id @default(autoincrement())
+  name        String     @unique @db.VarChar(120)
+  contactInfo String?    @map("contact_info") @db.VarChar(200)
+  garantias   Garantia[]
+  purchases   Purchase[]
+
+  @@map("supplier")
+}
+
+model DeviceModel {
+  id            Int            @id @default(autoincrement())
+  brand         String         @db.VarChar(100)
+  modelName     String         @map("model_name") @db.VarChar(100)
+  storageGb     Int            @map("storage_gb")
+  color         String?        @db.VarChar(50)
+  imageFilename String?        @map("image_filename") @db.VarChar(255)
+  equipos       Equipo[]
+  purchaseItems PurchaseItem[]
+
+  @@unique([brand, modelName, storageGb, color], name: "unique_device_model", map: "unique_device_model")
+  @@map("device_model")
+}
+
+model PurchaseItem {
+  id            Int         @id @default(autoincrement())
+  purchaseId    Int         @map("purchase_id")
+  deviceModelId Int         @map("device_model_id")
+  quantity      Int
+  unitPrice     Float?      @map("unit_price")
+  deviceModel   DeviceModel @relation(fields: [deviceModelId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  purchase      Purchase    @relation(fields: [purchaseId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("purchase_item")
+}
+
+model Purchase {
+  id            Int            @id @default(autoincrement())
+  purchaseDate  DateTime       @map("purchase_date") @db.Timestamp(6)
+  totalQuantity Int            @map("total_quantity")
+  totalAmount   Float?         @map("total_amount")
+  estado        String         @db.VarChar(20)
+  supplierId    Int            @map("supplier_id")
+  equipos       Equipo[]
+  supplier      Supplier       @relation(fields: [supplierId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  items         PurchaseItem[]
+
+  @@map("purchase")
+}
+
+model Equipo {
+  id            Int               @id @default(autoincrement())
+  imei          String            @unique @db.VarChar(100)
+  marca         String?           @db.VarChar(100)
+  modelo        String?           @db.VarChar(100)
+  storageGb     Int?              @map("storage_gb")
+  estado        String            @db.VarChar(50)
+  fechaIngreso  DateTime          @map("fecha_ingreso") @db.Timestamp(6)
+  userId        Int?              @map("user_id")
+  purchaseId    Int               @map("purchase_id")
+  deviceModelId Int?              @map("device_model_id")
+  loteId        Int?              @map("lote_id")
+  grado         String?           @db.VarChar(8)
+  observacion   String?
+  funcionalidad String?           @db.VarChar(20)
+  color         String?           @db.VarChar(50)
+  imageFilename String?           @map("image_filename") @db.VarChar(255)
+  deviceModel   DeviceModel?      @relation(fields: [deviceModelId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lote          Lote?             @relation(fields: [loteId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  purchase      Purchase          @relation(fields: [purchaseId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user          User?             @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  historial     EquipoHistorial[]
+  garantias     Garantia[]
+  penalidades   Penalidad[]
+
+  @@map("equipo")
+}
+
+model Lote {
+  id                 Int                 @id @default(autoincrement())
+  codigo             String              @unique @db.VarChar(100)
+  fecha              DateTime?           @db.Date
+  tecnicoId          Int                 @map("tecnico_id")
+  estado             String?             @db.VarChar(32)
+  equipos            Equipo[]
+  historial          EquipoHistorial[]
+  tecnico            User                @relation(fields: [tecnicoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  walletTransactions WalletTransaction[]
+
+  @@map("lotes")
+}
+
+model Wallet {
+  id        Int             @id @default(autoincrement())
+  tecnicoId Int             @map("tecnico_id")
+  saldo     Float?
+  tecnico   User            @relation(fields: [tecnicoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  accounts  WalletAccount[]
+
+  @@map("wallet")
+}
+
+model WalletAccount {
+  id            Int       @id @default(autoincrement())
+  walletId      Int       @map("wallet_id")
+  nombre        String    @db.VarChar(50)
+  tipo          String?   @db.VarChar(20)
+  saldo         Float?
+  fechaCreacion DateTime? @map("fecha_creacion") @db.Timestamp(6)
+  metaAhorro    Float?    @map("meta_ahorro")
+  color         String?   @db.VarChar(20)
+  wallet        Wallet    @relation(fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("wallet_account")
+}
+
+model WalletTransaction {
+  id          Int       @id @default(autoincrement())
+  tecnicoId   Int       @map("tecnico_id")
+  monto       Float
+  tipo        String    @db.VarChar(16)
+  estado      String?   @db.VarChar(16)
+  fecha       DateTime? @db.Timestamp(6)
+  loteId      Int?      @map("lote_id")
+  garantiaId  Int?      @map("garantia_id")
+  descripcion String?   @db.VarChar(200)
+  secureToken String?   @unique @map("secure_token") @db.VarChar(64)
+  canjeado    Boolean?
+  lote        Lote?     @relation(fields: [loteId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tecnico     User      @relation(fields: [tecnicoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("wallet_transaction")
+}
+
+model TecnicoGarantiaPago {
+  id                 Int       @id @default(autoincrement())
+  tecnicoId          Int       @map("tecnico_id")
+  montoPorReparacion Float     @map("monto_por_reparacion")
+  activo             Boolean?
+  fechaConfiguracion DateTime? @map("fecha_configuracion") @db.Timestamp(6)
+  adminId            Int       @map("admin_id")
+  admin              User      @relation("ConfiguracionCreadas", fields: [adminId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tecnico            User      @relation("ConfiguracionPagos", fields: [tecnicoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("tecnico_garantia_pago")
+}
+
+model EquipoHistorial {
+  id          Int       @id @default(autoincrement())
+  equipoId    Int       @map("equipo_id")
+  fecha       DateTime? @db.Timestamp(6)
+  estado      String    @db.VarChar(50)
+  userId      Int?      @map("user_id")
+  loteId      Int?      @map("lote_id")
+  observacion String?
+  equipo      Equipo    @relation(fields: [equipoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lote        Lote?     @relation(fields: [loteId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user        User?     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("equipo_historial")
+}
+
+model Penalidad {
+  id        Int       @id @default(autoincrement())
+  tecnicoId Int       @map("tecnico_id")
+  equipoId  Int       @map("equipo_id")
+  fecha     DateTime? @db.Timestamp(6)
+  motivo    String
+  monto     Float
+  adminId   Int       @map("admin_id")
+  admin     User      @relation("PenalidadAdmin", fields: [adminId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  equipo    Equipo    @relation(fields: [equipoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tecnico   User      @relation("PenalidadTecnico", fields: [tecnicoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("penalidad")
+}
+
+model PenalidadExterna {
+  id       Int       @id @default(autoincrement())
+  imei     String    @db.VarChar(20)
+  modelo   String    @db.VarChar(200)
+  culpable String    @db.VarChar(100)
+  cantidad Float
+  motivo   String
+  fecha    DateTime? @db.Timestamp(6)
+  adminId  Int       @map("admin_id")
+  admin    User      @relation(fields: [adminId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("penalidad_externa")
+}
+
+model MensajeBienvenida {
+  id      Int       @id @default(autoincrement())
+  mensaje String
+  fecha   DateTime? @db.Timestamp(6)
+
+  @@map("mensaje_bienvenida")
+}
+
+model Cliente {
+  id            Int                  @id @default(autoincrement())
+  nombre        String               @db.VarChar(200)
+  telefono      String?              @db.VarChar(50)
+  email         String?              @db.VarChar(100)
+  direccion     String?
+  fechaRegistro DateTime?            @map("fecha_registro") @db.Timestamp(6)
+  activo        Boolean?
+  ultimosUsos   UltimoClienteUsado[]
+
+  @@map("cliente")
+}
+
+model HistorialFactura {
+  id              Int       @id @default(autoincrement())
+  nombreArchivo   String    @map("nombre_archivo") @db.VarChar(255)
+  fechaGeneracion DateTime? @map("fecha_generacion") @db.Timestamp(6)
+  usuarioId       Int       @map("usuario_id")
+  tipo            String?   @db.VarChar(50)
+  usuario         User      @relation(fields: [usuarioId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("historial_factura")
+}
+
+model UltimoClienteUsado {
+  id             Int       @id @default(autoincrement())
+  usuarioId      Int       @map("usuario_id")
+  clienteId      Int       @map("cliente_id")
+  fechaUltimoUso DateTime? @map("fecha_ultimo_uso") @db.Timestamp(6)
+  cliente        Cliente   @relation(fields: [clienteId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuario        User      @relation(fields: [usuarioId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("ultimo_cliente_usado")
+}
+
+model ModelColorReference {
+  id            Int    @id @default(autoincrement())
+  modelName     String @map("model_name") @db.VarChar(100)
+  color         String @db.VarChar(50)
+  imageFilename String @map("image_filename") @db.VarChar(255)
+
+  @@unique([modelName, color], name: "unique_model_color_ref", map: "unique_model_color_ref")
+  @@map("model_color_reference")
+}
+
+model Notification {
+  id         Int       @id @default(autoincrement())
+  tecnicoId  Int       @map("tecnico_id")
+  tipo       String    @db.VarChar(50)
+  titulo     String    @db.VarChar(200)
+  mensaje    String
+  monto      Float?
+  loteCodigo String?   @map("lote_codigo") @db.VarChar(32)
+  leida      Boolean?
+  fecha      DateTime? @db.Timestamp(6)
+  tecnico    User      @relation(fields: [tecnicoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("notification")
+}
+
+model UserAchievement {
+  id            Int       @id @default(autoincrement())
+  userId        Int       @map("user_id")
+  achievementId String    @map("achievement_id") @db.VarChar(50)
+  unlockedAt    DateTime? @map("unlocked_at") @db.Timestamp(6)
+  user          User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([userId, achievementId], name: "unique_user_achievement", map: "unique_user_achievement")
+  @@map("user_achievement")
+}
+
+model Garantia {
+  id                      Int                  @id @default(autoincrement())
+  codigo                  String               @unique @db.VarChar(32)
+  fechaRecepcion          DateTime?            @map("fecha_recepcion") @db.Timestamp(6)
+  fechaAsignacion         DateTime?            @map("fecha_asignacion") @db.Timestamp(6)
+  fechaReparacion         DateTime?            @map("fecha_reparacion") @db.Timestamp(6)
+  fechaEntrega            DateTime?            @map("fecha_entrega") @db.Timestamp(6)
+  fechaDespacho           DateTime?            @map("fecha_despacho") @db.Timestamp(6)
+  fechaEnvioProveedor     DateTime?            @map("fecha_envio_proveedor") @db.Timestamp(6)
+  fechaRecepcionProveedor DateTime?            @map("fecha_recepcion_proveedor") @db.Timestamp(6)
+  estado                  String?              @db.VarChar(32)
+  cliente                 String               @db.VarChar(100)
+  imeiSn                  String               @map("imei_sn") @db.VarChar(50)
+  marca                   String?              @db.VarChar(100)
+  modelo                  String?              @db.VarChar(100)
+  problema                String
+  diagnostico             String?
+  solucionAplicada        String?              @map("solucion_aplicada")
+  observaciones           String?
+  resultadoProveedor      String?              @map("resultado_proveedor") @db.VarChar(50)
+  observacionesProveedor  String?              @map("observaciones_proveedor")
+  adminId                 Int                  @map("admin_id")
+  tecnicoId               Int?                 @map("tecnico_id")
+  equipoId                Int?                 @map("equipo_id")
+  supplierId              Int?                 @map("supplier_id")
+  loteIngresoId           Int?                 @map("lote_ingreso_id")
+  conducesAsociados       ConduceEquipo[]
+  admin                   User                 @relation("GarantiaAdmin", fields: [adminId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  equipo                  Equipo?              @relation(fields: [equipoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  loteIngreso             GarantiaLoteIngreso? @relation(fields: [loteIngresoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  supplier                Supplier?            @relation(fields: [supplierId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tecnico                 User?                @relation("GarantiaTecnico", fields: [tecnicoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  historialCambios        GarantiaHistorial[]
+  pagosTecnicos           PagoGarantia[]
+
+  @@map("garantia")
+}
+
+model GarantiaLoteIngreso {
+  id              Int        @id @default(autoincrement())
+  codigo          String     @unique @db.VarChar(32)
+  fechaCreacion   DateTime?  @map("fecha_creacion") @db.Timestamp(6)
+  observaciones   String?
+  cantidadInicial Int?       @map("cantidad_inicial")
+  createdById     Int        @map("created_by_id")
+  garantias       Garantia[]
+  createdBy       User       @relation(fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("garantia_lote_ingreso")
+}
+
+model GarantiaHistorial {
+  id             Int       @id @default(autoincrement())
+  garantiaId     Int       @map("garantia_id")
+  estadoAnterior String?   @map("estado_anterior") @db.VarChar(50)
+  estadoNuevo    String    @map("estado_nuevo") @db.VarChar(50)
+  userId         Int       @map("user_id")
+  fechaCambio    DateTime? @map("fecha_cambio") @db.Timestamp(6)
+  observacion    String?
+  garantia       Garantia  @relation(fields: [garantiaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuario        User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("garantia_historial")
+}
+
+model PagoGarantia {
+  id            Int       @id @default(autoincrement())
+  garantiaId    Int       @map("garantia_id")
+  tecnicoId     Int       @map("tecnico_id")
+  monto         Float
+  fechaPago     DateTime? @map("fecha_pago") @db.Timestamp(6)
+  estado        String?   @db.VarChar(20)
+  observaciones String?
+  garantia      Garantia  @relation(fields: [garantiaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tecnico       User      @relation(fields: [tecnicoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("pago_garantia")
+}
+
+model ConduceEnvio {
+  id               Int             @id @default(autoincrement())
+  codigoConduce    String          @unique @map("codigo_conduce") @db.VarChar(50)
+  tipoConduce      String          @map("tipo_conduce") @db.VarChar(20)
+  fechaGeneracion  DateTime?       @map("fecha_generacion") @db.Timestamp(6)
+  fechaCancelacion DateTime?       @map("fecha_cancelacion") @db.Timestamp(6)
+  estado           String?         @db.VarChar(20)
+  cliente          String          @db.VarChar(100)
+  totalEquipos     Int?            @map("total_equipos")
+  observaciones    String?
+  generadoPorId    Int             @map("generado_por_id")
+  canceladoPorId   Int?            @map("cancelado_por_id")
+  canceladoPor     User?           @relation("ConduceCancelado", fields: [canceladoPorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  generadoPor      User            @relation("ConduceGenerado", fields: [generadoPorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  equiposIncluidos ConduceEquipo[]
+
+  @@map("conduce_envio")
+}
+
+model ConduceEquipo {
+  id             Int          @id @default(autoincrement())
+  conduceId      Int          @map("conduce_id")
+  garantiaId     Int          @map("garantia_id")
+  fechaInclusion DateTime?    @map("fecha_inclusion") @db.Timestamp(6)
+  conduce        ConduceEnvio @relation(fields: [conduceId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  garantia       Garantia     @relation(fields: [garantiaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("conduce_equipo")
+}
+
+model TrabajoGarantiaLote {
+  id                Int                            @id @default(autoincrement())
+  codigo            String                         @unique @db.VarChar(32)
+  fechaCreacion     DateTime?                      @map("fecha_creacion") @db.Timestamp(6)
+  fechaAsignacion   DateTime?                      @map("fecha_asignacion") @db.Timestamp(6)
+  fechaEntrega      DateTime?                      @map("fecha_entrega") @db.Timestamp(6)
+  fechaConfirmacion DateTime?                      @map("fecha_confirmacion") @db.Timestamp(6)
+  descripcion       String                         @db.VarChar(200)
+  cantidadEquipos   Int                            @map("cantidad_equipos")
+  equiposEntregados Int?                           @map("equipos_entregados")
+  montoPorEquipo    Float                          @map("monto_por_equipo")
+  montoTotal        Float                          @map("monto_total")
+  estado            String?                        @db.VarChar(32)
+  observaciones     String?
+  adminId           Int                            @map("admin_id")
+  tecnicoId         Int?                           @map("tecnico_id")
+  admin             User                           @relation("TrabajoAdmin", fields: [adminId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tecnico           User?                          @relation("TrabajoTecnico", fields: [tecnicoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  historialCambios  TrabajoGarantiaLoteHistorial[]
+
+  @@map("trabajo_garantia_lote")
+}
+
+model TrabajoGarantiaLoteHistorial {
+  id                Int                 @id @default(autoincrement())
+  trabajoId         Int                 @map("trabajo_id")
+  estadoAnterior    String?             @map("estado_anterior") @db.VarChar(50)
+  estadoNuevo       String              @map("estado_nuevo") @db.VarChar(50)
+  equiposAnteriores Int?                @map("equipos_anteriores")
+  equiposNuevos     Int?                @map("equipos_nuevos")
+  userId            Int                 @map("user_id")
+  fechaCambio       DateTime?           @map("fecha_cambio") @db.Timestamp(6)
+  observacion       String?
+  trabajo           TrabajoGarantiaLote @relation(fields: [trabajoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuario           User                @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("trabajo_garantia_lote_historial")
+}
+
+model system_setting {
+  key         String    @id @db.VarChar(50)
+  value       String?   @db.VarChar(255)
+  description String?   @db.VarChar(255)
+  updated_at  DateTime? @db.Timestamp(6)
+}

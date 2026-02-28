@@ -1,0 +1,912 @@
+"use server";
+
+import prisma from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { checkAchievements } from "./achievements";
+
+export async function getGarantias(filters?: any) {
+    const session = await getServerSession(authOptions);
+    if (!session) return [];
+
+    const where: any = {};
+    if (filters?.estado && filters.estado !== 'all') where.estado = filters.estado;
+    if (filters?.tecnicoId && filters.tecnicoId !== 'all') where.tecnicoId = Number(filters.tecnicoId);
+
+    if (session.user.role === 'admin') {
+        return await prisma.garantia.findMany({
+            where,
+            include: {
+                tecnico: { select: { id: true, name: true, username: true } },
+                admin: { select: { id: true, name: true, username: true } }
+            },
+            orderBy: { fechaRecepcion: 'desc' }
+        });
+    }
+
+    if (session.user.role === 'tecnico_garantias') {
+        where.tecnicoId = Number(session.user.id);
+        return await prisma.garantia.findMany({
+            where,
+            include: {
+                tecnico: { select: { id: true, name: true, username: true } },
+                admin: { select: { id: true, name: true, username: true } }
+            },
+            orderBy: { fechaRecepcion: 'desc' }
+        });
+    }
+
+    return await prisma.garantia.findMany({
+        where,
+        orderBy: { fechaRecepcion: 'desc' }
+    });
+}
+
+export async function getGarantiaById(id: number) {
+    return await prisma.garantia.findUnique({
+        where: { id },
+        include: {
+            tecnico: { select: { id: true, name: true, username: true } },
+            admin: { select: { id: true, name: true, username: true } },
+            supplier: true,
+            historialCambios: {
+                include: {
+                    usuario: { select: { name: true, username: true } }
+                },
+                orderBy: { fechaCambio: 'desc' }
+            }
+        }
+    });
+}
+
+export async function getGarantiasStats() {
+    const total = await prisma.garantia.count();
+    const pendientesAsignacion = await prisma.garantia.count({ where: { estado: 'Pendiente de Asignación' } });
+    const asignadas = await prisma.garantia.count({ where: { estado: 'Asignado' } });
+    const enReparacion = await prisma.garantia.count({ where: { estado: 'En Reparación' } });
+    const reparadas = await prisma.garantia.count({ where: { estado: 'Reparado' } });
+    const entregadas = await prisma.garantia.count({ where: { estado: 'Entregado' } });
+
+    return {
+        total,
+        pendientesAsignacion,
+        asignadas,
+        enReparacion,
+        reparadas,
+        entregadas
+    };
+}
+
+export async function getTecnicosGarantias() {
+    return await prisma.user.findMany({
+        where: { role: 'tecnico_garantias' },
+        select: { id: true, name: true, username: true }
+    });
+}
+
+export async function getSuppliers() {
+    return await prisma.supplier.findMany({
+        orderBy: { name: "asc" }
+    });
+}
+
+export async function createGarantia(data: {
+    cliente: string;
+    imeiSn: string;
+    marca?: string;
+    modelo?: string;
+    problema: string;
+    observaciones?: string;
+}) {
+    const session = await getServerSession(authOptions);
+    if (!session) return { success: false, error: "No autorizado" };
+
+    try {
+        const count = await prisma.garantia.count();
+        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const codigo = `GAR-${dateStr}-${count + 1}`;
+
+        const garantia = await prisma.garantia.create({
+            data: {
+                codigo,
+                cliente: data.cliente,
+                imeiSn: data.imeiSn,
+                marca: data.marca || null,
+                modelo: data.modelo || null,
+                problema: data.problema,
+                observaciones: data.observaciones || null,
+                estado: 'Pendiente de Asignación',
+                adminId: Number(session.user.id),
+                fechaRecepcion: new Date()
+            }
+        });
+
+        await prisma.garantiaHistorial.create({
+            data: {
+                garantiaId: garantia.id,
+                estadoNuevo: 'Pendiente de Asignación',
+                userId: Number(session.user.id),
+                fechaCambio: new Date(),
+                observacion: 'Garantía creada'
+            }
+        });
+
+        revalidatePath("/garantias");
+        return { success: true, garantia };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function updateGarantia(id: number, data: {
+    cliente: string;
+    imeiSn: string;
+    marca?: string;
+    modelo?: string;
+    problema: string;
+    observaciones?: string;
+}) {
+    const session = await getServerSession(authOptions);
+    if (!session) return { success: false, error: "No autorizado" };
+
+    try {
+        const current = await prisma.garantia.findUnique({ where: { id } });
+        if (!current) return { success: false, error: "Garantía no encontrada" };
+
+        const updated = await prisma.garantia.update({
+            where: { id },
+            data: {
+                cliente: data.cliente,
+                imeiSn: data.imeiSn,
+                marca: data.marca || null,
+                modelo: data.modelo || null,
+                problema: data.problema,
+                observaciones: data.observaciones || null
+            }
+        });
+
+        await prisma.garantiaHistorial.create({
+            data: {
+                garantiaId: id,
+                estadoAnterior: current.estado ?? undefined,
+                estadoNuevo: current.estado ?? 'Desconocido',
+                userId: Number(session.user.id),
+                fechaCambio: new Date(),
+                observacion: 'Información de garantía editada'
+            }
+        });
+
+        revalidatePath(`/garantias/${id}`);
+        revalidatePath("/garantias");
+        return { success: true, garantia: updated };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function asignarGarantia(garantiaId: number, tecnicoId: number) {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== 'admin') return { success: false, error: "No autorizado" };
+
+    try {
+        await prisma.garantia.update({
+            where: { id: garantiaId },
+            data: {
+                tecnicoId,
+                estado: 'Asignado',
+                fechaAsignacion: new Date()
+            }
+        });
+
+        await prisma.garantiaHistorial.create({
+            data: {
+                garantiaId,
+                estadoAnterior: 'Pendiente de Asignación',
+                estadoNuevo: 'Asignado',
+                userId: Number(session.user.id),
+                fechaCambio: new Date(),
+                observacion: 'Garantía asignada'
+            }
+        });
+
+        revalidatePath("/garantias");
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function iniciarReparacion(garantiaId: number) {
+    const session = await getServerSession(authOptions);
+    if (!session) return { success: false, error: "No autorizado" };
+
+    try {
+        await prisma.garantia.update({
+            where: { id: garantiaId },
+            data: {
+                estado: 'En Reparación',
+                fechaReparacion: new Date()
+            }
+        });
+
+        await prisma.garantiaHistorial.create({
+            data: {
+                garantiaId,
+                estadoAnterior: 'Asignado',
+                estadoNuevo: 'En Reparación',
+                userId: Number(session.user.id),
+                fechaCambio: new Date(),
+                observacion: 'Técnico inició la reparación'
+            }
+        });
+
+        revalidatePath(`/garantias/${garantiaId}`);
+        revalidatePath("/garantias");
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function completarReparacion(garantiaId: number, data: { diagnostico: string, solucionAplicada: string }) {
+    const session = await getServerSession(authOptions);
+    if (!session) return { success: false, error: "No autorizado" };
+
+    try {
+        await prisma.garantia.update({
+            where: { id: garantiaId },
+            data: {
+                diagnostico: data.diagnostico,
+                solucionAplicada: data.solucionAplicada,
+                estado: 'Pendiente de Aprobación',
+                fechaReparacion: new Date()
+            }
+        });
+
+        await prisma.garantiaHistorial.create({
+            data: {
+                garantiaId,
+                estadoAnterior: 'En Reparación',
+                estadoNuevo: 'Pendiente de Aprobación',
+                userId: Number(session.user.id),
+                fechaCambio: new Date(),
+                observacion: 'Técnico completó la reparación'
+            }
+        });
+
+        revalidatePath(`/garantias/${garantiaId}`);
+        revalidatePath("/garantias");
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function aprobarGarantia(garantiaId: number) {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== 'admin') return { success: false, error: "No autorizado" };
+
+    try {
+        await prisma.garantia.update({
+            where: { id: garantiaId },
+            data: {
+                estado: 'Reparado'
+            }
+        });
+
+        await prisma.garantiaHistorial.create({
+            data: {
+                garantiaId,
+                estadoAnterior: 'Pendiente de Aprobación',
+                estadoNuevo: 'Reparado',
+                userId: Number(session.user.id),
+                fechaCambio: new Date(),
+                observacion: 'Administrador aprobó la reparación'
+            }
+        });
+
+        revalidatePath(`/garantias/${garantiaId}`);
+        revalidatePath("/garantias");
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function rechazarGarantia(garantiaId: number, razon: string) {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== 'admin') return { success: false, error: "No autorizado" };
+
+    try {
+        const currentGarantia = await prisma.garantia.findUnique({ where: { id: garantiaId } });
+        if (!currentGarantia) return { success: false, error: "Garantía no encontrada" };
+
+        await prisma.garantia.update({
+            where: { id: garantiaId },
+            data: {
+                estado: 'En Reparación'
+            }
+        });
+
+        await prisma.garantiaHistorial.create({
+            data: {
+                garantiaId,
+                estadoAnterior: 'Pendiente de Aprobación',
+                estadoNuevo: 'En Reparación',
+                userId: Number(session.user.id),
+                fechaCambio: new Date(),
+                observacion: `Rechazado por Admin: ${razon}`
+            }
+        });
+
+        revalidatePath(`/garantias/${garantiaId}`);
+        revalidatePath("/garantias");
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function cancelarGarantia(garantiaId: number) {
+    const session = await getServerSession(authOptions);
+    if (!session) return { success: false, error: "No autorizado" };
+
+    try {
+        const currentGarantia = await prisma.garantia.findUnique({ where: { id: garantiaId } });
+        if (!currentGarantia) return { success: false, error: "Garantía no encontrada" };
+
+        await prisma.garantia.update({
+            where: { id: garantiaId },
+            data: {
+                estado: 'Pendiente de Asignación',
+                tecnicoId: null
+            }
+        });
+
+        await prisma.garantiaHistorial.create({
+            data: {
+                garantiaId,
+                estadoAnterior: currentGarantia.estado ?? undefined,
+                estadoNuevo: 'Pendiente de Asignación',
+                userId: Number(session.user.id),
+                fechaCambio: new Date(),
+                observacion: 'Garantía cancelada/reiniciada'
+            }
+        });
+
+        revalidatePath(`/garantias/${garantiaId}`);
+        revalidatePath("/garantias");
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function eliminarGarantia(id: number) {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== "admin") return { success: false, error: "No autorizado" };
+
+    try {
+        await prisma.garantiaHistorial.deleteMany({ where: { garantiaId: id } });
+        await prisma.garantia.delete({ where: { id } });
+
+        revalidatePath("/garantias");
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function marcarComoEntregado(id: number, observacion?: string) {
+    const session = await getServerSession(authOptions);
+    if (!session) return { success: false, error: "No autorizado" };
+
+    try {
+        const current = await prisma.garantia.findUnique({ where: { id: id } });
+        if (!current) return { success: false, error: "Garantía no encontrada" };
+
+        await prisma.garantia.update({
+            where: { id: id },
+            data: {
+                estado: "Pendiente Confirmación Entrega",
+                fechaEntrega: new Date()
+            }
+        });
+
+        await prisma.garantiaHistorial.create({
+            data: {
+                garantiaId: id,
+                estadoAnterior: current.estado ?? undefined,
+                estadoNuevo: "Pendiente Confirmación Entrega",
+                userId: Number(session.user.id),
+                fechaCambio: new Date(),
+                observacion: observacion || "Garantía marcada como entregada - Pendiente confirmación"
+            }
+        });
+
+        revalidatePath(`/garantias/${id}`);
+        revalidatePath("/garantias");
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function confirmarEntrega(id: number, observacion?: string) {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== "admin") return { success: false, error: "No autorizado" };
+
+    try {
+        const current = await prisma.garantia.findUnique({ where: { id: id } });
+        if (!current) return { success: false, error: "Garantía no encontrada" };
+
+        await prisma.garantia.update({
+            where: { id: id },
+            data: {
+                estado: "Entregado"
+            }
+        });
+
+        await prisma.garantiaHistorial.create({
+            data: {
+                garantiaId: id,
+                estadoAnterior: current.estado ?? undefined,
+                estadoNuevo: "Entregado",
+                userId: Number(session.user.id),
+                fechaCambio: new Date(),
+                observacion: observacion || "Entrega confirmada por administrador"
+            }
+        });
+
+        if (current.tecnicoId) {
+            await checkAchievements(current.tecnicoId);
+        }
+
+        revalidatePath(`/garantias/${id}`);
+        revalidatePath("/garantias");
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function enviarAProveedor(garantiaId: number, supplierId: number, observaciones?: string) {
+    const session = await getServerSession(authOptions);
+    if (!session) return { success: false, error: "No autorizado" };
+
+    try {
+        const current = await prisma.garantia.findUnique({ where: { id: garantiaId } });
+        if (!current) return { success: false, error: "Garantía no encontrada" };
+
+        await prisma.garantia.update({
+            where: { id: garantiaId },
+            data: {
+                estado: "Enviado a Proveedor",
+                supplierId,
+                fechaEnvioProveedor: new Date()
+            }
+        });
+
+        await prisma.garantiaHistorial.create({
+            data: {
+                garantiaId,
+                estadoAnterior: current.estado ?? undefined,
+                estadoNuevo: "Enviado a Proveedor",
+                userId: Number(session.user.id),
+                fechaCambio: new Date(),
+                observacion: observaciones || "Enviado a proveedor para revisión"
+            }
+        });
+
+        revalidatePath(`/garantias/${garantiaId}`);
+        revalidatePath("/garantias");
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function recibirDeProveedor(garantiaId: number, resultado: string, diagnostico?: string, observaciones?: string) {
+    const session = await getServerSession(authOptions);
+    if (!session) return { success: false, error: "No autorizado" };
+
+    try {
+        const current = await prisma.garantia.findUnique({ where: { id: garantiaId } });
+        if (!current) return { success: false, error: "Garantía no encontrada" };
+
+        await prisma.garantia.update({
+            where: { id: garantiaId },
+            data: {
+                estado: resultado,
+                diagnostico: diagnostico || current.diagnostico,
+                observaciones: observaciones || current.observaciones,
+                fechaRecepcionProveedor: new Date()
+            }
+        });
+
+        await prisma.garantiaHistorial.create({
+            data: {
+                garantiaId,
+                estadoAnterior: "Enviado a Proveedor",
+                estadoNuevo: resultado,
+                userId: Number(session.user.id),
+                fechaCambio: new Date(),
+                observacion: `Recibido de proveedor - Resultado: ${resultado}. ${observaciones || ""}`
+            }
+        });
+
+        revalidatePath(`/garantias/${garantiaId}`);
+        revalidatePath("/garantias");
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function getEquipoHistorialByImei(imeiSn: string) {
+    return await prisma.equipoHistorial.findMany({
+        where: { equipo: { imei: imeiSn } },
+        include: {
+            user: { select: { name: true, username: true } },
+            lote: { select: { codigo: true } }
+        },
+        orderBy: { fecha: "desc" }
+    });
+}
+
+export async function getConfiguracionPago(tecnicoId: number) {
+    return await prisma.tecnicoGarantiaPago.findFirst({
+        where: { tecnicoId }
+    });
+}
+
+export async function saveConfiguracionPago(tecnicoId: number, data: { montoPorReparacion: number, activo: boolean }) {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== "admin") return { success: false, error: "No autorizado" };
+
+    try {
+        const current = await prisma.tecnicoGarantiaPago.findFirst({
+            where: { tecnicoId }
+        });
+
+        if (current) {
+            await prisma.tecnicoGarantiaPago.update({
+                where: { id: current.id },
+                data: {
+                    montoPorReparacion: data.montoPorReparacion,
+                    activo: data.activo,
+                    adminId: Number(session.user.id),
+                    fechaConfiguracion: new Date()
+                }
+            });
+        } else {
+            await prisma.tecnicoGarantiaPago.create({
+                data: {
+                    tecnicoId,
+                    montoPorReparacion: data.montoPorReparacion,
+                    activo: data.activo,
+                    adminId: Number(session.user.id),
+                    fechaConfiguracion: new Date()
+                }
+            });
+        }
+
+        revalidatePath("/garantias/pagos");
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function getTecnicosPaymentsInfo() {
+    const tecnicos = await prisma.user.findMany({
+        where: { role: "tecnico_garantias" },
+        select: {
+            id: true,
+            name: true,
+            username: true,
+            configuracionPagos: { where: { activo: true } },
+            wallet: { include: { accounts: { where: { nombre: "Principal" } } } }
+        }
+    });
+
+    return tecnicos.map(t => ({
+        id: t.id,
+        name: t.name,
+        username: t.username,
+        config: t.configuracionPagos[0] || null,
+        balance: t.wallet[0]?.accounts[0]?.saldo || 0
+    }));
+}
+
+export async function createGarantiasLote(data: {
+    cliente: string;
+    tecnicoId?: number;
+    observaciones?: string;
+    items: {
+        imeiSn: string;
+        marca?: string;
+        modelo?: string;
+        problema: string;
+    }[]
+}) {
+    const session = await getServerSession(authOptions);
+    if (!session) return { success: false, error: "No autorizado" };
+
+    try {
+        const result = await prisma.$transaction(async (tx) => {
+            // 1. Create Lote Record
+            const countLotes = await tx.garantiaLoteIngreso.count();
+            const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            const codigoLote = `LOTE-GAR-${dateStr}-${countLotes + 1}`;
+
+            const lote = await tx.garantiaLoteIngreso.create({
+                data: {
+                    codigo: codigoLote,
+                    observaciones: data.observaciones || "Ingreso masivo",
+                    cantidadInicial: data.items.length,
+                    createdById: Number(session.user.id),
+                    fechaCreacion: new Date()
+                }
+            });
+
+            const warrantiesCreated = [];
+            let currentWarrantyCount = await tx.garantia.count();
+
+            for (const item of data.items) {
+                currentWarrantyCount++;
+                const codigoGarantia = `GAR-${dateStr}-${currentWarrantyCount}`;
+
+                const estado = data.tecnicoId ? 'En Reparación' : 'Pendiente de Asignación';
+
+                const garantia = await tx.garantia.create({
+                    data: {
+                        codigo: codigoGarantia,
+                        cliente: data.cliente,
+                        imeiSn: item.imeiSn,
+                        marca: item.marca || null,
+                        modelo: item.modelo || null,
+                        problema: item.problema,
+                        observaciones: `Importado en lote ${codigoLote}`,
+                        estado: estado,
+                        adminId: Number(session.user.id),
+                        tecnicoId: data.tecnicoId || null,
+                        loteIngresoId: lote.id,
+                        fechaRecepcion: new Date(),
+                        fechaAsignacion: data.tecnicoId ? new Date() : null
+                    }
+                });
+
+                await tx.garantiaHistorial.create({
+                    data: {
+                        garantiaId: garantia.id,
+                        estadoNuevo: estado,
+                        userId: Number(session.user.id),
+                        fechaCambio: new Date(),
+                        observacion: `Creado en lote ${codigoLote}${data.tecnicoId ? ' y asignado automáticamente' : ''}`
+                    }
+                });
+
+                warrantiesCreated.push(garantia);
+            }
+
+            return { lote, warranties: warrantiesCreated };
+        });
+
+        revalidatePath("/garantias");
+        return { success: true, data: result };
+    } catch (error: any) {
+        console.error("Error creating batch warranties:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Create a labor-only batch job.
+ */
+export async function createTrabajoLote(data: {
+    descripcion: string;
+    cantidadEquipos: number;
+    montoPorEquipo: number;
+    observaciones?: string;
+}) {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== 'admin') return { success: false, error: "No autorizado" };
+
+    try {
+        const count = await prisma.trabajoGarantiaLote.count();
+        const codigo = `TL-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${count + 1}`;
+
+        const trabajo = await prisma.trabajoGarantiaLote.create({
+            data: {
+                codigo,
+                descripcion: data.descripcion,
+                cantidadEquipos: data.cantidadEquipos,
+                montoPorEquipo: data.montoPorEquipo,
+                montoTotal: data.cantidadEquipos * data.montoPorEquipo,
+                estado: 'Creado',
+                observaciones: data.observaciones || null,
+                adminId: Number(session.user.id),
+                fechaCreacion: new Date(),
+                equiposEntregados: 0
+            }
+        });
+
+        revalidatePath("/garantias");
+        return { success: true, trabajo };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Assign a batch job to a technician.
+ */
+export async function asignarTrabajoLote(trabajoId: number, tecnicoId: number) {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== 'admin') return { success: false, error: "No autorizado" };
+
+    try {
+        await prisma.trabajoGarantiaLote.update({
+            where: { id: trabajoId },
+            data: {
+                tecnicoId,
+                estado: 'Asignado',
+                fechaAsignacion: new Date()
+            }
+        });
+
+        await prisma.trabajoGarantiaLoteHistorial.create({
+            data: {
+                trabajoId,
+                estadoNuevo: 'Asignado',
+                userId: Number(session.user.id),
+                fechaCambio: new Date(),
+                observacion: 'Trabajo asignado a técnico'
+            }
+        });
+
+        revalidatePath("/garantias");
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Technician confirms partial or full delivery of a batch job.
+ */
+export async function confirmarEntregaTrabajoLote(trabajoId: number, cantidad: number) {
+    const session = await getServerSession(authOptions);
+    if (!session) return { success: false, error: "No autorizado" };
+
+    try {
+        const trabajo = await prisma.trabajoGarantiaLote.findUnique({ where: { id: trabajoId } });
+        if (!trabajo) return { success: false, error: "Trabajo no encontrado" };
+
+        const nuevosEntregados = (trabajo.equiposEntregados || 0) + cantidad;
+        const finalizado = nuevosEntregados >= trabajo.cantidadEquipos;
+
+        await prisma.trabajoGarantiaLote.update({
+            where: { id: trabajoId },
+            data: {
+                equiposEntregados: nuevosEntregados,
+                estado: finalizado ? 'Completado' : 'En Progreso',
+                fechaEntrega: finalizado ? new Date() : null
+            }
+        });
+
+        await prisma.trabajoGarantiaLoteHistorial.create({
+            data: {
+                trabajoId,
+                estadoAnterior: trabajo.estado,
+                estadoNuevo: finalizado ? 'Completado' : 'En Progreso',
+                equiposAnteriores: trabajo.equiposEntregados,
+                equiposNuevos: nuevosEntregados,
+                userId: Number(session.user.id),
+                fechaCambio: new Date(),
+                observacion: `Entrega de ${cantidad} equipos.`
+            }
+        });
+
+        revalidatePath("/garantias");
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Create a 'Conduce' (Manifest) for a set of warranties/equipments.
+ */
+export async function createConduce(data: {
+    cliente: string;
+    tipoConduce: 'individual' | 'masivo';
+    garantiaIds: number[];
+    observaciones?: string;
+}) {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== 'admin') return { success: false, error: "No autorizado" };
+
+    try {
+        const result = await prisma.$transaction(async (tx) => {
+            const count = await tx.conduceEnvio.count();
+            const codigo = `COND-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${count + 1}`;
+
+            const conduce = await tx.conduceEnvio.create({
+                data: {
+                    codigoConduce: codigo,
+                    tipoConduce: data.tipoConduce,
+                    cliente: data.cliente,
+                    totalEquipos: data.garantiaIds.length,
+                    observaciones: data.observaciones || null,
+                    generadoPorId: Number(session.user.id),
+                    fechaGeneracion: new Date(),
+                    estado: 'Activo'
+                }
+            });
+
+            // Associate equipments
+            await tx.conduceEquipo.createMany({
+                data: data.garantiaIds.map(gid => ({
+                    conduceId: conduce.id,
+                    garantiaId: gid,
+                    fechaInclusion: new Date()
+                }))
+            });
+
+            // Update warranty status to 'Despachado' (Dispatched)
+            await tx.garantia.updateMany({
+                where: { id: { in: data.garantiaIds } },
+                data: {
+                    estado: 'Despachado',
+                    fechaDespacho: new Date()
+                }
+            });
+
+            // Historial for each
+            for (const gid of data.garantiaIds) {
+                await tx.garantiaHistorial.create({
+                    data: {
+                        garantiaId: gid,
+                        estadoNuevo: 'Despachado',
+                        userId: Number(session.user.id),
+                        fechaCambio: new Date(),
+                        observacion: `Equipo incluido en conduce ${codigo}`
+                    }
+                });
+            }
+
+            return conduce;
+        });
+
+        revalidatePath("/garantias");
+        return { success: true, conduce: result };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Fetch all delivery manifests.
+ */
+export async function getConduces() {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== 'admin') return [];
+
+    return await prisma.conduceEnvio.findMany({
+        include: {
+            generadoPor: true,
+            equiposIncluidos: {
+                include: {
+                    garantia: true
+                }
+            }
+        },
+        orderBy: { fechaGeneracion: 'desc' }
+    });
+}
+
+
+
