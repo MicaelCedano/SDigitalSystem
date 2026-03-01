@@ -549,7 +549,7 @@ export function WalletClient({ initialData, currentUser }: WalletProps) {
 
             {/* 4. Receipt (Baucher) View */}
             <Dialog open={!!selectedReceipt} onOpenChange={() => setSelectedReceipt(null)}>
-                <DialogContent className="sm:max-w-md bg-white rounded-3xl p-6 border-none shadow-2xl relative overflow-hidden">
+                <DialogContent className="sm:max-w-md bg-white rounded-3xl p-6 md:p-8 border-none shadow-2xl relative max-h-[90vh] overflow-y-auto overflow-x-hidden">
                     <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
                         <Receipt className="w-48 h-48 text-indigo-900" />
                     </div>
@@ -564,7 +564,7 @@ export function WalletClient({ initialData, currentUser }: WalletProps) {
 
                     {selectedReceipt && (
                         <div className="space-y-6 relative z-10">
-                            <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                            <div className="bg-slate-50 rounded-2xl p-4 sm:p-6 border border-slate-100">
                                 <div className="space-y-4">
                                     <div className="flex justify-between items-center border-b border-slate-200 pb-4">
                                         <span className="text-xs font-black uppercase text-slate-400 tracking-wider">Monto Depositado</span>
