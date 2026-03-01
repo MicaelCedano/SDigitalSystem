@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Award, CheckCircle2, Package, Smartphone, Edit2, Medal, Trophy, Star, Zap, Shield, Crown, Clock, Mail } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getProfileImageUrl } from "@/lib/utils";
+
 import ProfileForm from "./ProfileForm";
 import { Button } from "@/components/ui/button";
 import { ACHIEVEMENTS_DEF } from "@/app/lib/achievements-config";
@@ -65,7 +66,7 @@ export default function UserProfileView({ user, stats, unlockedAchievements, isO
                         <div className="w-32 h-32 md:w-40 md:h-40 rounded-3xl overflow-hidden border-4 border-white/20 shadow-[0_0_30px_rgba(99,102,241,0.5)]">
                             {user.profileImage ? (
                                 <img
-                                    src={`/profile_images/${user.profileImage}`}
+                                    src={getProfileImageUrl(user.profileImage) || ""}
                                     alt={user.username}
                                     className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
                                 />

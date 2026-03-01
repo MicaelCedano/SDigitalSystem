@@ -91,27 +91,42 @@ export async function updateProfile(userId: number, formData: FormData) {
         if (photo instanceof File && photo.size > 0) {
             console.log(`Processing photo: ${photo.name}, size: ${(photo.size / 1024).toFixed(2)} KB`);
 
+            if (photo.size > 10 * 1024 * 1024) {
+                return { success: false, error: "La imagen excede el límite de 10MB" };
+            }
+
+            // Use Supabase Storage for persistence on Vercel
+            const { getSupabaseAdmin } = await import("@/lib/supabase");
+            const supabase = getSupabaseAdmin();
+
+            if (!supabase) {
+                console.error("Supabase admin client not available");
+                return { success: false, error: "Error de configuración del servidor de archivos" };
+            }
+
             const buffer = Buffer.from(await photo.arrayBuffer());
             const fileExt = photo.name.includes('.') ? photo.name.split('.').pop() : 'jpg';
             const filename = `profile_${userId}_${Date.now()}.${fileExt}`;
-            const publicDir = path.join(process.cwd(), "public", "profile_images");
 
-            if (!fs.existsSync(publicDir)) {
-                fs.mkdirSync(publicDir, { recursive: true });
+            const { data, error } = await supabase.storage
+                .from('profiles')
+                .upload(filename, buffer, {
+                    contentType: photo.type || 'image/jpeg',
+                    upsert: true
+                });
+
+            if (error) {
+                console.error("Supabase Storage Error:", error);
+                return { success: false, error: "Error al subir la imagen a la nube" };
             }
 
-            try {
-                if (currentUser?.profileImage) {
-                    const oldPath = path.join(publicDir, currentUser.profileImage);
-                    if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-                }
-            } catch (e) {
-                console.warn("Could not delete old profile image:", e);
-            }
+            // Get public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from('profiles')
+                .getPublicUrl(filename);
 
-            fs.writeFileSync(path.join(publicDir, filename), buffer);
-            updateData.profileImage = filename;
-            console.log(`Saved new profile image: ${filename}`);
+            updateData.profileImage = publicUrl;
+            console.log(`Saved new profile image to Supabase: ${publicUrl}`);
         }
 
         const updatedUser = await prisma.user.update({

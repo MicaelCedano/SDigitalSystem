@@ -1,0 +1,9 @@
+Buscando 32 tablas esperadas según schema.prisma...
+
+--- COMPARACIÓN DE TABLAS ---
+❌ Faltan las siguientes tablas en la base de datos:
+- conversation
+- message
+- system_setting
+
+Para crearlas, puedes ejecutar: npx prisma db push

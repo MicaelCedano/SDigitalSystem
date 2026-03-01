@@ -3,7 +3,8 @@ import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { cn } from "@/lib/utils";
+import { cn, getProfileImageUrl } from "@/lib/utils";
+
 import { LoteActionButtons } from "@/components/admin/LoteActionButtons";
 import { LoteDetailsModal } from "@/components/admin/LoteDetailsModal";
 import {
@@ -219,7 +220,7 @@ export default async function Home() {
                             {qc.profileImage ? (
                               <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-200">
                                 <img
-                                  src={`/profile_images/${qc.profileImage}`}
+                                  src={getProfileImageUrl(qc.profileImage) || ""}
                                   alt={qc.username}
                                   className="h-full w-full object-cover"
                                 />

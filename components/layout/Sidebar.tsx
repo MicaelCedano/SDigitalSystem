@@ -22,7 +22,8 @@ import {
 } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import { useState } from 'react';
-import { cn } from '@/lib/utils';
+import { cn, getProfileImageUrl } from '@/lib/utils';
+
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { getUnreadCount } from '@/app/actions/notifications';
@@ -181,7 +182,7 @@ const Sidebar = ({ initialUser, forceShow = false }: { initialUser?: any, forceS
                             <div className="h-10 w-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-black text-sm shadow-lg overflow-hidden shrink-0">
                                 {user?.image ? (
                                     <img
-                                        src={`/profile_images/${user.image}`}
+                                        src={getProfileImageUrl(user.image) || ""}
                                         alt={user?.username}
                                         className="h-full w-full object-cover"
                                     />
@@ -226,7 +227,7 @@ const NavItem = ({ href, icon, label, active, collapsed, badge, user }: { href: 
                         )}>
                             {href === '/profile' && user?.image ? (
                                 <img
-                                    src={`/profile_images/${user.image}`}
+                                    src={getProfileImageUrl(user.image) || ""}
                                     alt="Profile"
                                     className="h-full w-full object-cover"
                                 />

@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { toast } from "sonner";
 import { updateProfile } from "@/app/actions/user";
 import { useSession } from "next-auth/react";
+import { getProfileImageUrl } from "@/lib/utils";
+
 
 interface ProfileFormProps {
     user: {
@@ -24,17 +26,16 @@ interface ProfileFormProps {
 export default function ProfileForm({ user }: ProfileFormProps) {
     const { update } = useSession();
     const [isLoading, setIsLoading] = useState(false);
-    const [preview, setPreview] = useState<string | null>(
-        user.profileImage ? `/profile_images/${user.profileImage}` : null
-    );
+    const [preview, setPreview] = useState<string | null>(getProfileImageUrl(user.profileImage));
+
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            // Validate size (max 2MB)
-            if (file.size > 2 * 1024 * 1024) {
-                toast.error("La imagen es demasiado pesada. Máximo 2MB.");
+            // Validate size (max 10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                toast.error("La imagen es demasiado pesada. Máximo 10MB.");
                 e.target.value = ""; // Clear input
                 return;
             }
@@ -122,7 +123,8 @@ export default function ProfileForm({ user }: ProfileFormProps) {
                                 name="photo"
                                 ref={fileInputRef}
                                 onChange={handleImageChange}
-                                accept="image/*"
+                                accept="image/png, image/jpeg, image/gif, image/webp"
+
                                 className="hidden"
                             />
                         </div>
