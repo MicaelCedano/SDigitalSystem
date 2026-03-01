@@ -27,6 +27,7 @@ model User {
   lotesGarantiaIngresados GarantiaLoteIngreso[]
   facturasGeneradas       HistorialFactura[]
   lotes                   Lote[]
+  sentMessages            Message[]                      @relation("SentMessages")
   notificaciones          Notification[]
   pagosGarantias          PagoGarantia[]
   penalidadesCreadas      Penalidad[]                    @relation("PenalidadAdmin")
@@ -42,19 +43,17 @@ model User {
   wallet                  Wallet[]
   walletTransactions      WalletTransaction[]
   conversations           Conversation[]
-  sentMessages            Message[]            @relation("SentMessages")
 
   @@map("users")
 }
 
 model Conversation {
-  id            Int       @id @default(autoincrement())
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
-  isGlobal      Boolean   @default(false) @map("is_global")
-  
-  participants  User[]
-  messages      Message[]
+  id        Int       @id @default(autoincrement())
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  isGlobal  Boolean   @default(false) @map("is_global")
+  messages  Message[]
+  participants User[]
 
   @@map("conversation")
 }
@@ -63,14 +62,11 @@ model Message {
   id             Int          @id @default(autoincrement())
   content        String
   createdAt      DateTime     @default(now()) @map("created_at")
-  
   senderId       Int          @map("sender_id")
-  sender         User         @relation("SentMessages", fields: [senderId], references: [id])
-  
   conversationId Int          @map("conversation_id")
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  
   read           Boolean      @default(false)
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id])
 
   @@map("message")
 }
@@ -106,21 +102,19 @@ model PurchaseItem {
   quantity      Int
   unitPrice     Float?      @map("unit_price")
   deviceModel   DeviceModel @relation(fields: [deviceModelId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  purchase      Purchase    @relation(fields: [purchaseId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@map("purchase_item")
 }
 
 model Purchase {
-  id            Int            @id @default(autoincrement())
-  purchaseDate  DateTime       @map("purchase_date") @db.Timestamp(6)
-  totalQuantity Int            @map("total_quantity")
-  totalAmount   Float?         @map("total_amount")
-  estado        String         @db.VarChar(20)
-  supplierId    Int            @map("supplier_id")
+  id            Int      @id @default(autoincrement())
+  purchaseDate  DateTime @map("purchase_date") @db.Timestamp(6)
+  totalQuantity Int      @map("total_quantity")
+  totalAmount   Float?   @map("total_amount")
+  estado        String   @db.VarChar(20)
+  supplierId    Int      @map("supplier_id")
   equipos       Equipo[]
-  supplier      Supplier       @relation(fields: [supplierId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  items         PurchaseItem[]
+  supplier      Supplier @relation(fields: [supplierId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@map("purchase")
 }
@@ -201,8 +195,8 @@ model WalletTransaction {
   loteId      Int?      @map("lote_id")
   garantiaId  Int?      @map("garantia_id")
   descripcion String?   @db.VarChar(200)
-  secureToken String?   @unique @map("secure_token") @db.VarChar(64)
-  canjeado    Boolean?
+  canjeado    Boolean?  @default(false)
+  secureToken String?   @unique(map: "unique_secure_token") @map("secure_token") @db.VarChar(64)
   lote        Lote?     @relation(fields: [loteId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   tecnico     User      @relation(fields: [tecnicoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
@@ -234,6 +228,7 @@ model EquipoHistorial {
   lote        Lote?     @relation(fields: [loteId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   user        User?     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
+  @@index([equipoId], map: "idx_equipo_historial_equipo_id")
   @@map("equipo_historial")
 }
 

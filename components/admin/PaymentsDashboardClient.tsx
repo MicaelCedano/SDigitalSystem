@@ -21,7 +21,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { markAsRedeemed, applyPenaltyByImei, applyExternalPenalty, getPenaltyDataByImei } from "@/app/actions/admin-payments";
+import { markAsRedeemed, applyPenaltyByImei, applyExternalPenalty, getPenaltyDataByImei, revertPenalty, revertExternalPenalty } from "@/app/actions/admin-payments";
 import { manualCredit, adminManualWithdrawal } from "@/app/actions/wallet";
 
 export function PaymentsDashboardClient({ data }: { data: any }) {
@@ -185,6 +185,25 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
             } else toast.error((res as any).error);
         } catch (error) {
             toast.error("Error al aplicar penalidad externa");
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const handleRevertPenalty = async (id: number, isExternal: boolean = false) => {
+        if (!confirm("¿Estás seguro de que deseas revertir esta penalidad? El saldo será devuelto al técnico.")) return;
+
+        setIsProcessing(true);
+        try {
+            const res = isExternal ? await revertExternalPenalty(id) : await revertPenalty(id);
+            if (res.success) {
+                toast.success("Penalidad revertida y saldo devuelto.");
+                router.refresh();
+            } else {
+                toast.error((res as any).error || "Error al revertir");
+            }
+        } catch (error) {
+            toast.error("Ocurrió un error inesperado");
         } finally {
             setIsProcessing(false);
         }
@@ -534,42 +553,80 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <Card className="rounded-[2rem] border-none shadow-xl bg-white p-6">
-                                <h4 className="font-black text-slate-400 text-xs uppercase tracking-widest mb-4">Internas (Por IMEI)</h4>
+                                <h4 className="font-black text-slate-400 text-xs uppercase tracking-widest mb-4 flex items-center justify-between">
+                                    <span>Internas (Por IMEI)</span>
+                                    <Badge className="bg-slate-100 text-slate-500 border-none text-[9px]">Últimas 5</Badge>
+                                </h4>
                                 <div className="space-y-4">
                                     {data.recentPenalties.map((p: any) => (
-                                        <div key={p.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                            <div>
-                                                <p className="font-bold text-slate-900 text-sm">{p.tecnico.name || p.tecnico.username}</p>
-                                                <p className="text-[10px] text-slate-400 font-bold uppercase">{p.equipo.modelo} - {p.equipo.imei}</p>
+                                        <div key={p.id} className="group relative flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 transition-all hover:bg-white hover:shadow-md">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <p className="font-bold text-slate-900 text-sm leading-none">{p.tecnico.name || p.tecnico.username}</p>
+                                                    <span className="text-[10px] text-slate-400 font-medium">• {new Date(p.fecha).toLocaleDateString()}</span>
+                                                </div>
+                                                <p className="text-[10px] text-slate-500 font-bold uppercase mb-1 tracking-wider">{p.equipo.modelo} - {p.equipo.imei}</p>
+                                                <div className="bg-rose-50/50 p-2 rounded-lg border border-rose-100/50">
+                                                    <p className="text-[11px] font-bold text-rose-700 leading-tight">
+                                                        <span className="opacity-50 uppercase text-[9px] mr-1">Motivo:</span>
+                                                        {p.motivo}
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <div className="text-right flex flex-col items-end gap-1">
-                                                <Badge className="bg-rose-50 text-rose-600 border-rose-100 text-[8px] font-black uppercase px-2">Deducción</Badge>
-                                                <p className="font-black text-rose-600">- RD$ {p.monto}</p>
-                                                <p className="text-[9px] text-slate-400 font-bold">{new Date(p.fecha).toLocaleDateString()}</p>
+                                            <div className="text-right flex flex-col items-end gap-2 ml-4">
+                                                <p className="font-black text-rose-600 text-lg tracking-tighter">- RD$ {p.monto}</p>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleRevertPenalty(p.id)}
+                                                    disabled={isProcessing}
+                                                    className="h-7 text-[9px] font-black uppercase text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg px-2"
+                                                >
+                                                    Deshacer
+                                                </Button>
                                             </div>
                                         </div>
                                     ))}
-                                    {data.recentPenalties.length === 0 && <p className="text-center text-slate-300 py-4 font-bold text-sm">Sin registros</p>}
+                                    {data.recentPenalties.length === 0 && <p className="text-center text-slate-300 py-10 font-bold italic text-sm">Sin registros recientes</p>}
                                 </div>
                             </Card>
 
                             <Card className="rounded-[2rem] border-none shadow-xl bg-white p-6">
-                                <h4 className="font-black text-slate-400 text-xs uppercase tracking-widest mb-4">Externas (Manuales)</h4>
+                                <h4 className="font-black text-slate-400 text-xs uppercase tracking-widest mb-4 flex items-center justify-between">
+                                    <span>Externas (Manuales)</span>
+                                    <Badge className="bg-slate-100 text-slate-500 border-none text-[9px]">Últimas 5</Badge>
+                                </h4>
                                 <div className="space-y-4">
                                     {data.recentExternalPenalties.map((p: any) => (
-                                        <div key={p.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                            <div>
-                                                <p className="font-bold text-slate-900 text-sm">{p.culpable}</p>
-                                                <p className="text-[10px] text-slate-400 font-bold uppercase">{p.modelo} - {p.imei}</p>
+                                        <div key={p.id} className="group relative flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 transition-all hover:bg-white hover:shadow-md">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <p className="font-bold text-slate-900 text-sm leading-none">{p.culpable}</p>
+                                                    <span className="text-[10px] text-slate-400 font-medium">• {new Date(p.fecha).toLocaleDateString()}</span>
+                                                </div>
+                                                <p className="text-[10px] text-slate-500 font-bold uppercase mb-1 tracking-wider">{p.modelo} - {p.imei}</p>
+                                                <div className="bg-amber-50/50 p-2 rounded-lg border border-amber-100/50">
+                                                    <p className="text-[11px] font-bold text-amber-800 leading-tight">
+                                                        <span className="opacity-50 uppercase text-[9px] mr-1">Motivo:</span>
+                                                        {p.motivo}
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <div className="text-right flex flex-col items-end gap-1">
-                                                <Badge className="bg-rose-50 text-rose-600 border-rose-100 text-[8px] font-black uppercase px-2">Deducción</Badge>
-                                                <p className="font-black text-rose-600">- RD$ {p.cantidad}</p>
-                                                <p className="text-[9px] text-slate-400 font-bold">{new Date(p.fecha).toLocaleDateString()}</p>
+                                            <div className="text-right flex flex-col items-end gap-2 ml-4">
+                                                <p className="font-black text-rose-600 text-lg tracking-tighter">- RD$ {p.cantidad}</p>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleRevertPenalty(p.id, true)}
+                                                    disabled={isProcessing}
+                                                    className="h-7 text-[9px] font-black uppercase text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg px-2"
+                                                >
+                                                    Deshacer
+                                                </Button>
                                             </div>
                                         </div>
                                     ))}
-                                    {data.recentExternalPenalties.length === 0 && <p className="text-center text-slate-300 py-4 font-bold text-sm">Sin registros</p>}
+                                    {data.recentExternalPenalties.length === 0 && <p className="text-center text-slate-300 py-10 font-bold italic text-sm">Sin registros recientes</p>}
                                 </div>
                             </Card>
                         </div>
