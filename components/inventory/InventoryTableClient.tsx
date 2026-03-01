@@ -134,6 +134,12 @@ export function InventoryTableClient({
                         className="pl-10 h-11 bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-xl"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleSearch(e);
+                            }
+                        }}
                         disabled={isSearching}
                     />
                 </div>
