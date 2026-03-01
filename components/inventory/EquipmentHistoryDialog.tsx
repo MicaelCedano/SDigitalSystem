@@ -43,19 +43,21 @@ interface EquipmentHistoryDialogProps {
 export function EquipmentHistoryDialog({ equipmentId, open, onOpenChange }: EquipmentHistoryDialogProps) {
     const [details, setDetails] = useState<any>(null);
     const [loading, setLoading] = useState(false);
+    const [serverError, setServerError] = useState<string | null>(null);
 
     useEffect(() => {
         if (open) {
             setLoading(true);
-            setDetails(null); // Clear previous details immediately
+            setDetails(null);
+            setServerError(null); // Clear errors
             getEquipmentFullDetails(equipmentId)
-                .then((data) => {
-                    setDetails(data);
-                    setLoading(false); // Done with main data
+                .then((res: any) => {
+                    if (res?.success) {
+                        setDetails(res.data);
+                        setLoading(false);
 
-                    // Background: fetch image if missing
-                    if (data && !data.imageFilename) {
-                        try {
+                        // Background: fetch image if missing
+                        if (res.data && !res.data.imageFilename) {
                             findAndAssignImageToEquipment(equipmentId)
                                 .then((result) => {
                                     if (result.success && result.filename) {
@@ -63,13 +65,15 @@ export function EquipmentHistoryDialog({ equipmentId, open, onOpenChange }: Equi
                                     }
                                 })
                                 .catch(err => console.error("Auto image fetch failed:", err));
-                        } catch (err) {
-                            console.error("Auto image fetch trigger failed:", err);
                         }
+                    } else {
+                        setServerError(res?.error || "Error al obtener información");
+                        setLoading(false);
                     }
                 })
                 .catch((err) => {
                     console.error(err);
+                    setServerError("Excepción técnica al conectar con el servidor");
                     setLoading(false);
                 });
         }
@@ -98,21 +102,28 @@ export function EquipmentHistoryDialog({ equipmentId, open, onOpenChange }: Equi
                         <p className="mt-6 text-slate-500 font-bold text-sm tracking-wider uppercase animate-pulse">Cargando expediente...</p>
                         <p className="text-slate-400 text-xs mt-1">Obteniendo detalles del IMEI: {equipmentId}</p>
                     </div>
-                ) : !details ? (
-                    <div className="flex flex-col items-center justify-center h-full bg-white p-8 text-center">
-                        <div className="h-16 w-16 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-500 mb-4">
+                ) : (serverError || !details) ? (
+                    <div className="flex flex-col items-center justify-center h-full bg-white p-8 text-center transition-all animate-in fade-in zoom-in duration-300">
+                        <div className="h-16 w-16 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-500 mb-4 shadow-sm border border-rose-100">
                             <AlertCircle size={32} />
                         </div>
-                        <h3 className="text-lg font-bold text-slate-900 mb-2">Expediente no encontrado</h3>
-                        <p className="text-slate-500 max-w-xs mb-6">
-                            Lo sentimos, no pudimos encontrar la información de este dispositivo. Puede que el registro ya no exista o tu sesión haya expirado.
+                        <h3 className="text-xl font-black text-slate-900 mb-2 tracking-tight">Expediente no disponible</h3>
+                        <p className="text-slate-500 max-w-sm mb-8 font-medium leading-relaxed">
+                            {serverError || "Lo sentimos, no pudimos encontrar la información de este dispositivo en la base de datos."}
                         </p>
                         <div className="flex gap-3">
-                            <Button variant="outline" onClick={() => onOpenChange(false)}>Cerrar</Button>
-                            <Button className="bg-indigo-600 hover:bg-indigo-700" onClick={() => {
-                                setLoading(true);
-                                getEquipmentFullDetails(equipmentId).then(setDetails).finally(() => setLoading(false));
-                            }}>Reintentar</Button>
+                            <Button variant="outline" className="h-11 px-6 rounded-xl font-bold border-slate-200" onClick={() => onOpenChange(false)}>Cerrar</Button>
+                            <Button className="bg-indigo-600 hover:bg-indigo-700 h-11 px-8 rounded-xl font-black shadow-lg shadow-indigo-200 transition-all hover:-translate-y-0.5"
+                                onClick={() => {
+                                    setLoading(true);
+                                    setServerError(null);
+                                    getEquipmentFullDetails(equipmentId).then(res => {
+                                        if (res?.success) setDetails(res.data);
+                                        else setServerError(res?.error || "Reintento fallido");
+                                    }).finally(() => setLoading(false));
+                                }}>
+                                Reintentar
+                            </Button>
                         </div>
                     </div>
                 ) : (

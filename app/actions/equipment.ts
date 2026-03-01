@@ -57,8 +57,13 @@ export async function updateEquipment(id: number, data: any) {
 }
 
 export async function getEquipmentFullDetails(id: number) {
+    console.log(`[DEBUG] Fetching details for equipment ID: ${id}`);
     const session = await getServerSession(authOptions);
-    if (!session) return null;
+
+    if (!session) {
+        console.warn("[DEBUG] No session found in getEquipmentFullDetails");
+        return { success: false, error: "Sesión no válida o expirada. Por favor, inicia sesión de nuevo." };
+    }
 
     try {
         const details = await prisma.equipo.findUnique({
@@ -92,10 +97,16 @@ export async function getEquipmentFullDetails(id: number) {
                 }
             }
         });
-        return details;
-    } catch (error) {
-        console.error("Error fetching full details:", error);
-        return null;
+
+        if (!details) {
+            console.warn(`[DEBUG] Equipment with ID ${id} not found in database`);
+            return { success: false, error: "No se encontró el equipo en la base de datos." };
+        }
+
+        return { success: true, data: details };
+    } catch (error: any) {
+        console.error("[DEBUG] Error fetching full details:", error);
+        return { success: false, error: `Error de base de datos: ${error.message || 'Error desconocido'}` };
     }
 }
 
