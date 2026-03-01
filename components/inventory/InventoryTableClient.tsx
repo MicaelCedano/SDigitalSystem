@@ -59,6 +59,21 @@ export function InventoryTableClient({
 
     const [isSearching, startTransition] = useTransition();
 
+    // Debounced automatic search
+    useEffect(() => {
+        // Skip initial mount if search terms match exactly
+        if (searchTerm === query) return;
+
+        const timer = setTimeout(() => {
+            startTransition(() => {
+                // If it's a completely new term, reset to page 1
+                router.push(`?q=${searchTerm.trim()}&page=1`);
+            });
+        }, 300); // 300ms debounce for fast but un-spammy typing
+
+        return () => clearTimeout(timer);
+    }, [searchTerm, query, router]);
+
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         startTransition(() => {
