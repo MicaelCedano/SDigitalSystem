@@ -359,6 +359,7 @@ export function WalletClient({ initialData, currentUser }: WalletProps) {
                                 <thead className="bg-slate-50/50 border-b border-slate-100">
                                     <tr>
                                         <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400">Fecha</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400">Descripción</th>
                                         <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 text-right">Monto</th>
                                         <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 text-center">Estado</th>
                                     </tr>
@@ -368,6 +369,10 @@ export function WalletClient({ initialData, currentUser }: WalletProps) {
                                         <tr key={t.id} className="hover:bg-slate-50 transition-colors">
                                             <td className="px-6 py-4 whitespace-nowrap text-xs font-bold text-slate-400">
                                                 {formatDateTime(t.fecha).split(' ')[0]}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="text-xs font-black text-slate-700">{t.descripcion || 'Retiro de Efectivo'}</div>
+                                                <div className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">{t.tipo}</div>
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <span className="font-mono font-black text-slate-800 text-sm">
@@ -385,7 +390,7 @@ export function WalletClient({ initialData, currentUser }: WalletProps) {
                                         </tr>
                                     )) : (
                                         <tr>
-                                            <td colSpan={3} className="py-20 text-center text-slate-300 font-bold italic text-sm">Sin retiros registrados</td>
+                                            <td colSpan={4} className="py-20 text-center text-slate-300 font-bold italic text-sm">Sin retiros registrados</td>
                                         </tr>
                                     )}
                                 </tbody>

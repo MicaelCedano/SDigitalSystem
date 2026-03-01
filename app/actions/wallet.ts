@@ -53,8 +53,8 @@ export async function getWalletData() {
             take: 50
         });
 
-        const ingresos = transactions.filter(t => t.tipo === 'ingreso');
-        const retiros = transactions.filter(t => t.tipo === 'retiro');
+        const ingresos = transactions.filter(t => t.tipo.toLowerCase() === 'ingreso');
+        const retiros = transactions.filter(t => t.tipo.toLowerCase() === 'retiro' || t.tipo.toLowerCase() === 'transferencia');
 
         return {
             walletId: wallet?.id || 0,

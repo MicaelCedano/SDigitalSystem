@@ -19,7 +19,7 @@ export async function getAdminWalletsData() {
         // Fetch their wallets and accounts
         const walletsData = await prisma.wallet.findMany({
             where: { tecnicoId: { in: tecnicos.map(t => t.id) } },
-            include: { accounts: { where: { tipo: "Principal" } } }
+            include: { accounts: { where: { nombre: "Principal" } } }
         });
 
         const wallets: Record<number, number> = {};
@@ -31,25 +31,16 @@ export async function getAdminWalletsData() {
 
         // Get recent transactions for each tech
         // Retiros
-        const recentRetiros = await prisma.walletTransaction.findMany({
+        const allTransactions = await prisma.walletTransaction.findMany({
             where: {
                 tecnicoId: { in: tecnicos.map(t => t.id) },
-                tipo: 'Retiro',
-                estado: 'Completado'
+                estado: { in: ['Completado', 'Aprobado'] }
             },
-            orderBy: { fecha: 'desc' },
-            take: 50 // Global take, will map manually or we can fetch per tech
+            orderBy: { fecha: 'desc' }
         });
 
-        const recentManuales = await prisma.walletTransaction.findMany({
-            where: {
-                tecnicoId: { in: tecnicos.map(t => t.id) },
-                tipo: 'Ingreso Manual',
-                estado: 'Completado'
-            },
-            orderBy: { fecha: 'desc' },
-            take: 50
-        });
+        const recentRetiros = allTransactions.filter(t => t.tipo.toLowerCase() === 'retiro');
+        const recentManuales = allTransactions.filter(t => t.tipo.toLowerCase() === 'ingreso manual');
 
         const historial: Record<number, { retiros: any[], acreditaciones_manuales: any[], total_ganado: number }> = {};
         tecnicos.forEach(t => {
@@ -64,7 +55,10 @@ export async function getAdminWalletsData() {
         // In python it sum of 'Ingreso' transactions
         const ingresos = await prisma.walletTransaction.groupBy({
             by: ['tecnicoId'],
-            where: { tipo: 'Ingreso', estado: 'Completado' },
+            where: {
+                tipo: { in: ['Ingreso', 'ingreso'] },
+                estado: { in: ['Completado', 'Aprobado'] }
+            },
             _sum: { monto: true }
         });
 
@@ -185,5 +179,44 @@ export async function deleteManualAccreditacion(transactionId: number) {
     } catch (error: any) {
         console.error("Error deleting accreditation:", error);
         return { success: false, error: error.message };
+    }
+}
+
+export async function getTechnicianWalletHistory(tecnicoId: number) {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== "admin") return null;
+
+    try {
+        const tecnico = await prisma.user.findUnique({
+            where: { id: tecnicoId },
+            select: { id: true, name: true, username: true, role: true }
+        });
+
+        if (!tecnico) return null;
+
+        const wallet = await prisma.wallet.findFirst({
+            where: { tecnicoId: tecnicoId },
+            include: { accounts: true }
+        });
+
+        const transactions = await prisma.walletTransaction.findMany({
+            where: { tecnicoId: tecnicoId },
+            orderBy: { fecha: 'desc' }
+        });
+
+        const ingresos = transactions.filter(t => t.tipo.toLowerCase() === 'ingreso' || t.tipo.toLowerCase() === 'ingreso manual');
+        const retiros = transactions.filter(t => t.tipo.toLowerCase() === 'retiro' || t.tipo.toLowerCase() === 'transferencia' || t.tipo.toLowerCase() === 'penalidad');
+
+        return {
+            tecnico,
+            wallet,
+            ingresos,
+            retiros,
+            totalGanado: ingresos.filter(t => t.estado === 'Completado' || t.estado === 'Aprobado').reduce((sum, t) => sum + t.monto, 0),
+            totalRetirado: retiros.filter(t => t.estado === 'Completado' || t.estado === 'Aprobado').reduce((sum, t) => sum + t.monto, 0),
+        };
+    } catch (error) {
+        console.error("Error fetching technician wallet history:", error);
+        return null;
     }
 }

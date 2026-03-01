@@ -69,7 +69,7 @@ export async function getAdminPaymentsDashboardData() {
         const recentEarnings = await prisma.walletTransaction.aggregate({
             where: {
                 tipo: { equals: "ingreso", mode: "insensitive" },
-                estado: "Completado",
+                estado: { in: ["Completado", "Aprobado"] },
                 fecha: { gte: thirtyDaysAgo }
             },
             _sum: { monto: true }
@@ -85,7 +85,7 @@ export async function getAdminPaymentsDashboardData() {
                 where: {
                     tecnicoId: u.id,
                     tipo: { in: ["ingreso", "Ingreso", "Ingreso Manual"] },
-                    estado: "Completado"
+                    estado: { in: ["Completado", "Aprobado"] }
                 },
                 _sum: { monto: true }
             });
@@ -96,7 +96,7 @@ export async function getAdminPaymentsDashboardData() {
                 username: u.username,
                 role: u.role,
                 profileImage: u.profileImage,
-                balance: principalAcc?.saldo || 0,
+                balance: u.wallet[0]?.saldo || 0,
                 totalEarned: allTimeEarnings._sum.monto || 0,
                 config: (u as any).configuracionPagos?.[0] || null
             };
