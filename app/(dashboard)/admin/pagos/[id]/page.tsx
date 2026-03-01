@@ -3,8 +3,9 @@ import { getTechnicianWalletHistory } from "@/app/actions/wallets";
 import { TechnicianHistoryClient } from "@/components/admin/TechnicianHistoryClient";
 import { notFound } from "next/navigation";
 
-export default async function TechnicianPaymentHistoryPage({ params }: { params: { id: string } }) {
-    const data = await getTechnicianWalletHistory(Number(params.id));
+export default async function TechnicianPaymentHistoryPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
+    const data = await getTechnicianWalletHistory(Number(id));
 
     if (!data) {
         notFound();

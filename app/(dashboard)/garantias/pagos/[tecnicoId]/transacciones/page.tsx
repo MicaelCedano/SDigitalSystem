@@ -8,14 +8,15 @@ export const metadata = {
     title: "Transacciones del Técnico - RMA Señal Digital",
 };
 
-export default async function TransaccionesTecnicoPage({ params }: { params: { tecnicoId: string } }) {
+export default async function TransaccionesTecnicoPage({ params }: { params: Promise<{ tecnicoId: string }> }) {
     const session = await getServerSession(authOptions);
 
     if (!session) {
         redirect("/login");
     }
 
-    const tecnicoId = parseInt(params.tecnicoId);
+    const { tecnicoId: tIdStr } = await params;
+    const tecnicoId = parseInt(tIdStr);
     if (isNaN(tecnicoId)) notFound();
 
     const data = await getTecnicoTransactions(tecnicoId);

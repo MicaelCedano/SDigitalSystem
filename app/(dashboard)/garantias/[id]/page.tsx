@@ -8,14 +8,15 @@ export const metadata = {
     title: "Detalle de Garantía - RMA Señal Digital",
 };
 
-export default async function GarantiaDetailPage({ params }: { params: { id: string } }) {
+export default async function GarantiaDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const session = await getServerSession(authOptions);
 
     if (!session) {
         redirect("/login");
     }
 
-    const id = parseInt(params.id);
+    const { id: idStr } = await params;
+    const id = parseInt(idStr);
     if (isNaN(id)) notFound();
 
     const [garantia, tecnicos, suppliers] = await Promise.all([
