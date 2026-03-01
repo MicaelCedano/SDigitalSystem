@@ -155,7 +155,7 @@ export function InventoryTableClient({
                                 handleSearch(e);
                             }
                         }}
-                        disabled={isSearching}
+                    // Se eliminó 'disabled={isSearching}' para que no se congele al escribir
                     />
                 </div>
 
