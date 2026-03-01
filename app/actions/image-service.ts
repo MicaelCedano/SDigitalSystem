@@ -10,9 +10,21 @@ const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
 const PUBLIC_DIR = path.join(process.cwd(), "public");
 const IMAGES_DIR = path.join(PUBLIC_DIR, "device-images");
 
-// Ensure directory exists
-if (!fs.existsSync(IMAGES_DIR)) {
-    fs.mkdirSync(IMAGES_DIR, { recursive: true });
+// Ensure directory exists - Only in development to avoid production/Vercel crashes
+try {
+    const isServerless = !!(process.env.VERCEL || process.env.RENDER || process.env.NETLIFY);
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    // Skip file system operations on read-only environments
+    if (!isServerless && !isProduction) {
+        if (!fs.existsSync(IMAGES_DIR)) {
+            fs.mkdirSync(IMAGES_DIR, { recursive: true });
+        }
+    } else {
+        console.log(`[STORAGE] Skipping local directory initialization (Runtime: ${isServerless ? 'Serverless' : 'Production'})`);
+    }
+} catch (e: any) {
+    console.warn(`[STORAGE] Warning: Local images directory could not be initialized: ${e.message}`);
 }
 
 interface ImageResult {
