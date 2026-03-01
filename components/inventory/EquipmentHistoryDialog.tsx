@@ -48,23 +48,29 @@ export function EquipmentHistoryDialog({ equipmentId, open, onOpenChange }: Equi
         if (open) {
             setLoading(true);
             getEquipmentFullDetails(equipmentId)
-                .then(async (data) => {
+                .then((data) => {
                     setDetails(data);
-                    // Dynamically fetch image if missing
+                    setLoading(false); // Done with main data
+
+                    // Background: fetch image if missing
                     if (data && !data.imageFilename) {
                         try {
-                            const result = await findAndAssignImageToEquipment(equipmentId);
-                            if (result.success && result.filename) {
-                                // Refresh details to show new image
-                                setDetails({ ...data, imageFilename: result.filename });
-                            }
+                            findAndAssignImageToEquipment(equipmentId)
+                                .then((result) => {
+                                    if (result.success && result.filename) {
+                                        setDetails((prev: any) => ({ ...prev, imageFilename: result.filename }));
+                                    }
+                                })
+                                .catch(err => console.error("Auto image fetch failed:", err));
                         } catch (err) {
-                            console.error("Auto image fetch failed:", err);
+                            console.error("Auto image fetch trigger failed:", err);
                         }
                     }
                 })
-                .catch(console.error)
-                .finally(() => setLoading(false));
+                .catch((err) => {
+                    console.error(err);
+                    setLoading(false);
+                });
         }
     }, [open, equipmentId]);
 
