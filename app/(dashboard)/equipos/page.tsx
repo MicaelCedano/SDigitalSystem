@@ -58,23 +58,27 @@ export default async function InventoryPage({
     const trimmedQuery = query.trim();
     const queryNoSpaces = trimmedQuery.replace(/\s+/g, '');
 
-    // Construct Where Clause
+    console.log(`[SEARCH] Query: "${trimmedQuery}" | ID: ${session.user.id}`);
+
+    // Construct Where Clause with performance optimization
     const whereClause: any = {
         AND: [
             trimmedQuery
                 ? {
                     OR: [
+                        // Exact match first (extremely fast due to unique index)
+                        { imei: trimmedQuery },
+                        { imei: queryNoSpaces },
+
+                        // Fallback to contains for partial search
                         { imei: { contains: trimmedQuery, mode: "insensitive" } },
-                        { imei: { contains: queryNoSpaces, mode: "insensitive" } },
                         { marca: { contains: trimmedQuery, mode: "insensitive" } },
                         { modelo: { contains: trimmedQuery, mode: "insensitive" } },
                         { color: { contains: trimmedQuery, mode: "insensitive" } },
                         { grado: { contains: trimmedQuery, mode: "insensitive" } },
-                        { funcionalidad: { contains: trimmedQuery, mode: "insensitive" } },
                         { lote: { codigo: { contains: trimmedQuery, mode: "insensitive" } } },
                         { deviceModel: { modelName: { contains: trimmedQuery, mode: "insensitive" } } },
                         { deviceModel: { brand: { contains: trimmedQuery, mode: "insensitive" } } },
-                        { deviceModel: { color: { contains: trimmedQuery, mode: "insensitive" } } },
                     ],
                 }
                 : {},
