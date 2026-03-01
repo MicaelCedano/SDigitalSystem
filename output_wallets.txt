@@ -1,0 +1,175 @@
+Checking Wallet Transactions and Balances...
+
+User:  (Kevin) - Role: control_calidad
+  Wallet Balance: RD$ 6600
+    Account: Principal - Balance: RD$ 6600
+  Recent Transactions:
+    0: [ingreso] 500 - null (Aprobado) - Fecha: Sat Feb 28 2026 14:59:39 GMT-0400 (hora de Bolivia)
+    1: [retiro] 2000 - null (Completado) - Fecha: Sat Feb 28 2026 14:17:27 GMT-0400 (hora de Bolivia)
+    2: [ingreso] 1000 - null (Aprobado) - Fecha: Sat Feb 28 2026 11:42:20 GMT-0400 (hora de Bolivia)
+    3: [ingreso] 1000 - null (Aprobado) - Fecha: Fri Feb 27 2026 13:16:45 GMT-0400 (hora de Bolivia)
+    4: [ingreso] 900 - Acreditaci├│n manual (Aprobado) - Fecha: Wed Feb 25 2026 21:52:47 GMT-0400 (hora de Bolivia)
+    5: [retiro] 2000 - null (Completado) - Fecha: Tue Feb 24 2026 15:53:18 GMT-0400 (hora de Bolivia)
+    6: [ingreso] 450 - Acreditaci├│n manual (Aprobado) - Fecha: Tue Feb 24 2026 15:50:57 GMT-0400 (hora de Bolivia)
+    7: [ingreso] 1000 - null (Aprobado) - Fecha: Fri Feb 20 2026 20:14:00 GMT-0400 (hora de Bolivia)
+    8: [ingreso] 1000 - null (Aprobado) - Fecha: Thu Feb 19 2026 12:25:21 GMT-0400 (hora de Bolivia)
+    9: [ingreso] 1800 - Acreditaci├│n manual (Aprobado) - Fecha: Thu Feb 12 2026 12:04:35 GMT-0400 (hora de Bolivia)
+
+User:  (Alejandro) - Role: control_calidad
+  Wallet Balance: RD$ 4750
+    Account: Principal - Balance: RD$ 5750
+    Account: motor  - Balance: RD$ 0
+  Recent Transactions:
+    0: [transferencia] 2000 - Transferencia de motor  a Principal (Aprobado) - Fecha: Sat Feb 28 2026 16:13:29 GMT-0400 (hora de Bolivia)
+    1: [ingreso] 500 - null (Aprobado) - Fecha: Sat Feb 28 2026 11:42:26 GMT-0400 (hora de Bolivia)
+    2: [ingreso] 1000 - null (Aprobado) - Fecha: Sat Feb 28 2026 09:36:06 GMT-0400 (hora de Bolivia)
+    3: [retiro] 500 - Penalidad aplicada: Mancha en la Pantalla (Completado) - Fecha: Fri Feb 27 2026 12:11:19 GMT-0400 (hora de Bolivia)
+    4: [retiro] 500 - Penalidad aplicada: Se Efriza (Completado) - Fecha: Fri Feb 27 2026 12:10:48 GMT-0400 (hora de Bolivia)
+    5: [transferencia] 1000 - Transferencia de Principal a motor  (Aprobado) - Fecha: Fri Feb 27 2026 10:56:55 GMT-0400 (hora de Bolivia)
+    6: [ingreso] 1000 - null (Aprobado) - Fecha: Sat Feb 21 2026 08:57:59 GMT-0400 (hora de Bolivia)
+    7: [ingreso] 1000 - null (Aprobado) - Fecha: Thu Feb 19 2026 12:46:19 GMT-0400 (hora de Bolivia)
+    8: [transferencia] 1000 - Transferencia de Principal a motor  (Aprobado) - Fecha: Tue Feb 17 2026 12:25:21 GMT-0400 (hora de Bolivia)
+    9: [transferencia] 500 - Transferencia de Principal a juego de aposento  (Aprobado) - Fecha: Fri Feb 13 2026 12:29:44 GMT-0400 (hora de Bolivia)
+
+User: Maxwell Lebron (Lebron) - Role: control_calidad
+  Wallet Balance: RD$ 500
+  Recent Transactions:
+    0: [retiro] 500 - Penalidad aplicada: Problema en Camara (Completado) - Fecha: Fri Feb 27 2026 12:09:33 GMT-0400 (hora de Bolivia)
+    1: [retiro] 2000 - null (Completado) - Fecha: Sat Feb 07 2026 19:07:18 GMT-0400 (hora de Bolivia)
+    2: [ingreso] 1000 - null (Aprobado) - Fecha: Sat Jan 31 2026 21:02:59 GMT-0400 (hora de Bolivia)
+    3: [ingreso] 1000 - null (Aprobado) - Fecha: Fri Jan 30 2026 20:23:56 GMT-0400 (hora de Bolivia)
+    4: [retiro] 3250 - null (Completado) - Fecha: Sat Jan 24 2026 17:38:36 GMT-0400 (hora de Bolivia)
+    5: [ingreso] 1500 - null (Aprobado) - Fecha: Tue Jan 20 2026 21:37:27 GMT-0400 (hora de Bolivia)
+    6: [ingreso] 1000 - null (Aprobado) - Fecha: Sun Jan 18 2026 10:47:00 GMT-0400 (hora de Bolivia)
+    7: [ingreso] 500 - Cancelaci├│n de penalidad: no enfoca (Aprobado) - Fecha: Sun Jan 11 2026 15:40:12 GMT-0400 (hora de Bolivia)
+    8: [retiro] 500 - Penalidad aplicada: no enfoca (Completado) - Fecha: Sun Jan 11 2026 15:40:02 GMT-0400 (hora de Bolivia)
+    9: [retiro] 500 - Penalidad aplicada: no enfoca (Completado) - Fecha: Sun Jan 11 2026 15:39:56 GMT-0400 (hora de Bolivia)
+
+User:  (Alberto) - Role: control_calidad
+  Wallet Balance: RD$ -2500
+    Account: Principal - Balance: RD$ 0
+  Recent Transactions:
+    0: [retiro] 3000 - null (Completado) - Fecha: Sat Feb 28 2026 16:13:35 GMT-0400 (hora de Bolivia)
+    1: [ingreso] 1000 - null (Aprobado) - Fecha: Sat Feb 28 2026 14:59:48 GMT-0400 (hora de Bolivia)
+    2: [ingreso] 500 - null (Aprobado) - Fecha: Sat Feb 28 2026 09:36:13 GMT-0400 (hora de Bolivia)
+    3: [ingreso] 1000 - null (Aprobado) - Fecha: Sat Feb 28 2026 09:36:02 GMT-0400 (hora de Bolivia)
+    4: [retiro] 500 - Penalidad aplicada: Pantalla Se efriza aveces y se pone rara (Completado) - Fecha: Fri Feb 27 2026 12:11:53 GMT-0400 (hora de Bolivia)
+    5: [retiro] 500 - Penalidad aplicada: Problemas en la Camara (Completado) - Fecha: Fri Feb 27 2026 12:09:11 GMT-0400 (hora de Bolivia)
+    6: [retiro] 500 - Penalidad aplicada: NO CARGA (Completado) - Fecha: Fri Feb 27 2026 12:06:21 GMT-0400 (hora de Bolivia)
+    7: [ingreso] 500 - Cancelaci├│n de penalidad: Camara Vibra (Aprobado) - Fecha: Fri Feb 27 2026 12:05:09 GMT-0400 (hora de Bolivia)
+    8: [retiro] 500 - Penalidad aplicada: Camara Vibra (Completado) - Fecha: Fri Feb 27 2026 12:05:00 GMT-0400 (hora de Bolivia)
+    9: [retiro] 500 - Penalidad aplicada: Camara Vibra (Completado) - Fecha: Fri Feb 27 2026 12:04:36 GMT-0400 (hora de Bolivia)
+
+User: null (Ricky) - Role: control_calidad
+  Wallet Balance: RD$ 0
+  Recent Transactions:
+    0: [retiro] 4050 - null (Completado) - Fecha: Sat Jul 12 2025 00:38:31 GMT-0400 (hora de Bolivia)
+    1: [ingreso] 1500 - null (Aprobado) - Fecha: Wed Jul 09 2025 20:56:08 GMT-0400 (hora de Bolivia)
+    2: [ingreso] 1000 - Pago por lote 16 (Aprobado) - Fecha: Sat Jul 05 2025 15:27:46 GMT-0400 (hora de Bolivia)
+    3: [ingreso] 500 - Pago por lote 13 (Aprobado) - Fecha: Fri Jul 04 2025 20:45:36 GMT-0400 (hora de Bolivia)
+    4: [ingreso] 50 - Pago por lote 14 (Aprobado) - Fecha: Fri Jul 04 2025 20:30:48 GMT-0400 (hora de Bolivia)
+    5: [ingreso] 50 - Pago por lote 15 (Aprobado) - Fecha: Fri Jul 04 2025 20:26:40 GMT-0400 (hora de Bolivia)
+    6: [ingreso] 950 - Pago por lote 6 (Aprobado) - Fecha: Fri Jul 04 2025 01:19:32 GMT-0400 (hora de Bolivia)
+
+User: Yude Zorob ­ƒÉó­ƒö»ÔÜí´©Å (Yude) - Role: control_calidad
+  Wallet Balance: RD$ -2000
+    Account: Principal - Balance: RD$ 1000
+  Recent Transactions:
+    0: [retiro] 500 - Penalidad aplicada: Problemas del Touch s ele salen de las Aplicaciones (Completado) - Fecha: Fri Feb 27 2026 12:11:32 GMT-0400 (hora de Bolivia)
+    1: [retiro] 500 - Penalidad aplicada: Se le va la Se├▒al y Aveces No Lee el Sim (Completado) - Fecha: Fri Feb 27 2026 12:10:14 GMT-0400 (hora de Bolivia)
+    2: [retiro] 500 - Penalidad aplicada: Microfono y bocina (Completado) - Fecha: Fri Feb 27 2026 12:08:48 GMT-0400 (hora de Bolivia)
+    3: [retiro] 500 - Penalidad aplicada: Se Reinicia No Prende (Completado) - Fecha: Fri Feb 27 2026 12:08:23 GMT-0400 (hora de Bolivia)
+    4: [retiro] 500 - Penalidad aplicada: PUNTO VERDE EN LA PANTALLA (Completado) - Fecha: Fri Feb 27 2026 12:07:34 GMT-0400 (hora de Bolivia)
+    5: [retiro] 500 - Penalidad aplicada: PROBLEMAS EN EL MICROFONO (Completado) - Fecha: Fri Feb 27 2026 12:05:44 GMT-0400 (hora de Bolivia)
+    6: [retiro] 4000 - null (Aprobado) - Fecha: Sat Jan 31 2026 17:25:14 GMT-0400 (hora de Bolivia)
+    7: [ingreso] 1500 - null (Aprobado) - Fecha: Sat Jan 31 2026 17:22:36 GMT-0400 (hora de Bolivia)
+    8: [ingreso] 2500 - null (Aprobado) - Fecha: Sat Jan 31 2026 12:40:59 GMT-0400 (hora de Bolivia)
+    9: [retiro] 7700 - null (Completado) - Fecha: Sun Jan 18 2026 17:23:31 GMT-0400 (hora de Bolivia)
+
+User: Brahian ­ƒÿì (Brahian) - Role: control_calidad
+  Wallet Balance: RD$ 3250
+    Account: honda accord 2.0T - Balance: RD$ 750
+    Account: comprar un carro - Balance: RD$ 1000
+    Account: Principal - Balance: RD$ 2000
+  Recent Transactions:
+    0: [ingreso] 1000 - null (Aprobado) - Fecha: Sat Feb 28 2026 14:59:59 GMT-0400 (hora de Bolivia)
+    1: [ingreso] 1000 - null (Aprobado) - Fecha: Sat Feb 28 2026 09:36:10 GMT-0400 (hora de Bolivia)
+    2: [retiro] 500 - Penalidad aplicada: BOCINA MALA (Completado) - Fecha: Fri Feb 27 2026 12:06:41 GMT-0400 (hora de Bolivia)
+    3: [retiro] 2000 - null (Completado) - Fecha: Wed Feb 25 2026 13:07:45 GMT-0400 (hora de Bolivia)
+    4: [ingreso] 1000 - null (Aprobado) - Fecha: Fri Feb 20 2026 20:13:55 GMT-0400 (hora de Bolivia)
+    5: [transferencia] 1000 - Transferencia de honda accord 2.0T a comprar un carro (Aprobado) - Fecha: Thu Feb 19 2026 12:16:09 GMT-0400 (hora de Bolivia)
+    6: [ingreso] 1000 - null (Aprobado) - Fecha: Thu Feb 19 2026 11:52:24 GMT-0400 (hora de Bolivia)
+    7: [transferencia] 1750 - Transferencia de Principal a Comprar un Honda Acc (Aprobado) - Fecha: Fri Feb 13 2026 12:26:33 GMT-0400 (hora de Bolivia)
+    8: [ingreso] 250 - null (Aprobado) - Fecha: Sun Feb 08 2026 00:27:29 GMT-0400 (hora de Bolivia)
+    9: [ingreso] 500 - null (Aprobado) - Fecha: Sat Feb 07 2026 21:00:59 GMT-0400 (hora de Bolivia)
+
+User: null (Freddy) - Role: tecnico_garantias
+  Wallet Balance: RD$ 4350
+  Recent Transactions:
+    0: [ingreso] 1800 - 14-11 (Aprobado) - Fecha: Fri Nov 14 2025 19:47:56 GMT-0400 (hora de Bolivia)
+    1: [ingreso] 2550 - Pago de reparaciones a Daury (Aprobado) - Fecha: Sat Nov 08 2025 11:14:27 GMT-0400 (hora de Bolivia)
+    2: [ingreso] 3600 - Pago de garant├¡as  (Aprobado) - Fecha: Fri Oct 24 2025 10:42:38 GMT-0400 (hora de Bolivia)
+    3: [retiro] 11850 - null (Completado) - Fecha: Fri Oct 24 2025 10:01:07 GMT-0400 (hora de Bolivia)
+    4: [ingreso] 1350 - pagos de garantias mox (Aprobado) - Fecha: Mon Sep 29 2025 12:21:20 GMT-0400 (hora de Bolivia)
+    5: [ingreso] 1200 - Pago de 8 garantias angelo (Aprobado) - Fecha: Tue Sep 23 2025 11:22:48 GMT-0400 (hora de Bolivia)
+    6: [ingreso] 1050 - pago 19-09 (Aprobado) - Fecha: Fri Sep 19 2025 11:29:55 GMT-0400 (hora de Bolivia)
+    7: [ingreso] 1200 - R (Aprobado) - Fecha: Mon Sep 15 2025 11:52:06 GMT-0400 (hora de Bolivia)
+    8: [ingreso] 3000 - Pago por trabajo por lotes completado: LOTE-20250906-004 - variados (Aprobado) - Fecha: Mon Sep 15 2025 11:51:20 GMT-0400 (hora de Bolivia)
+    9: [ingreso] 450 - Pago por trabajo por lotes completado: LOTE-20250830-003 - Tabletas (Aprobado) - Fecha: Mon Sep 15 2025 11:50:19 GMT-0400 (hora de Bolivia)
+
+User: null (Fraimel) - Role: control_calidad
+  Wallet Balance: RD$ 1000
+  Recent Transactions:
+    0: [retiro] 3450 - null (Completado) - Fecha: Fri Aug 29 2025 14:28:12 GMT-0400 (hora de Bolivia)
+    1: [ingreso] 4450 - Acreditaci├│n manual (Aprobado) - Fecha: Fri Aug 29 2025 14:27:14 GMT-0400 (hora de Bolivia)
+
+User: null (Chachito) - Role: tecnico_garantias
+  Wallet Balance: RD$ 150
+  Recent Transactions:
+    0: [ingreso] 150 - Aumento (Aprobado) - Fecha: Sat Sep 20 2025 19:19:55 GMT-0400 (hora de Bolivia)
+
+User: null (Carlos) - Role: tecnico_garantias
+  Wallet Balance: RD$ 0
+  Recent Transactions:
+
+User: Sahul (Saul) - Role: tecnico_garantias
+  Wallet Balance: RD$ 10050
+    Account: Principal - Balance: RD$ 10050
+  Recent Transactions:
+    0: [retiro] 6500 - null (Completado) - Fecha: Sat Feb 21 2026 12:11:03 GMT-0400 (hora de Bolivia)
+    1: [ingreso] 3600 - Pago 20-2  (Aprobado) - Fecha: Fri Feb 20 2026 19:34:45 GMT-0400 (hora de Bolivia)
+    2: [ingreso] 2950 - pago 17-2 (Aprobado) - Fecha: Tue Feb 17 2026 18:11:10 GMT-0400 (hora de Bolivia)
+    3: [retiro] 3100 - null (Completado) - Fecha: Thu Feb 12 2026 12:51:57 GMT-0400 (hora de Bolivia)
+    4: [ingreso] 2075 - 9-2 (Aprobado) - Fecha: Mon Feb 09 2026 12:11:08 GMT-0400 (hora de Bolivia)
+    5: [retiro] 10000 - null (Aprobado) - Fecha: Sat Jan 31 2026 11:58:57 GMT-0400 (hora de Bolivia)
+    6: [ingreso] 450 - PAGO DE MEJIA (Aprobado) - Fecha: Fri Jan 30 2026 14:41:39 GMT-0400 (hora de Bolivia)
+    7: [ingreso] 10650 - PAGO DE REPARACION ANGELO 30-1 (Aprobado) - Fecha: Fri Jan 30 2026 14:41:18 GMT-0400 (hora de Bolivia)
+    8: [ingreso] 300 - pago de table de nisar y de blu pro 28-1 (Aprobado) - Fecha: Wed Jan 28 2026 11:16:57 GMT-0400 (hora de Bolivia)
+    9: [ingreso] 125 - pago de 28-1 desbloqueos (Aprobado) - Fecha: Wed Jan 28 2026 11:16:24 GMT-0400 (hora de Bolivia)
+
+User: null (Venezuela) - Role: control_calidad
+  Wallet Balance: RD$ 825
+  Recent Transactions:
+    0: [ingreso] 325 - Acreditaci├│n manual (Aprobado) - Fecha: Wed Dec 10 2025 15:24:00 GMT-0400 (hora de Bolivia)
+    1: [ingreso] 500 - null (Aprobado) - Fecha: Tue Dec 09 2025 12:52:30 GMT-0400 (hora de Bolivia)
+
+User: null (test) - Role: control_calidad
+  Wallet Balance: RD$ 0
+  Recent Transactions:
+    0: [ingreso] 50 - null (Aprobado) - Fecha: Wed Feb 04 2026 00:27:51 GMT-0400 (hora de Bolivia)
+    1: [retiro] 4000 - null (Aprobado) - Fecha: Mon Jan 26 2026 12:43:57 GMT-0400 (hora de Bolivia)
+
+User: Joselo Torres (joselotorres) - Role: control_calidad
+  Wallet Balance: RD$ 8600
+    Account: Principal - Balance: RD$ 8600
+  Recent Transactions:
+    0: [ingreso] 1000 - null (Aprobado) - Fecha: Sat Feb 28 2026 15:00:08 GMT-0400 (hora de Bolivia)
+    1: [ingreso] 1000 - null (Aprobado) - Fecha: Sat Feb 28 2026 09:35:53 GMT-0400 (hora de Bolivia)
+    2: [ingreso] 1000 - null (Aprobado) - Fecha: Fri Feb 27 2026 13:16:48 GMT-0400 (hora de Bolivia)
+    3: [ingreso] 750 - Acreditaci├│n manual (Aprobado) - Fecha: Thu Feb 26 2026 20:20:05 GMT-0400 (hora de Bolivia)
+    4: [ingreso] 900 - Acreditaci├│n manual (Aprobado) - Fecha: Wed Feb 25 2026 21:52:40 GMT-0400 (hora de Bolivia)
+    5: [ingreso] 1950 - Acreditaci├│n manual (Aprobado) - Fecha: Tue Feb 24 2026 15:42:39 GMT-0400 (hora de Bolivia)
+    6: [ingreso] 1000 - null (Aprobado) - Fecha: Fri Feb 20 2026 12:56:03 GMT-0400 (hora de Bolivia)
+    7: [ingreso] 100 - null (Aprobado) - Fecha: Fri Feb 20 2026 12:55:54 GMT-0400 (hora de Bolivia)
+    8: [retiro] 10000 - null (Aprobado) - Fecha: Thu Feb 19 2026 17:24:08 GMT-0400 (hora de Bolivia)
+    9: [ingreso] 1000 - null (Aprobado) - Fecha: Thu Feb 19 2026 12:28:37 GMT-0400 (hora de Bolivia)

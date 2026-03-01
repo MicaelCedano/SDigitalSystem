@@ -1,0 +1,43 @@
+Audit ALL accounts for all users...
+
+User: Ricky | Wallet Total Saldo: 0
+
+User: admin | Wallet Total Saldo: 0
+
+User: Freddy | Wallet Total Saldo: 4350
+
+User: Fraimel | Wallet Total Saldo: 1000
+
+User: Chachito | Wallet Total Saldo: 150
+
+User: Carlos | Wallet Total Saldo: 0
+
+User: Venezuela | Wallet Total Saldo: 825
+
+User: test | Wallet Total Saldo: 0
+
+User: Alberto | Wallet Total Saldo: -2500
+  Acc [3] Principal (corriente): RD$ 0
+
+User: Alejandro | Wallet Total Saldo: 4750
+  Acc [8] motor  (ahorro): RD$ 0
+  Acc [4] Principal (corriente): RD$ 5750
+
+User: Saul | Wallet Total Saldo: 10050
+  Acc [14] Principal (corriente): RD$ 10050
+
+User: Lebron | Wallet Total Saldo: 500
+
+User: Yude | Wallet Total Saldo: -2000
+  Acc [15] Principal (corriente): RD$ 1000
+
+User: Kevin | Wallet Total Saldo: 6600
+  Acc [16] Principal (corriente): RD$ 6600
+
+User: Brahian | Wallet Total Saldo: 3250
+  Acc [5] honda accord 2.0T (ahorro): RD$ 750
+  Acc [17] comprar un carro (ahorro): RD$ 1000
+  Acc [20] Principal (corriente): RD$ 2000
+
+User: joselotorres | Wallet Total Saldo: 8600
+  Acc [7] Principal (corriente): RD$ 8600

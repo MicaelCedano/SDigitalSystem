@@ -1,0 +1,11 @@
+Checking Wallet Accounts Types...
+Account Name: Principal | Type: corriente | Balance: 0
+Account Name: Principal | Type: corriente | Balance: 5750
+Account Name: honda accord 2.0T | Type: ahorro | Balance: 750
+Account Name: Principal | Type: corriente | Balance: 8600
+Account Name: motor  | Type: ahorro | Balance: 0
+Account Name: Principal | Type: corriente | Balance: 10050
+Account Name: Principal | Type: corriente | Balance: 1000
+Account Name: Principal | Type: corriente | Balance: 6600
+Account Name: comprar un carro | Type: ahorro | Balance: 1000
+Account Name: Principal | Type: corriente | Balance: 2000

@@ -290,9 +290,11 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
                                                     {(retiro.tecnico.name || retiro.tecnico.username).substring(0, 2).toUpperCase()}
                                                 </div>
                                                 <div>
-                                                    <p className="font-bold text-slate-900 leading-none mb-1">
-                                                        {retiro.tecnico.name || retiro.tecnico.username}
-                                                    </p>
+                                                    <Link href={`/admin/pagos/${retiro.tecnicoId}`} className="hover:underline">
+                                                        <p className="font-bold text-slate-900 leading-none mb-1">
+                                                            {retiro.tecnico.name || retiro.tecnico.username}
+                                                        </p>
+                                                    </Link>
                                                     <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">{retiro.descripcion || "Retiro de Wallet"}</p>
                                                 </div>
                                             </div>
@@ -321,6 +323,8 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
                         </div>
                     )}
                 </TabsContent>
+
+
 
                 <TabsContent value="technicians" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                     {/* Técnicos Table */}
@@ -409,11 +413,11 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
                                                     </Button>
                                                     <Link href={`/admin/pagos/${tecnico.id}`}>
                                                         <Button
-                                                            variant="ghost" size="icon"
-                                                            className="h-8 w-8 rounded-lg text-slate-400 hover:bg-slate-100"
-                                                            title="Ver Historial"
+                                                            variant="outline" size="sm"
+                                                            className="h-8 px-3 rounded-lg text-slate-600 hover:bg-slate-100 border-slate-200 font-bold text-[10px] uppercase tracking-wider flex items-center gap-1.5"
+                                                            title="Ver Historial de Pagos"
                                                         >
-                                                            <ExternalLink size={16} />
+                                                            <Clock size={12} /> Historial
                                                         </Button>
                                                     </Link>
                                                 </div>
@@ -548,9 +552,16 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
 
                     {/* Historial de Penalidades Recientes */}
                     <div className="mt-12 space-y-6">
-                        <h3 className="text-xl font-black text-slate-800 flex items-center gap-2 px-2">
-                            <Clock className="text-rose-500" /> Historial Reciente de Penalidades
-                        </h3>
+                        <div className="flex items-center justify-between px-2">
+                            <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
+                                <Clock className="text-rose-500" /> Historial Reciente de Penalidades
+                            </h3>
+                            <Link href="/admin/penalidades">
+                                <Button variant="outline" size="sm" className="rounded-xl font-black text-[10px] uppercase tracking-[0.1em] text-indigo-600 border-indigo-100 hover:bg-indigo-50">
+                                    Ver Todas
+                                </Button>
+                            </Link>
+                        </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <Card className="rounded-[2rem] border-none shadow-xl bg-white p-6">
                                 <h4 className="font-black text-slate-400 text-xs uppercase tracking-widest mb-4 flex items-center justify-between">

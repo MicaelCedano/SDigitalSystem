@@ -506,3 +506,31 @@ export async function revertExternalPenalty(penaltyId: number) {
     }
 }
 
+export async function getAllPenalties() {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== "admin") return null;
+
+    try {
+        const [penalties, externalPenalties] = await Promise.all([
+            prisma.penalidad.findMany({
+                orderBy: { fecha: "desc" },
+                include: {
+                    tecnico: { select: { name: true, username: true } },
+                    equipo: { select: { imei: true, modelo: true } }
+                }
+            }),
+            prisma.penalidadExterna.findMany({
+                orderBy: { fecha: "desc" }
+            })
+        ]);
+
+        return {
+            penalties: penalties.map(p => ({ ...p, type: 'internal' })),
+            externalPenalties: externalPenalties.map(p => ({ ...p, type: 'external' }))
+        };
+    } catch (error) {
+        console.error("Error fetching all penalties:", error);
+        return null;
+    }
+}
+
