@@ -5,7 +5,7 @@ import {
     Wallet, ArrowUpRight, TrendingUp, TrendingDown,
     Calendar, CheckCircle2, AlertTriangle, DollarSign,
     Download, Clock, Info, PiggyBank, ArrowRightLeft, Plus,
-    X
+    X, Receipt
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,6 +54,9 @@ export function WalletClient({ initialData, currentUser }: WalletProps) {
     // New Account States
     const [isNewAccOpen, setIsNewAccOpen] = useState(false);
     const [newAccName, setNewAccName] = useState("");
+
+    // Receipt Modal State
+    const [selectedReceipt, setSelectedReceipt] = useState<any>(null);
 
     const handleWithdrawalRequest = async () => {
         const numAmount = parseFloat(amount);
@@ -362,6 +365,7 @@ export function WalletClient({ initialData, currentUser }: WalletProps) {
                                         <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400">Descripción</th>
                                         <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 text-right">Monto</th>
                                         <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 text-center">Estado</th>
+                                        <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 text-center">Baucher</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-50">
@@ -387,10 +391,22 @@ export function WalletClient({ initialData, currentUser }: WalletProps) {
                                                     {t.estado}
                                                 </span>
                                             </td>
+                                            <td className="px-6 py-4 text-center">
+                                                {(t.estado === 'Aprobado' || t.estado === 'Completado') && t.secureToken && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => setSelectedReceipt(t)}
+                                                        className="h-8 w-8 p-0 text-indigo-600 hover:bg-indigo-50 rounded-lg hover:text-indigo-700 transition-colors"
+                                                    >
+                                                        <Receipt className="w-4 h-4" />
+                                                    </Button>
+                                                )}
+                                            </td>
                                         </tr>
                                     )) : (
                                         <tr>
-                                            <td colSpan={4} className="py-20 text-center text-slate-300 font-bold italic text-sm">Sin retiros registrados</td>
+                                            <td colSpan={5} className="py-20 text-center text-slate-300 font-bold italic text-sm">Sin retiros registrados</td>
                                         </tr>
                                     )}
                                 </tbody>
@@ -528,6 +544,77 @@ export function WalletClient({ initialData, currentUser }: WalletProps) {
                             Confirmar
                         </Button>
                     </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* 4. Receipt (Baucher) View */}
+            <Dialog open={!!selectedReceipt} onOpenChange={() => setSelectedReceipt(null)}>
+                <DialogContent className="sm:max-w-md bg-white rounded-3xl p-6 border-none shadow-2xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
+                        <Receipt className="w-48 h-48 text-indigo-900" />
+                    </div>
+
+                    <div className="text-center space-y-2 mb-6 relative z-10">
+                        <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <CheckCircle2 className="w-8 h-8" />
+                        </div>
+                        <h2 className="text-2xl font-black text-slate-800">Baucher de Pago</h2>
+                        <p className="text-sm font-bold text-slate-400">RMA Señal Digital</p>
+                    </div>
+
+                    {selectedReceipt && (
+                        <div className="space-y-6 relative z-10">
+                            <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-center border-b border-slate-200 pb-4">
+                                        <span className="text-xs font-black uppercase text-slate-400 tracking-wider">Monto Depositado</span>
+                                        <span className="text-2xl font-black text-indigo-600 font-mono">
+                                            RD$ {selectedReceipt.monto.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="font-bold text-slate-500">Fecha</span>
+                                        <span className="font-black text-slate-800">{formatDateTime(selectedReceipt.fecha)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="font-bold text-slate-500">Técnico</span>
+                                        <span className="font-black text-slate-800">{currentUser.name || currentUser.username}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="font-bold text-slate-500">Concepto</span>
+                                        <span className="font-black text-slate-800 text-right max-w-[200px] truncate">{selectedReceipt.descripcion || 'Retiro de Efectivo'}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="font-bold text-slate-500">Estado</span>
+                                        <span className="font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md uppercase text-[10px] tracking-wider">{selectedReceipt.estado}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="text-center">
+                                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Token de Seguridad Unívoco</p>
+                                <p className="text-xs font-mono text-slate-600 bg-slate-100 p-2 rounded-lg break-all">
+                                    {selectedReceipt.secureToken || "No Disponible"}
+                                </p>
+                            </div>
+
+                            <div className="flex gap-4 pt-2">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setSelectedReceipt(null)}
+                                    className="flex-1 h-12 rounded-xl border-slate-200 text-slate-600 hover:bg-slate-50 font-bold"
+                                >
+                                    Cerrar
+                                </Button>
+                                <Button
+                                    onClick={() => window.print()}
+                                    className="flex-1 h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black shadow-lg shadow-indigo-100"
+                                >
+                                    Imprimir Copia
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                 </DialogContent>
             </Dialog>
 
