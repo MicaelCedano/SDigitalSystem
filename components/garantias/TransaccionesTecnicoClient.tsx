@@ -19,7 +19,7 @@ import {
 import Link from "next/link";
 import { cn, formatDateTime } from "@/lib/utils";
 
-export function TransaccionesTecnicoClient({ data, currentUser }: any) {
+export function TransaccionesTecnicoClient({ data, currentUser, backHref = "/garantias/pagos" }: any) {
     const [searchTerm, setSearchTerm] = useState("");
     const [typeFilter, setTypeFilter] = useState("all");
 
@@ -42,7 +42,7 @@ export function TransaccionesTecnicoClient({ data, currentUser }: any) {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
-                    <Link href="/garantias/pagos">
+                    <Link href={backHref}>
                         <Button variant="ghost" size="icon" className="h-12 w-12 rounded-2xl bg-white border border-slate-100 shadow-sm hover:bg-slate-50">
                             <ArrowLeft className="w-5 h-5 text-slate-500" />
                         </Button>
