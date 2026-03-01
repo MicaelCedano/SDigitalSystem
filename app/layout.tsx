@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Outfit } from "next/font/google";
 import "./globals.css";
 import SessionProvider from "@/components/providers/SessionProvider";
@@ -20,11 +20,14 @@ const outfit = Outfit({
   variable: "--font-outfit",
 });
 
+export const viewport: Viewport = {
+  themeColor: "#0f172a",
+};
+
 export const metadata: Metadata = {
   title: "Señal Digital System",
   description: "Advanced Repair Management System",
   manifest: "/manifest.json",
-  themeColor: "#0f172a",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
