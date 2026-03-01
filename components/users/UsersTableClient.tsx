@@ -6,7 +6,8 @@ import { Edit2, Trash2, MoreVertical, Search, Shield, UserPlus, Mail } from "luc
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, getProfileImageUrl } from "@/lib/utils";
+
 import {
     Table,
     TableBody,
@@ -76,7 +77,7 @@ export default function UsersTableClient({ users }: UsersTableClientProps) {
                                         {u.profileImage ? (
                                             <div className="h-10 w-10 rounded-xl overflow-hidden shadow-sm group-hover/link:scale-105 transition-transform duration-300">
                                                 <img
-                                                    src={`/profile_images/${u.profileImage}`}
+                                                    src={getProfileImageUrl(u.profileImage) || ""}
                                                     alt={u.username}
                                                     className="h-full w-full object-cover"
                                                 />
