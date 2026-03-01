@@ -201,10 +201,9 @@ export async function getPurchases() {
         where: { estado: { not: "borrador" } },
         orderBy: { id: 'desc' },
         include: {
-            supplier: true,
-            items: true
+            supplier: true
         }
-    });
+    }) as any[];
 
     const active: any[] = [];
     const history: any[] = [];
@@ -224,8 +223,9 @@ export async function getPurchases() {
 
         const percentage = totalEquipments > 0 ? (completedCount / totalEquipments) * 100 : 0;
 
-        const enhancedPurchase: PurchaseWithProgress = {
+        const enhancedPurchase: any = {
             ...purchase,
+            supplier: (purchase as any).supplier,
             displayProgress: Math.min(percentage, 100),
             completedCount,
             originalTotal: totalEquipments
@@ -248,10 +248,10 @@ export async function getDraftPurchases() {
         include: {
             supplier: true,
             _count: {
-                select: { items: true, equipos: true }
+                select: { equipos: true }
             }
         }
-    });
+    }) as any[];
     return drafts;
 }
 
@@ -290,9 +290,6 @@ export async function getPurchaseById(id: number) {
         where: { id },
         include: {
             supplier: true,
-            items: {
-                include: { deviceModel: true }
-            },
             equipos: {
                 include: {
                     deviceModel: true,
@@ -301,13 +298,13 @@ export async function getPurchaseById(id: number) {
                 orderBy: { id: 'asc' }
             }
         }
-    });
+    }) as any;
 
     if (!purchase) return null;
 
     // Calculate stats based on 'funcionalidad'
-    const functionalCount = purchase.equipos.filter(e => e.funcionalidad === 'Funcional').length;
-    const nonFunctionalCount = purchase.equipos.filter(e => e.funcionalidad === 'No funcional').length;
+    const functionalCount = purchase.equipos.filter((e: any) => e.funcionalidad === 'Funcional').length;
+    const nonFunctionalCount = purchase.equipos.filter((e: any) => e.funcionalidad === 'No funcional').length;
     const reviewedCount = functionalCount + nonFunctionalCount;
     const totalEquipments = purchase.totalQuantity;
 
@@ -326,7 +323,7 @@ export async function getPurchaseById(id: number) {
         full_name: string;
     }>();
 
-    purchase.equipos.forEach(eq => {
+    purchase.equipos.forEach((eq: any) => {
         if (!eq.deviceModel) return;
 
         // Create a unique key for grouping (Brand + Model + Storage + Color)
@@ -350,6 +347,8 @@ export async function getPurchaseById(id: number) {
 
     return {
         ...purchase,
+        supplier: (purchase as any).supplier,
+        equipos: (purchase as any).equipos,
         displayProgress: Math.min(reviewedPercentage, 100),
         functionalCount,
         nonFunctionalCount,
@@ -357,5 +356,5 @@ export async function getPurchaseById(id: number) {
         functionalPercentage,
         nonFunctionalPercentage,
         modelSummary
-    };
+    } as any;
 }

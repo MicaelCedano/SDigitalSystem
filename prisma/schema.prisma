@@ -101,6 +101,7 @@ model PurchaseItem {
   deviceModelId Int         @map("device_model_id")
   quantity      Int
   unitPrice     Float?      @map("unit_price")
+  purchase      Purchase    @relation(fields: [purchaseId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   deviceModel   DeviceModel @relation(fields: [deviceModelId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@map("purchase_item")
@@ -114,6 +115,7 @@ model Purchase {
   estado        String   @db.VarChar(20)
   supplierId    Int      @map("supplier_id")
   equipos       Equipo[]
+  items         PurchaseItem[]
   supplier      Supplier @relation(fields: [supplierId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@map("purchase")
