@@ -22,7 +22,6 @@ const CreatePurchaseSchema = z.object({
 
 export type PurchaseWithProgress = Purchase & {
     supplier: Supplier;
-    items: PurchaseItem[];
     displayProgress: number;
     completedCount: number;
     originalTotal: number;
@@ -201,8 +200,7 @@ export async function getPurchases() {
         where: { estado: { not: "borrador" } },
         orderBy: { id: 'desc' },
         include: {
-            supplier: true,
-            items: true
+            supplier: true
         }
     });
 
@@ -248,7 +246,7 @@ export async function getDraftPurchases() {
         include: {
             supplier: true,
             _count: {
-                select: { items: true, equipos: true }
+                select: { equipos: true }
             }
         }
     });
@@ -290,9 +288,6 @@ export async function getPurchaseById(id: number) {
         where: { id },
         include: {
             supplier: true,
-            items: {
-                include: { deviceModel: true }
-            },
             equipos: {
                 include: {
                     deviceModel: true,
