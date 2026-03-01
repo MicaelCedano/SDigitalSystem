@@ -55,18 +55,26 @@ export default async function InventoryPage({
     const itemsPerPage = 10;
     const skip = (currentPage - 1) * itemsPerPage;
 
+    const trimmedQuery = query.trim();
+    const queryNoSpaces = trimmedQuery.replace(/\s+/g, '');
+
     // Construct Where Clause
     const whereClause: any = {
         AND: [
-            // status !== "all" ? { estado: status } : {}, // Keep simple for now matching logic
-            query
+            trimmedQuery
                 ? {
                     OR: [
-                        { imei: { contains: query, mode: "insensitive" } },
-                        { modelo: { contains: query, mode: "insensitive" } },
-                        { lote: { codigo: { contains: query, mode: "insensitive" } } },
-                        { deviceModel: { modelName: { contains: query, mode: "insensitive" } } },
-                        { deviceModel: { brand: { contains: query, mode: "insensitive" } } },
+                        { imei: { contains: trimmedQuery, mode: "insensitive" } },
+                        { imei: { contains: queryNoSpaces, mode: "insensitive" } },
+                        { marca: { contains: trimmedQuery, mode: "insensitive" } },
+                        { modelo: { contains: trimmedQuery, mode: "insensitive" } },
+                        { color: { contains: trimmedQuery, mode: "insensitive" } },
+                        { grado: { contains: trimmedQuery, mode: "insensitive" } },
+                        { funcionalidad: { contains: trimmedQuery, mode: "insensitive" } },
+                        { lote: { codigo: { contains: trimmedQuery, mode: "insensitive" } } },
+                        { deviceModel: { modelName: { contains: trimmedQuery, mode: "insensitive" } } },
+                        { deviceModel: { brand: { contains: trimmedQuery, mode: "insensitive" } } },
+                        { deviceModel: { color: { contains: trimmedQuery, mode: "insensitive" } } },
                     ],
                 }
                 : {},

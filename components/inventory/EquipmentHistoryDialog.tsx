@@ -47,6 +47,7 @@ export function EquipmentHistoryDialog({ equipmentId, open, onOpenChange }: Equi
     useEffect(() => {
         if (open) {
             setLoading(true);
+            setDetails(null); // Clear previous details immediately
             getEquipmentFullDetails(equipmentId)
                 .then((data) => {
                     setDetails(data);
@@ -88,10 +89,31 @@ export function EquipmentHistoryDialog({ equipmentId, open, onOpenChange }: Equi
             {/* Reduced height slightly to 85vh to ensure it fits better on most screens without cutting off */}
             <DialogContent className="max-w-3xl w-full bg-slate-50 p-0 overflow-hidden rounded-2xl border-0 shadow-2xl flex flex-col h-[85vh]">
                 <DialogTitle className="sr-only">Expediente del Equipo</DialogTitle>
-                {loading || !details ? (
-                    <div className="flex flex-col items-center justify-center h-full bg-white">
-                        <Loader2 className="h-10 w-10 animate-spin text-indigo-600 mb-3" />
-                        <p className="text-slate-500 font-medium text-sm">Cargando expediente...</p>
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center h-full bg-white transition-all duration-300">
+                        <div className="relative">
+                            <div className="h-20 w-20 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin" />
+                            <Smartphone className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 text-indigo-500 animate-pulse" />
+                        </div>
+                        <p className="mt-6 text-slate-500 font-bold text-sm tracking-wider uppercase animate-pulse">Cargando expediente...</p>
+                        <p className="text-slate-400 text-xs mt-1">Obteniendo detalles del IMEI: {equipmentId}</p>
+                    </div>
+                ) : !details ? (
+                    <div className="flex flex-col items-center justify-center h-full bg-white p-8 text-center">
+                        <div className="h-16 w-16 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-500 mb-4">
+                            <AlertCircle size={32} />
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-900 mb-2">Expediente no encontrado</h3>
+                        <p className="text-slate-500 max-w-xs mb-6">
+                            Lo sentimos, no pudimos encontrar la información de este dispositivo. Puede que el registro ya no exista o tu sesión haya expirado.
+                        </p>
+                        <div className="flex gap-3">
+                            <Button variant="outline" onClick={() => onOpenChange(false)}>Cerrar</Button>
+                            <Button className="bg-indigo-600 hover:bg-indigo-700" onClick={() => {
+                                setLoading(true);
+                                getEquipmentFullDetails(equipmentId).then(setDetails).finally(() => setLoading(false));
+                            }}>Reintentar</Button>
+                        </div>
                     </div>
                 ) : (
                     <>

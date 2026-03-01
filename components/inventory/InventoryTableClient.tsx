@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -52,9 +52,14 @@ export function InventoryTableClient({
     const [selectedQcId, setSelectedQcId] = useState<string>("");
     const [isAssigning, setIsAssigning] = useState(false);
 
+    // Sync search input with URL query prop
+    useEffect(() => {
+        setSearchTerm(query);
+    }, [query]);
+
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        router.push(`?q=${searchTerm}&page=1`);
+        router.push(`?q=${searchTerm.trim()}&page=1`);
     };
 
     const handleSelectAll = (checked: boolean) => {
