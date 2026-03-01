@@ -549,72 +549,74 @@ export function WalletClient({ initialData, currentUser }: WalletProps) {
 
             {/* 4. Receipt (Baucher) View */}
             <Dialog open={!!selectedReceipt} onOpenChange={() => setSelectedReceipt(null)}>
-                <DialogContent className="sm:max-w-md bg-white rounded-3xl p-6 md:p-8 border-none shadow-2xl relative max-h-[90vh] overflow-y-auto overflow-x-hidden">
-                    <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
-                        <Receipt className="w-48 h-48 text-indigo-900" />
-                    </div>
-
-                    <div className="text-center space-y-2 mb-6 relative z-10">
-                        <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <CheckCircle2 className="w-8 h-8" />
+                <DialogContent className="sm:max-w-md bg-white rounded-3xl p-0 border-none shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
+                    <div className="p-6 md:p-8 overflow-y-auto relative flex-1 custom-scrollbar">
+                        <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
+                            <Receipt className="w-48 h-48 text-indigo-900" />
                         </div>
-                        <h2 className="text-2xl font-black text-slate-800">Baucher de Pago</h2>
-                        <p className="text-sm font-bold text-slate-400">RMA Señal Digital</p>
-                    </div>
 
-                    {selectedReceipt && (
-                        <div className="space-y-6 relative z-10">
-                            <div className="bg-slate-50 rounded-2xl p-4 sm:p-6 border border-slate-100">
-                                <div className="space-y-4">
-                                    <div className="flex justify-between items-center border-b border-slate-200 pb-4">
-                                        <span className="text-xs font-black uppercase text-slate-400 tracking-wider">Monto Depositado</span>
-                                        <span className="text-2xl font-black text-indigo-600 font-mono">
-                                            RD$ {selectedReceipt.monto.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between text-sm">
-                                        <span className="font-bold text-slate-500">Fecha</span>
-                                        <span className="font-black text-slate-800">{formatDateTime(selectedReceipt.fecha)}</span>
-                                    </div>
-                                    <div className="flex justify-between text-sm">
-                                        <span className="font-bold text-slate-500">Técnico</span>
-                                        <span className="font-black text-slate-800">{currentUser.name || currentUser.username}</span>
-                                    </div>
-                                    <div className="flex justify-between text-sm">
-                                        <span className="font-bold text-slate-500">Concepto</span>
-                                        <span className="font-black text-slate-800 text-right max-w-[200px] truncate">{selectedReceipt.descripcion || 'Retiro de Efectivo'}</span>
-                                    </div>
-                                    <div className="flex justify-between text-sm">
-                                        <span className="font-bold text-slate-500">Estado</span>
-                                        <span className="font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md uppercase text-[10px] tracking-wider">{selectedReceipt.estado}</span>
+                        <div className="text-center space-y-2 mb-6 relative z-10">
+                            <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <CheckCircle2 className="w-8 h-8" />
+                            </div>
+                            <h2 className="text-2xl font-black text-slate-800">Baucher de Pago</h2>
+                            <p className="text-sm font-bold text-slate-400">RMA Señal Digital</p>
+                        </div>
+
+                        {selectedReceipt && (
+                            <div className="space-y-6 relative z-10">
+                                <div className="bg-slate-50 rounded-2xl p-4 sm:p-6 border border-slate-100">
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-center border-b border-slate-200 pb-4">
+                                            <span className="text-xs font-black uppercase text-slate-400 tracking-wider">Monto Depositado</span>
+                                            <span className="text-xl sm:text-2xl font-black text-indigo-600 font-mono">
+                                                RD$ {selectedReceipt.monto.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="font-bold text-slate-500">Fecha</span>
+                                            <span className="font-black text-slate-800">{formatDateTime(selectedReceipt.fecha)}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="font-bold text-slate-500">Técnico</span>
+                                            <span className="font-black text-slate-800">{currentUser.name || currentUser.username}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="font-bold text-slate-500">Concepto</span>
+                                            <span className="font-black text-slate-800 text-right max-w-[200px] truncate">{selectedReceipt.descripcion || 'Retiro de Efectivo'}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="font-bold text-slate-500">Estado</span>
+                                            <span className="font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md uppercase text-[10px] tracking-wider">{selectedReceipt.estado}</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div className="text-center">
-                                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Token de Seguridad Unívoco</p>
-                                <p className="text-xs font-mono text-slate-600 bg-slate-100 p-2 rounded-lg break-all">
-                                    {selectedReceipt.secureToken || "No Disponible"}
-                                </p>
-                            </div>
+                                <div className="text-center">
+                                    <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Token de Seguridad Unívoco</p>
+                                    <p className="text-xs font-mono text-slate-600 bg-slate-100 p-2 rounded-lg break-all">
+                                        {selectedReceipt.secureToken || "No Disponible"}
+                                    </p>
+                                </div>
 
-                            <div className="flex gap-4 pt-2">
-                                <Button
-                                    variant="outline"
-                                    onClick={() => setSelectedReceipt(null)}
-                                    className="flex-1 h-12 rounded-xl border-slate-200 text-slate-600 hover:bg-slate-50 font-bold"
-                                >
-                                    Cerrar
-                                </Button>
-                                <Button
-                                    onClick={() => window.print()}
-                                    className="flex-1 h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black shadow-lg shadow-indigo-100"
-                                >
-                                    Imprimir Copia
-                                </Button>
+                                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setSelectedReceipt(null)}
+                                        className="flex-1 h-12 rounded-xl border-slate-200 text-slate-600 hover:bg-slate-50 font-bold"
+                                    >
+                                        Cerrar
+                                    </Button>
+                                    <Button
+                                        onClick={() => window.print()}
+                                        className="flex-1 h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black shadow-lg shadow-indigo-100"
+                                    >
+                                        Imprimir Copia
+                                    </Button>
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </DialogContent>
             </Dialog>
 
