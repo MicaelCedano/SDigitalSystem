@@ -33,7 +33,34 @@ export const authOptions: NextAuthOptions = {
                     throw new Error("Usuario no encontrado");
                 }
 
-                const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
+                let isValid = await bcrypt.compare(credentials.password, user.passwordHash);
+
+                // Legacy Werkzeug Scrypt support & auto-upgrade
+                if (!isValid && user.passwordHash.startsWith('scrypt:')) {
+                    try {
+                        const crypto = require('crypto');
+                        const [params, salt, key] = user.passwordHash.split('$');
+                        const [_, nStr, rStr, pStr] = params.split(':');
+                        const derivedKey = crypto.scryptSync(credentials.password, Buffer.from(salt, 'utf8'), 64, {
+                            N: parseInt(nStr),
+                            r: parseInt(rStr),
+                            p: parseInt(pStr),
+                            maxmem: 128 * 1024 * 1024
+                        });
+
+                        if (derivedKey.toString('hex') === key) {
+                            isValid = true;
+                            // Update to bcrypt automatically
+                            const newHash = await bcrypt.hash(credentials.password, 10);
+                            await prisma.user.update({
+                                where: { id: user.id },
+                                data: { passwordHash: newHash }
+                            });
+                        }
+                    } catch (e) {
+                        console.error('Error verifying legacy hash', e);
+                    }
+                }
 
                 if (!isValid) {
                     throw new Error("Contraseña incorrecta");
