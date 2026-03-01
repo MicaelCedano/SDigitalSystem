@@ -46,34 +46,26 @@ export function EquipmentHistoryDialog({ equipmentId, open, onOpenChange }: Equi
     const [serverError, setServerError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (open) {
+        if (open && equipmentId) {
+            console.log(`[CLIENT] Opening history for ID: ${equipmentId}`);
             setLoading(true);
             setDetails(null);
-            setServerError(null); // Clear errors
+            setServerError(null);
+
             getEquipmentFullDetails(equipmentId)
                 .then((res: any) => {
+                    console.log(`[CLIENT] Response for ID ${equipmentId}:`, res);
                     if (res?.success) {
                         setDetails(res.data);
-                        setLoading(false);
-
-                        // Background: fetch image if missing
-                        if (res.data && !res.data.imageFilename) {
-                            findAndAssignImageToEquipment(equipmentId)
-                                .then((result) => {
-                                    if (result.success && result.filename) {
-                                        setDetails((prev: any) => ({ ...prev, imageFilename: result.filename }));
-                                    }
-                                })
-                                .catch(err => console.error("Auto image fetch failed:", err));
-                        }
                     } else {
                         setServerError(res?.error || "Error al obtener información");
-                        setLoading(false);
                     }
                 })
                 .catch((err) => {
-                    console.error(err);
-                    setServerError("Excepción técnica al conectar con el servidor");
+                    console.error(`[CLIENT] Fetch error:`, err);
+                    setServerError("Error de red o servidor al conectar");
+                })
+                .finally(() => {
                     setLoading(false);
                 });
         }

@@ -120,25 +120,22 @@ export function InventoryTableClient({
         <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden relative z-10">
             {/* Controls Bar */}
             <form onSubmit={handleSearch} className="p-6 border-b border-slate-100 flex flex-col lg:flex-row gap-4 justify-between items-center">
-                <div className="relative w-full lg:w-96 flex gap-2">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4" />
-                        <Input
-                            type="search"
-                            placeholder="Buscar por IMEI, modelo, marca..."
-                            className="pl-10 h-11 bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-xl"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            disabled={isSearching}
-                        />
+                <div className="relative w-full lg:w-96">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                        {isSearching ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-indigo-500" />
+                        ) : (
+                            <Search className="h-4 w-4" />
+                        )}
                     </div>
-                    <Button
-                        type="submit"
+                    <Input
+                        type="search"
+                        placeholder="Buscar por IMEI, modelo, marca o grado..."
+                        className="pl-10 h-11 bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-xl"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
                         disabled={isSearching}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-4 h-11 shadow-sm font-bold flex items-center justify-center min-w-[80px]"
-                    >
-                        {isSearching ? <Loader2 size={18} className="animate-spin" /> : "Buscar"}
-                    </Button>
+                    />
                 </div>
 
                 <div className="flex gap-3 w-full lg:w-auto">

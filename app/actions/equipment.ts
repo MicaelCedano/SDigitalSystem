@@ -103,10 +103,14 @@ export async function getEquipmentFullDetails(id: number) {
             return { success: false, error: "No se encontró el equipo en la base de datos." };
         }
 
-        return { success: true, data: details };
+        // IMPORTANT: Convert Prisma Decimals to serializable format (Strings/Numbers)
+        // Server actions can't handle Decimal objects directly.
+        const serializableDetails = JSON.parse(JSON.stringify(details));
+
+        return { success: true, data: serializableDetails };
     } catch (error: any) {
         console.error("[DEBUG] Error fetching full details:", error);
-        return { success: false, error: `Error de base de datos: ${error.message || 'Error desconocido'}` };
+        return { success: false, error: `Error de base de datos o serialización: ${error.message || 'Error desconocido'}` };
     }
 }
 

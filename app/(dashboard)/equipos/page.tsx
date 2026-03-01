@@ -86,7 +86,7 @@ export default async function InventoryPage({
     };
 
     // Parallel Data Fetching
-    const [totalItems, equipos, stats] = await Promise.all([
+    const [totalItems, rawEquipos, stats] = await Promise.all([
         prisma.equipo.count({ where: whereClause }),
         prisma.equipo.findMany({
             where: whereClause,
@@ -107,6 +107,8 @@ export default async function InventoryPage({
             prisma.equipo.count({ where: { estado: 'Revisado' } })
         ])
     ]);
+
+    const equipos = JSON.parse(JSON.stringify(rawEquipos));
 
     const [totalEquipos, inStock, inRevision, reviewed] = stats;
     const totalPages = Math.ceil(totalItems / itemsPerPage);
