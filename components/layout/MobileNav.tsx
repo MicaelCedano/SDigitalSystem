@@ -24,7 +24,7 @@ export function MobileNav({ user }: { user: any }) {
                             <div className="p-6 border-b border-white/5 flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <Shield className="w-6 h-6 text-indigo-500" />
-                                    <span className="text-xl font-black text-white">RMA Digital</span>
+                                    <span className="text-xl font-black text-white">Señal Digital</span>
                                 </div>
                                 <Button variant="ghost" size="icon" onClick={() => setOpen(false)} className="text-white/50 hover:text-white hover:bg-white/5">
                                     <X className="w-5 h-5" />
@@ -42,8 +42,8 @@ export function MobileNav({ user }: { user: any }) {
                         <Shield className="w-5 h-5 text-white" />
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-lg font-black tracking-tighter text-slate-900 leading-none">RMA</span>
-                        <span className="text-[8px] uppercase font-bold text-indigo-600 tracking-widest leading-none">Digital</span>
+                        <span className="text-lg font-black tracking-tighter text-slate-900 leading-none">SDigital</span>
+                        <span className="text-[8px] uppercase font-bold text-indigo-600 tracking-widest leading-none">System</span>
                     </div>
                 </div>
             </div>

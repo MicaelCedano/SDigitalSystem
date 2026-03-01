@@ -59,13 +59,13 @@ export default function LoginPage() {
                             <div className="w-12 h-12 bg-gradient-to-tr from-primary to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-primary/25">
                                 <ShieldCheck className="text-white w-7 h-7" />
                             </div>
-                            <h2 className="text-2xl font-bold text-white tracking-tight">RMA Señal Digital</h2>
+                            <h2 className="text-2xl font-bold text-white tracking-tight">Señal Digital System</h2>
                         </div>
 
                         <h1 className="text-5xl font-black text-white leading-[1.1] mb-6 tracking-tight">
                             Control Total de <br />
                             Servicio Técnico <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">& RMA.</span>
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">& Pro.</span>
                         </h1>
                         <p className="text-slate-300 text-lg max-w-sm leading-relaxed">
                             Administra garantías, reparaciones e inventario de dispositivos con precisión absoluta.

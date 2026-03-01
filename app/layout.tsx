@@ -21,14 +21,14 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "RMA Digital V2",
+  title: "Señal Digital System",
   description: "Advanced Repair Management System",
   manifest: "/manifest.json",
   themeColor: "#0f172a",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "RMA Digital",
+    title: "SDigitalSystem",
   },
   formatDetection: {
     telephone: false,

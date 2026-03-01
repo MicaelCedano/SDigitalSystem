@@ -98,8 +98,8 @@ const Sidebar = ({ initialUser, forceShow = false }: { initialUser?: any, forceS
                         </div>
                         {!collapsed && (
                             <div className="flex flex-col justify-center overflow-hidden animate-in fade-in duration-300">
-                                <span className="text-2xl font-black tracking-tighter text-white leading-none">RMA</span>
-                                <span className="text-[10px] uppercase font-bold text-indigo-400 tracking-[0.3em] leading-none mt-1">Señal Digital</span>
+                                <span className="text-2xl font-black tracking-tighter text-white leading-none">SDigitalSystem</span>
+                                <span className="text-[10px] uppercase font-bold text-indigo-400 tracking-[0.3em] leading-none mt-1">System</span>
                             </div>
                         )}
                     </div>

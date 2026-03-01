@@ -1,6 +1,6 @@
 {
-    "name": "RMA Digital",
-    "short_name": "RMA Digital",
+    "name": "Señal Digital System",
+    "short_name": "SDigitalSystem",
     "description": "Sistema Avanzado de Gestión de Reparaciones",
     "start_url": "/",
     "display": "standalone",
