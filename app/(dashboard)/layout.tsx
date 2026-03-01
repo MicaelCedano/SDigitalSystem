@@ -5,7 +5,6 @@ import { redirect } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import { NotificationsCenter } from "@/components/layout/NotificationsCenter";
 import { MobileNav } from "@/components/layout/MobileNav";
-import { ChatFloating } from "@/components/layout/ChatFloating";
 
 export default async function DashboardLayout({
     children,
@@ -39,9 +38,6 @@ export default async function DashboardLayout({
                     {children}
                 </div>
             </main>
-
-            {/* Real-time Chat Floating UI */}
-            <ChatFloating currentUser={session.user} />
         </div>
     );
 }
