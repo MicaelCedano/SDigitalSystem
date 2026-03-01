@@ -41,7 +41,7 @@ import { getQCUsers } from "@/app/actions/equipment";
 export default async function InventoryPage({
     searchParams,
 }: {
-    searchParams: { q?: string; status?: string; page?: string };
+    searchParams: Promise<{ q?: string; status?: string; page?: string }>;
 }) {
     const session = await getServerSession(authOptions);
 
@@ -49,9 +49,10 @@ export default async function InventoryPage({
         redirect("/login");
     }
 
-    const query = searchParams?.q || "";
-    // const status = searchParams?.status || "all"; // Not used in this specific view for now, usually
-    const currentPage = Number(searchParams?.page) || 1;
+    const resolvedParams = await searchParams;
+    const query = resolvedParams?.q || "";
+    // const status = resolvedParams?.status || "all"; // Not used in this specific view for now, usually
+    const currentPage = Number(resolvedParams?.page) || 1;
     const itemsPerPage = 10;
     const skip = (currentPage - 1) * itemsPerPage;
 
