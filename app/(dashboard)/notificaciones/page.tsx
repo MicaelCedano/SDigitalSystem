@@ -87,10 +87,10 @@ export default async function NotificationsPage() {
                             <div className="flex gap-8">
                                 {/* Large Avatar/Icon */}
                                 <div className="flex-shrink-0">
-                                    {n.tecnico?.profileImage ? (
+                                    {n.actorProfileImage ? (
                                         <div className="w-20 h-20 rounded-[2rem] overflow-hidden border-4 border-white shadow-xl ring-1 ring-slate-100 rotate-3 group-hover:rotate-0 transition-transform duration-500">
                                             <img
-                                                src={getProfileImageUrl(n.tecnico.profileImage) || ""}
+                                                src={getProfileImageUrl(n.actorProfileImage) || ""}
                                                 alt="User"
                                                 className="w-full h-full object-cover"
                                             />

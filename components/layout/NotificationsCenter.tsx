@@ -120,10 +120,10 @@ export function NotificationsCenter() {
                                     )}
                                 >
                                     <div className="flex-shrink-0">
-                                        {n.tecnico?.profileImage ? (
+                                        {n.actorProfileImage ? (
                                             <div className="w-12 h-12 rounded-2xl overflow-hidden border-2 border-white shadow-sm ring-1 ring-slate-100">
                                                 <img
-                                                    src={getProfileImageUrl(n.tecnico.profileImage) || ""}
+                                                    src={getProfileImageUrl(n.actorProfileImage) || ""}
                                                     alt="User"
                                                     className="w-full h-full object-cover"
                                                 />
