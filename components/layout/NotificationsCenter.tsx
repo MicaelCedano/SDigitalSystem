@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Bell, Check, Circle, ExternalLink, Inbox, Sparkles, User, Wallet, Package, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,11 +16,12 @@ import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { getNotifications, markAsRead, markAllAsRead, getUnreadCount } from "@/app/actions/notifications";
-import { cn } from "@/lib/utils";
+import { cn, getProfileImageUrl } from "@/lib/utils";
 import Link from "next/link";
 import { toast } from "sonner";
 
 export function NotificationsCenter() {
+    const router = useRouter();
     const [notifications, setNotifications] = useState<any[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [open, setOpen] = useState(false);
@@ -52,6 +54,17 @@ export function NotificationsCenter() {
         if (res.success) {
             toast.success("Todas las notificaciones leídas");
             loadData();
+        }
+    };
+
+    const handleNotificationClick = async (notification: any) => {
+        if (!notification.leida) {
+            await handleMarkAsRead(notification.id);
+        }
+
+        if (notification.targetUrl) {
+            setOpen(false);
+            router.push(notification.targetUrl);
         }
     };
 
@@ -113,17 +126,17 @@ export function NotificationsCenter() {
                             {notifications.map((n) => (
                                 <div
                                     key={n.id}
-                                    onClick={() => !n.leida && handleMarkAsRead(n.id)}
+                                    onClick={() => handleNotificationClick(n)}
                                     className={cn(
                                         "relative flex gap-4 p-4 rounded-[1.5rem] transition-all cursor-pointer group hover:bg-slate-50",
                                         !n.leida ? "bg-indigo-50/30" : ""
                                     )}
                                 >
                                     <div className="flex-shrink-0">
-                                        {n.tecnico?.profileImage ? (
+                                        {n.actorProfileImage ? (
                                             <div className="w-12 h-12 rounded-2xl overflow-hidden border-2 border-white shadow-sm ring-1 ring-slate-100">
                                                 <img
-                                                    src={`/profile_images/${n.tecnico.profileImage}`}
+                                                    src={getProfileImageUrl(n.actorProfileImage) || ""}
                                                     alt="User"
                                                     className="w-full h-full object-cover"
                                                 />

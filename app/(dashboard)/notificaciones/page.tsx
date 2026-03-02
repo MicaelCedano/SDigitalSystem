@@ -77,20 +77,20 @@ export default async function NotificationsPage() {
             <div className="space-y-4">
                 {notifications.length > 0 ? (
                     notifications.map((n) => (
-                        <div
-                            key={n.id}
-                            className={cn(
-                                "group relative bg-white p-8 rounded-[2.5rem] border transition-all duration-300 hover:shadow-2xl hover:shadow-slate-200/50 hover:border-indigo-100",
-                                !n.leida ? "border-indigo-100 shadow-xl shadow-indigo-500/5" : "border-slate-100"
-                            )}
-                        >
-                            <div className="flex gap-8">
+                        <Link key={n.id} href={n.targetUrl || "/notificaciones"} className="block">
+                            <div
+                                className={cn(
+                                    "group relative bg-white p-8 rounded-[2.5rem] border transition-all duration-300 hover:shadow-2xl hover:shadow-slate-200/50 hover:border-indigo-100",
+                                    !n.leida ? "border-indigo-100 shadow-xl shadow-indigo-500/5" : "border-slate-100"
+                                )}
+                            >
+                                <div className="flex gap-8">
                                 {/* Large Avatar/Icon */}
                                 <div className="flex-shrink-0">
-                                    {n.tecnico?.profileImage ? (
+                                    {n.actorProfileImage ? (
                                         <div className="w-20 h-20 rounded-[2rem] overflow-hidden border-4 border-white shadow-xl ring-1 ring-slate-100 rotate-3 group-hover:rotate-0 transition-transform duration-500">
                                             <img
-                                                src={getProfileImageUrl(n.tecnico.profileImage) || ""}
+                                                src={getProfileImageUrl(n.actorProfileImage) || ""}
                                                 alt="User"
                                                 className="w-full h-full object-cover"
                                             />
@@ -153,8 +153,9 @@ export default async function NotificationsPage() {
                                         </div>
                                     </div>
                                 </div>
+                                </div>
                             </div>
-                        </div>
+                        </Link>
                     ))
                 ) : (
                     <div className="bg-white rounded-[3rem] p-24 text-center border border-dashed border-slate-200">

@@ -23,5 +23,7 @@ export function formatDateTime(date: Date | string | null | undefined) {
 export function getProfileImageUrl(image: string | null | undefined) {
   if (!image) return null;
   if (image.startsWith('http')) return image;
+  if (image.startsWith('/')) return image;
+  if (image.startsWith('profile_images/')) return `/${image}`;
   return `/profile_images/${image}`;
 }

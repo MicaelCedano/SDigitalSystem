@@ -3,6 +3,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 export async function getQCDashboardData() {
     const session = await getServerSession(authOptions);
@@ -84,35 +85,55 @@ export async function getQCDashboardData() {
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
         // helper to get ranking data
+        type RankingRow = { userId: number | null; count: bigint };
+
         const getRanking = async (since?: Date, limit: number = 5) => {
-            const query = await prisma.equipoHistorial.groupBy({
-                by: ['userId'],
-                where: {
-                    estado: 'Revisado',
-                    ...(since ? { fecha: { gte: since } } : {})
-                },
-                _count: { id: true },
-                orderBy: { _count: { id: 'desc' } },
-                take: limit,
-            });
+            try {
+                const sinceFilter = since
+                    ? Prisma.sql`AND eh.fecha >= ${since}`
+                    : Prisma.empty;
 
-            const userIds = query.map(q => q.userId!).filter(id => id !== null);
-            const users = await prisma.user.findMany({
-                where: { id: { in: userIds } },
-                select: { id: true, name: true, username: true, profileImage: true }
-            });
+                const query = await prisma.$queryRaw<RankingRow[]>`
+                    SELECT
+                        eh.user_id AS "userId",
+                        COUNT(DISTINCT eh.equipo_id) AS "count"
+                    FROM equipo_historial eh
+                    WHERE eh.estado = 'Revisado'
+                      AND eh.user_id IS NOT NULL
+                    ${sinceFilter}
+                    GROUP BY eh.user_id
+                    ORDER BY "count" DESC
+                    LIMIT ${limit}
+                `;
 
-            return query.map(q => {
-                const user = users.find(u => u.id === q.userId);
-                return {
-                    tecnico: {
-                        name: user?.name,
-                        username: user?.username,
-                        profileImage: user?.profileImage
-                    },
-                    count: q._count.id
-                };
-            });
+                const userIds = query
+                    .map((q) => q.userId)
+                    .filter((id): id is number => id !== null);
+
+                if (userIds.length === 0) return [];
+
+                const users = await prisma.user.findMany({
+                    where: { id: { in: userIds } },
+                    select: { id: true, name: true, username: true, profileImage: true }
+                });
+
+                return query
+                    .filter((q): q is { userId: number; count: bigint } => q.userId !== null)
+                    .map((q) => {
+                        const user = users.find((u) => u.id === q.userId);
+                        return {
+                            tecnico: {
+                                name: user?.name,
+                                username: user?.username,
+                                profileImage: user?.profileImage
+                            },
+                            count: Number(q.count)
+                        };
+                    });
+            } catch (error) {
+                console.error("Error building ranking data:", error);
+                return [];
+            }
         };
 
         const topDia = await getRanking(startOfDay, 3);

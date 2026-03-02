@@ -6,11 +6,34 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
+function resolveNotificationUrl(notification: { tipo: string; loteCodigo: string | null }, role?: string | null) {
+    const tipo = notification.tipo?.toLowerCase() || "";
+
+    if (notification.loteCodigo) {
+        return `/qc?lote=${encodeURIComponent(notification.loteCodigo)}`;
+    }
+
+    if (tipo.includes("retiro")) {
+        return role === "admin" ? "/admin/pagos" : "/wallet";
+    }
+
+    if (tipo.includes("wallet") || tipo.includes("acreditacion") || tipo.includes("ingreso")) {
+        return role === "admin" ? "/admin/pagos" : "/wallet";
+    }
+
+    if (tipo.includes("logro") || tipo.includes("award")) {
+        return "/ranking";
+    }
+
+    return "/notificaciones";
+}
+
+
 export async function getNotifications() {
     const session = await getServerSession(authOptions);
     if (!session) return [];
 
-    return await prisma.notification.findMany({
+    const notifications = await prisma.notification.findMany({
         where: {
             tecnicoId: Number(session.user.id)
         },
@@ -26,6 +49,66 @@ export async function getNotifications() {
                 }
             }
         }
+    });
+
+    const loteCodes = notifications
+        .map((n) => n.loteCodigo)
+        .filter((code): code is string => Boolean(code));
+
+    const lotes = loteCodes.length > 0
+        ? await prisma.lote.findMany({
+            where: { codigo: { in: loteCodes } },
+            select: {
+                codigo: true,
+                tecnico: {
+                    select: {
+                        name: true,
+                        username: true,
+                        profileImage: true
+                    }
+                }
+            }
+        })
+        : [];
+
+    const loteByCode = new Map(lotes.map((lote) => [lote.codigo, lote.tecnico]));
+
+    const extractedNames = notifications
+        .map((n) => n.mensaje.match(/El técnico\s+(.+?)\s+ha/i)?.[1]?.trim())
+        .filter((name): name is string => Boolean(name));
+
+    const potentialActors = extractedNames.length > 0
+        ? await prisma.user.findMany({
+            where: {
+                OR: [
+                    { name: { in: extractedNames } },
+                    { username: { in: extractedNames } }
+                ]
+            },
+            select: {
+                name: true,
+                username: true,
+                profileImage: true
+            }
+        })
+        : [];
+
+    const actorByName = new Map<string, { profileImage: string | null }>();
+    potentialActors.forEach((actor) => {
+        if (actor.name) actorByName.set(actor.name.toLowerCase(), { profileImage: actor.profileImage });
+        actorByName.set(actor.username.toLowerCase(), { profileImage: actor.profileImage });
+    });
+
+    return notifications.map((notification) => {
+        const loteActor = notification.loteCodigo ? loteByCode.get(notification.loteCodigo) : undefined;
+        const extractedName = notification.mensaje.match(/El técnico\s+(.+?)\s+ha/i)?.[1]?.trim().toLowerCase();
+        const parsedActor = extractedName ? actorByName.get(extractedName) : undefined;
+
+        return {
+            ...notification,
+            actorProfileImage: loteActor?.profileImage || parsedActor?.profileImage || notification.tecnico?.profileImage || null,
+            targetUrl: resolveNotificationUrl(notification, session.user.role)
+        };
     });
 }
 
