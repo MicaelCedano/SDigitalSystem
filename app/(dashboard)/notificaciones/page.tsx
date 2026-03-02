@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
-import { cn } from "@/lib/utils";
+import { cn, getProfileImageUrl } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 
 export default async function NotificationsPage() {
@@ -90,7 +90,7 @@ export default async function NotificationsPage() {
                                     {n.tecnico?.profileImage ? (
                                         <div className="w-20 h-20 rounded-[2rem] overflow-hidden border-4 border-white shadow-xl ring-1 ring-slate-100 rotate-3 group-hover:rotate-0 transition-transform duration-500">
                                             <img
-                                                src={`/profile_images/${n.tecnico.profileImage}`}
+                                                src={getProfileImageUrl(n.tecnico.profileImage) || ""}
                                                 alt="User"
                                                 className="w-full h-full object-cover"
                                             />
