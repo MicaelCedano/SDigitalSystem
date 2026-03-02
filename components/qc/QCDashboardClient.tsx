@@ -80,7 +80,7 @@ export function QCDashboardClient({ initialData, currentUser }: QCDashboardProps
                                 i === 0 ? 'bg-gradient-to-br from-amber-400 to-orange-500' : i === 1 ? 'bg-slate-400' : 'bg-indigo-400'
                             )}>
                                 {stats.tecnico?.profileImage ? (
-                                    <img src={`/profiles/${stats.tecnico.profileImage}`} className="w-full h-full object-cover rounded-xl" />
+                                    <img src={`/profile_images/${stats.tecnico.profileImage}`} className="w-full h-full object-cover rounded-xl" />
                                 ) : (
                                     (stats.tecnico?.name?.substring(0, 1) || stats.tecnico?.username?.substring(0, 1) || "?")
                                 )}
@@ -117,8 +117,18 @@ export function QCDashboardClient({ initialData, currentUser }: QCDashboardProps
                 </div>
 
                 <div className="bg-white/80 backdrop-blur-md px-5 py-3 rounded-2xl border border-emerald-100 shadow-sm shadow-emerald-100 flex items-center gap-3 w-fit">
-                    <div className="p-2 bg-emerald-100/50 rounded-xl">
-                        <DollarSign className="w-5 h-5 text-emerald-600" />
+                    <div className="p-0.5 bg-white/20 rounded-xl backdrop-blur-md overflow-hidden w-11 h-11 flex items-center justify-center border border-white/30">
+                        {currentUser.image || currentUser.profileImage ? (
+                            <img
+                                src={currentUser.image?.startsWith('http') ? currentUser.image : `/profile_images/${currentUser.image || currentUser.profileImage}`}
+                                className="w-full h-full object-cover rounded-[10px]"
+                                alt="Profile"
+                            />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-indigo-500 text-white font-black text-xs">
+                                {currentUser.name?.substring(0, 1) || currentUser.username?.substring(0, 1) || "?"}
+                            </div>
+                        )}
                     </div>
                     <div>
                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Saldo Principal</p>

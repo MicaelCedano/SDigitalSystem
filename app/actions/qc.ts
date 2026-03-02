@@ -119,9 +119,21 @@ export async function getQCDashboardData() {
         const topMes = await getRanking(startOfMonth, 5);
         const topGlobal = await getRanking(undefined, 5);
 
-        const deviceModels = await prisma.deviceModel.findMany({
+        const rawDeviceModels = await prisma.deviceModel.findMany({
             orderBy: [{ brand: 'asc' }, { modelName: 'asc' }]
         });
+
+        const deviceModels = rawDeviceModels.map(m => ({
+            ...m,
+            fullName: `${m.brand} ${m.modelName} ${m.storageGb}GB${m.color ? ` - ${m.color}` : ""}`
+        }));
+
+        const transformEquipo = (eq: any) => {
+            if (eq.deviceModel) {
+                eq.deviceModel.fullName = `${eq.deviceModel.brand} ${eq.deviceModel.modelName} ${eq.deviceModel.storageGb}GB${eq.deviceModel.color ? ` - ${eq.deviceModel.color}` : ""}`;
+            }
+            return eq;
+        };
 
         return {
             saldoPrincipal,
@@ -131,8 +143,11 @@ export async function getQCDashboardData() {
             totalNoFuncionales,
             globalInventario,
             globalEnRevision,
-            equipos,
-            lotesAbiertos,
+            equipos: equipos.map(transformEquipo),
+            lotesAbiertos: lotesAbiertos.map(lote => ({
+                ...lote,
+                equipos: lote.equipos?.map(transformEquipo) || []
+            })),
             topGlobal,
             topDia,
             topMes,
