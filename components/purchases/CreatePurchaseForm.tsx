@@ -367,11 +367,13 @@ export function CreatePurchaseForm({ suppliers, deviceModels }: CreatePurchaseFo
                                     const lines = imeiInput.split('\n').filter(l => l.trim()).length;
                                     const declaredQty = form.watch(`items.${index}.quantity`);
                                     const isMismatch = lines > 0 && lines !== declaredQty;
-                                    const isNewModel = form.watch(`items.${index}.modelId`) === 0;
                                     const modelBrand = form.watch(`items.${index}.brand`);
                                     const modelName = form.watch(`items.${index}.modelName`);
                                     const modelStorage = form.watch(`items.${index}.storageGb`);
                                     const modelColor = form.watch(`items.${index}.color`);
+                                    const isNewModel =
+                                        form.watch(`items.${index}.modelId`) === 0 &&
+                                        Boolean(modelBrand && modelName && modelStorage);
 
                                     return (
                                         <TableRow
