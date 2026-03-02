@@ -18,7 +18,7 @@ export default async function DraftsPage() {
         id: d.id,
         purchaseDate: d.purchaseDate,
         supplier: { name: d.supplier.name },
-        _count: { items: d._count.items, equipos: d._count.equipos }
+        _count: { items: d.totalQuantity, equipos: d._count.equipos }
     }));
 
     return (

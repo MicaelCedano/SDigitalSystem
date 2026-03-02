@@ -89,6 +89,7 @@ export async function getQCDashboardData() {
                 by: ['userId'],
                 where: {
                     estado: 'Revisado',
+                    userId: { not: null },
                     ...(since ? { fecha: { gte: since } } : {})
                 },
                 _count: { id: true },
@@ -104,10 +105,11 @@ export async function getQCDashboardData() {
 
             return query.map(q => {
                 const user = users.find(u => u.id === q.userId);
+                const fallbackName = `Usuario #${q.userId}`;
                 return {
                     tecnico: {
-                        name: user?.name,
-                        username: user?.username,
+                        name: user?.name || user?.username || fallbackName,
+                        username: user?.username || fallbackName,
                         profileImage: user?.profileImage
                     },
                     count: q._count.id

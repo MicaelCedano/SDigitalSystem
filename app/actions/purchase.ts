@@ -22,7 +22,6 @@ const CreatePurchaseSchema = z.object({
 
 export type PurchaseWithProgress = Purchase & {
     supplier: Supplier;
-    items: PurchaseItem[];
     displayProgress: number;
     completedCount: number;
     originalTotal: number;
