@@ -140,7 +140,7 @@ export default function ManualAssignmentClient({ qcUsers }: Props) {
                         <Users size={10} /> Técnico Asignado
                     </Label>
                     <Select value={selectedQcId} onValueChange={setSelectedQcId}>
-                        <SelectTrigger className="h-12 bg-white/5 border-white/10 rounded-2xl text-white font-bold text-sm">
+                        <SelectTrigger className="h-12 bg-white/10 border-white/20 rounded-2xl text-white font-bold text-sm placeholder:text-slate-400 focus:ring-indigo-500/50">
                             <SelectValue placeholder="Seleccionar técnico de CC..." />
                         </SelectTrigger>
                         <SelectContent className="bg-[#0f172a] border-white/10 text-white rounded-2xl shadow-2xl">
