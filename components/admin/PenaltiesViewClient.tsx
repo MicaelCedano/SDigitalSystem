@@ -147,8 +147,13 @@ export function PenaltiesViewClient({ data }: { data: any }) {
                                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-1">
                                         <Smartphone size={10} /> Equipo / Referencia
                                     </p>
-                                    <p className="font-bold text-slate-700">
-                                        {p.type === 'internal' ? `${p.equipo?.marca} ${p.equipo?.modelo}` : p.modelo}
+                                    <p className="font-bold text-slate-700 leading-tight">
+                                        {p.type === 'internal'
+                                            ? [p.equipo?.marca, p.equipo?.deviceModel?.brand, p.equipo?.modelo, p.equipo?.deviceModel?.modelName]
+                                                .filter(Boolean)
+                                                .filter((val, index, self) => self.indexOf(val) === index) // remove duplicates if marca == brand
+                                                .join(' ') || "Equipo sin identificar"
+                                            : (p.modelo || "Referencia Manual")}
                                     </p>
                                     <p className="font-mono text-xs text-slate-400 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100 inline-block mt-1">
                                         {p.type === 'internal' ? p.equipo?.imei : p.imei}
