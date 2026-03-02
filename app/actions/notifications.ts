@@ -6,6 +6,29 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
+function resolveNotificationUrl(notification: { tipo: string; loteCodigo: string | null }, role?: string | null) {
+    const tipo = notification.tipo?.toLowerCase() || "";
+
+    if (notification.loteCodigo) {
+        return `/qc?lote=${encodeURIComponent(notification.loteCodigo)}`;
+    }
+
+    if (tipo.includes("retiro")) {
+        return role === "admin" ? "/admin/pagos" : "/wallet";
+    }
+
+    if (tipo.includes("wallet") || tipo.includes("acreditacion") || tipo.includes("ingreso")) {
+        return role === "admin" ? "/admin/pagos" : "/wallet";
+    }
+
+    if (tipo.includes("logro") || tipo.includes("award")) {
+        return "/ranking";
+    }
+
+    return "/notificaciones";
+}
+
+
 export async function getNotifications() {
     const session = await getServerSession(authOptions);
     if (!session) return [];
@@ -83,7 +106,8 @@ export async function getNotifications() {
 
         return {
             ...notification,
-            actorProfileImage: loteActor?.profileImage || parsedActor?.profileImage || notification.tecnico?.profileImage || null
+            actorProfileImage: loteActor?.profileImage || parsedActor?.profileImage || notification.tecnico?.profileImage || null,
+            targetUrl: resolveNotificationUrl(notification, session.user.role)
         };
     });
 }

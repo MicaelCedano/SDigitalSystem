@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Bell, Check, Circle, ExternalLink, Inbox, Sparkles, User, Wallet, Package, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +21,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 
 export function NotificationsCenter() {
+    const router = useRouter();
     const [notifications, setNotifications] = useState<any[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [open, setOpen] = useState(false);
@@ -52,6 +54,17 @@ export function NotificationsCenter() {
         if (res.success) {
             toast.success("Todas las notificaciones leídas");
             loadData();
+        }
+    };
+
+    const handleNotificationClick = async (notification: any) => {
+        if (!notification.leida) {
+            await handleMarkAsRead(notification.id);
+        }
+
+        if (notification.targetUrl) {
+            setOpen(false);
+            router.push(notification.targetUrl);
         }
     };
 
@@ -113,7 +126,7 @@ export function NotificationsCenter() {
                             {notifications.map((n) => (
                                 <div
                                     key={n.id}
-                                    onClick={() => !n.leida && handleMarkAsRead(n.id)}
+                                    onClick={() => handleNotificationClick(n)}
                                     className={cn(
                                         "relative flex gap-4 p-4 rounded-[1.5rem] transition-all cursor-pointer group hover:bg-slate-50",
                                         !n.leida ? "bg-indigo-50/30" : ""
