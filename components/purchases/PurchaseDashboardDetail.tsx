@@ -142,6 +142,13 @@ export function PurchaseDashboardDetail({ purchase }: PurchaseDetailProps) {
                 </div>
 
                 <div className="flex items-center gap-3 w-full xl:w-auto relative z-10">
+                    <Link href={`/compras/${purchase.id}/match`}>
+                        <Button variant="outline" className="hidden md:flex h-14 px-6 rounded-2xl border-slate-200 font-bold text-indigo-600 gap-2 hover:bg-indigo-50 hover:border-indigo-200 bg-white shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]">
+                            <Activity className="h-5 w-5" />
+                            Verificador Físico (Pistola)
+                        </Button>
+                    </Link>
+
                     <Button className="flex-1 md:flex-none h-14 px-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-lg shadow-xl shadow-indigo-100 transition-all hover:scale-[1.02] active:scale-[0.98]">
                         <Plus className="h-5 w-5 mr-2" />
                         Agregar Equipos
