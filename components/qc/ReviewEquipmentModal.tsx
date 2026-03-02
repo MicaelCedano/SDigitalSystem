@@ -164,7 +164,7 @@ export function ReviewEquipmentModal({ equipo, isOpen, onClose, deviceModels }: 
                             <div className="w-24 h-24 bg-slate-50 rounded-xl border border-slate-200 p-2 flex flex-col items-center justify-center shadow-sm relative overflow-hidden group">
                                 {previewImageFilename ? (
                                     <img
-                                        src={`/device_images/${previewImageFilename}`}
+                                        src={previewImageFilename.startsWith('http') ? previewImageFilename : `/device-images/${previewImageFilename}`}
                                         alt={modelo || 'Equipo'}
                                         className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110"
                                     />
