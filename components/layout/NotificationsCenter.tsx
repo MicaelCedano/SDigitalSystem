@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { getNotifications, markAsRead, markAllAsRead, getUnreadCount } from "@/app/actions/notifications";
-import { cn } from "@/lib/utils";
+import { cn, getProfileImageUrl } from "@/lib/utils";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -123,7 +123,7 @@ export function NotificationsCenter() {
                                         {n.tecnico?.profileImage ? (
                                             <div className="w-12 h-12 rounded-2xl overflow-hidden border-2 border-white shadow-sm ring-1 ring-slate-100">
                                                 <img
-                                                    src={`/profile_images/${n.tecnico.profileImage}`}
+                                                    src={getProfileImageUrl(n.tecnico.profileImage) || ""}
                                                     alt="User"
                                                     className="w-full h-full object-cover"
                                                 />
