@@ -80,7 +80,10 @@ export function QCDashboardClient({ initialData, currentUser }: QCDashboardProps
                                 i === 0 ? 'bg-gradient-to-br from-amber-400 to-orange-500' : i === 1 ? 'bg-slate-400' : 'bg-indigo-400'
                             )}>
                                 {stats.tecnico?.profileImage ? (
-                                    <img src={`/profile_images/${stats.tecnico.profileImage}`} className="w-full h-full object-cover rounded-xl" />
+                                    <img
+                                        src={stats.tecnico.profileImage.startsWith('http') ? stats.tecnico.profileImage : `/profile_images/${stats.tecnico.profileImage}`}
+                                        className="w-full h-full object-cover rounded-xl"
+                                    />
                                 ) : (
                                     (stats.tecnico?.name?.substring(0, 1) || stats.tecnico?.username?.substring(0, 1) || "?")
                                 )}
