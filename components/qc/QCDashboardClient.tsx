@@ -101,12 +101,12 @@ export function QCDashboardClient({ initialData, currentUser }: QCDashboardProps
     };
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500 slide-in-from-bottom-4">
+        <div className="space-y-4 sm:space-y-5 animate-in fade-in duration-500 slide-in-from-bottom-4">
 
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl lg:text-4xl font-black bg-gradient-to-r from-indigo-600 to-blue-500 bg-clip-text text-transparent mb-1">
+                    <h1 className="text-2xl lg:text-3xl font-black bg-gradient-to-r from-indigo-600 to-blue-500 bg-clip-text text-transparent mb-1">
                         Dashboard de Calidad
                     </h1>
                     <p className="text-slate-500 font-medium">
