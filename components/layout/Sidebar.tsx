@@ -257,7 +257,7 @@ const NavItem = ({ href, icon, label, active, collapsed, badge, user }: { href: 
                 {href === '/profile' && user?.image ? (
                     <div className="h-5 w-5 rounded-full overflow-hidden shrink-0">
                         <img
-                            src={`/profile_images/${user.image}`}
+                            src={getProfileImageUrl(user.image) || ""}
                             alt="Profile"
                             className="h-full w-full object-cover"
                         />
