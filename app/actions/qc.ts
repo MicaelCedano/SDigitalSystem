@@ -3,6 +3,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 export async function getQCDashboardData() {
     const session = await getServerSession(authOptions);
@@ -84,25 +85,32 @@ export async function getQCDashboardData() {
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
         // helper to get ranking data
-        const getRanking = async (since?: Date, limit: number = 5) => {
-            const query = await prisma.equipoHistorial.groupBy({
-                by: ['userId'],
-                where: {
-                    estado: 'Revisado',
-                    ...(since ? { fecha: { gte: since } } : {})
-                },
-                _count: { id: true },
-                orderBy: { _count: { id: 'desc' } },
-                take: limit,
-            });
+        type RankingRow = { userId: number; count: bigint };
 
-            const userIds = query.map(q => q.userId!).filter(id => id !== null);
+        const getRanking = async (since?: Date, limit: number = 5) => {
+            const sinceFilter = since
+                ? Prisma.sql`AND eh.fecha >= ${since}`
+                : Prisma.empty;
+
+            const query = await prisma.$queryRaw<RankingRow[]>`
+                SELECT
+                    eh.user_id AS "userId",
+                    COUNT(DISTINCT eh.equipo_id) AS "count"
+                FROM equipo_historial eh
+                WHERE eh.estado = 'Revisado'
+                ${sinceFilter}
+                GROUP BY eh.user_id
+                ORDER BY "count" DESC
+                LIMIT ${limit}
+            `;
+
+            const userIds = query.map((q) => q.userId);
             const users = await prisma.user.findMany({
                 where: { id: { in: userIds } },
                 select: { id: true, name: true, username: true, profileImage: true }
             });
 
-            return query.map(q => {
+            return query.map((q) => {
                 const user = users.find(u => u.id === q.userId);
                 return {
                     tecnico: {
@@ -110,7 +118,7 @@ export async function getQCDashboardData() {
                         username: user?.username,
                         profileImage: user?.profileImage
                     },
-                    count: q._count.id
+                    count: Number(q.count)
                 };
             });
         };
