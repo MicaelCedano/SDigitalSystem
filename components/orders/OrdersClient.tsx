@@ -59,6 +59,7 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
 
     const [selectedOrder, setSelectedOrder] = useState<any>(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState<'activos' | 'entregados'>('activos');
 
     const statusConfig: any = {
         'PENDIENTE': { label: 'Pendiente', color: 'bg-amber-100 text-amber-700 border-amber-200', icon: Clock },
@@ -157,8 +158,36 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
                 </div>
             </div>
 
+            <div className="flex gap-4 bg-white/50 p-2 rounded-2xl w-fit border border-slate-100">
+                <Button
+                    variant={activeTab === 'activos' ? "default" : "ghost"}
+                    onClick={() => setActiveTab('activos')}
+                    className={cn(
+                        "rounded-xl px-6 font-bold text-xs tracking-tighter transition-all",
+                        activeTab === 'activos' ? "bg-slate-900 text-white shadow-lg" : "text-slate-500 hover:bg-slate-50"
+                    )}
+                >
+                    <Clock className="mr-2 h-4 w-4" />
+                    PENDIENTES ({initialOrders.filter(o => o.status !== 'ENTREGADO' && o.status !== 'CANCELADO').length})
+                </Button>
+                <Button
+                    variant={activeTab === 'entregados' ? "default" : "ghost"}
+                    onClick={() => setActiveTab('entregados')}
+                    className={cn(
+                        "rounded-xl px-6 font-bold text-xs tracking-tighter transition-all",
+                        activeTab === 'entregados' ? "bg-slate-900 text-white shadow-lg" : "text-slate-500 hover:bg-slate-50"
+                    )}
+                >
+                    <History className="mr-2 h-4 w-4" />
+                    HISTORIAL ({initialOrders.filter(o => o.status === 'ENTREGADO' || o.status === 'CANCELADO').length})
+                </Button>
+            </div>
+
             <div className="space-y-6">
-                {initialOrders.length === 0 ? (
+                {initialOrders.filter(o => {
+                    if (activeTab === 'activos') return o.status !== 'ENTREGADO' && o.status !== 'CANCELADO';
+                    return o.status === 'ENTREGADO' || o.status === 'CANCELADO';
+                }).length === 0 ? (
                     <div className="text-center py-20 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-200">
                         <Package className="h-16 w-16 mx-auto text-slate-300 mb-4" />
                         <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">No hay pedidos registrados</h3>
@@ -166,7 +195,10 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 gap-6">
-                        {initialOrders.map((order) => {
+                        {initialOrders.filter(o => {
+                            if (activeTab === 'activos') return o.status !== 'ENTREGADO' && o.status !== 'CANCELADO';
+                            return o.status === 'ENTREGADO' || o.status === 'CANCELADO';
+                        }).map((order) => {
                             const StatusIcon = statusConfig[order.status].icon;
                             return (
                                 <Card key={order.id} className="rounded-[2.5rem] border-none shadow-xl hover:shadow-2xl transition-all group bg-white border border-slate-50 overflow-hidden">
@@ -224,14 +256,14 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
                                             </div>
 
                                             <div className="flex flex-col lg:items-end gap-3">
-                                                {order.status !== 'ENTREGADO' && order.status !== 'CANCELADO' && (
+                                                {session?.user?.role === 'admin' && order.status !== 'ENTREGADO' && order.status !== 'CANCELADO' && (
                                                     <Button
                                                         onClick={() => handleStatusUpdate(order.id, order.status)}
                                                         className="rounded-full bg-slate-900 hover:bg-black text-white px-8 font-black text-xs h-12 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-slate-200"
                                                     >
                                                         {order.status === 'PENDIENTE' && 'ACEPTAR PEDIDO'}
                                                         {order.status === 'PROCESO' && 'MARCAR COMO LISTO'}
-                                                        {order.status === 'LISTO' && 'ENTREGAR MERCANCÍA'}
+                                                        {order.status === 'LISTO' && 'ENTREGAR MERCANCIA'}
                                                         <ArrowRight className="ml-2 h-4 w-4" />
                                                     </Button>
                                                 )}
