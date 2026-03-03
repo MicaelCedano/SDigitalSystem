@@ -24,7 +24,7 @@ export async function sendTelegramMessage(message: string) {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                chat_id: chatId,
+                chat_id: isNaN(Number(chatId)) ? chatId : Number(chatId),
                 text: message || "",
                 parse_mode: 'HTML',
             }),
