@@ -18,7 +18,8 @@ import {
     Smartphone,
     Umbrella,
     Wrench,
-    Bell
+    Bell,
+    Package
 } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import { useState } from 'react';
@@ -131,10 +132,10 @@ const Sidebar = ({ initialUser, forceShow = false }: { initialUser?: any, forceS
                                         <SubNavItem href="/admin/pagos" label="Gestión de Pagos" />
                                         <SubNavItem href="/admin/penalidades" label="Historial Penalidades" />
                                         <SubNavItem href="/garantias" label="Garantías" />
-                                        <SubNavItem href="/pedidos" label="Pedidos & Novedades" />
                                     </div>
                                 )}
                             </div>
+                            <NavItem href="/pedidos" icon={<Package size={20} />} label="Pedidos Almacén" active={pathname === '/pedidos'} collapsed={collapsed} user={user} />
                         </div>
                     )}
 

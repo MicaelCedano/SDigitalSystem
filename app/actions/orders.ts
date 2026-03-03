@@ -7,12 +7,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
 const CreateOrderSchema = z.object({
-    clienteId: z.coerce.number().optional(),
-    observaciones: z.string().optional(),
-    items: z.array(z.object({
-        modelId: z.coerce.number(),
-        cantidad: z.coerce.number(),
-    })).min(1, "Debe agregar al menos un modelo"),
+    clienteId: z.coerce.number().optional().nullable(),
+    detalle: z.string().min(5, "El detalle del pedido debe tener al menos 5 caracteres"),
+    observaciones: z.string().optional().nullable(),
 });
 
 export async function createOrder(data: z.infer<typeof CreateOrderSchema>) {
@@ -24,7 +21,7 @@ export async function createOrder(data: z.infer<typeof CreateOrderSchema>) {
         return { success: false, error: "Datos inválidos: " + result.error.issues.map(i => i.message).join(", ") };
     }
 
-    const { clienteId, observaciones, items } = result.data;
+    const { clienteId, detalle, observaciones } = result.data;
 
     try {
         const order = await prisma.$transaction(async (tx) => {
@@ -38,14 +35,9 @@ export async function createOrder(data: z.infer<typeof CreateOrderSchema>) {
                     codigo,
                     clienteId: clienteId || null,
                     usuarioId: Number(session.user.id),
-                    observaciones,
+                    detalle,
+                    observaciones: observaciones || "",
                     status: 'PENDIENTE',
-                    items: {
-                        create: items.map(item => ({
-                            modelId: item.modelId,
-                            cantidad: item.cantidad,
-                        }))
-                    },
                     historial: {
                         create: {
                             estadoNuevo: 'PENDIENTE',
@@ -66,7 +58,7 @@ export async function createOrder(data: z.infer<typeof CreateOrderSchema>) {
     }
 }
 
-export async function updateOrderStatus(orderId: number, newStatus: string, observacion?: string) {
+export async function updateOrderStatus(orderId: number, newStatus: string) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) return { success: false, error: "No autorizado" };
 
@@ -109,11 +101,6 @@ export async function getOrders() {
             include: {
                 cliente: true,
                 usuario: true,
-                items: {
-                    include: {
-                        model: true
-                    }
-                },
                 historial: {
                     include: {
                         usuario: true
@@ -125,32 +112,6 @@ export async function getOrders() {
         return orders;
     } catch (error) {
         console.error("Error fetching orders:", error);
-        return [];
-    }
-}
-
-export async function getMerchandiseArrivals() {
-    try {
-        // Get recent purchases and their items
-        const purchases = await prisma.purchase.findMany({
-            where: {
-                estado: { not: 'borrador' }
-            },
-            take: 5,
-            orderBy: { id: 'desc' },
-            include: {
-                supplier: true,
-                items: {
-                    include: {
-                        deviceModel: true
-                    }
-                }
-            }
-        });
-
-        return purchases;
-    } catch (error) {
-        console.error("Error fetching arrivals:", error);
         return [];
     }
 }

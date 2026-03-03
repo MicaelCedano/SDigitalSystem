@@ -507,6 +507,7 @@ model Order {
   clienteId          Int?           @map("client_id")
   usuarioId          Int            @map("usuario_id")
   status             String         @default("PENDIENTE") @db.VarChar(32) // PENDIENTE, PROCESO, LISTO, ENTREGADO, CANCELADO
+  detalle            String         @db.Text
   observaciones      String?
   fechaCreacion      DateTime       @default(now()) @map("fecha_creacion") @db.Timestamp(6)
   fechaActualizacion DateTime       @updatedAt @map("fecha_actualizacion") @db.Timestamp(6)
