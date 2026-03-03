@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { sendTelegramMessage } from "@/lib/telegram";
+import { sendTelegramMessage, escapeHTML } from "@/lib/telegram";
 
 const CreateOrderSchema = z.object({
     clienteNombre: z.string().optional().nullable(),
@@ -79,10 +79,10 @@ export async function createOrder(data: z.infer<typeof CreateOrderSchema>) {
 
         // Send Telegram Notification
         const telegramMsg = `📦 <b>NUEVO PEDIDO: ${order.codigo}</b>\n\n` +
-            `👤 <b>Técnico:</b> ${session.user.name || session.user.username}\n` +
-            `🏢 <b>Cliente:</b> ${clienteNombre || 'Cliente General'}\n` +
-            `📝 <b>Detalle:</b> ${detalle}\n` +
-            `${observaciones ? `ℹ️ <b>Nota:</b> ${observaciones}` : ''}`;
+            `👤 <b>Técnico:</b> ${escapeHTML(session.user.name || session.user.username)}\n` +
+            `🏢 <b>Cliente:</b> ${escapeHTML(clienteNombre || 'Cliente General')}\n` +
+            `📝 <b>Detalle:</b> ${escapeHTML(detalle)}\n` +
+            `${observaciones ? `ℹ️ <b>Nota:</b> ${escapeHTML(observaciones)}` : ''}`;
 
         console.log(`[Orders] Enviando notificación a Telegram para pedido: ${order.codigo}`);
         await sendTelegramMessage(telegramMsg);
@@ -140,8 +140,8 @@ export async function updateOrderStatus(orderId: number, newStatus: string) {
 
         // Send Telegram Notification for Status Change
         const telegramMsg = `🔄 <b>ACTUALIZACIÓN DE PEDIDO: ${order.codigo}</b>\n\n` +
-            `📍 <b>Nuevo Estado:</b> ${newStatus}\n` +
-            `👤 <b>Actualizado por:</b> ${session.user.name || session.user.username}`;
+            `📍 <b>Nuevo Estado:</b> <code>${escapeHTML(newStatus)}</code>\n` +
+            `👤 <b>Actualizado por:</b> ${escapeHTML(session.user.name || session.user.username)}`;
 
         console.log(`[Orders] Enviando actualización a Telegram para pedido: ${order.codigo}`);
         await sendTelegramMessage(telegramMsg);
