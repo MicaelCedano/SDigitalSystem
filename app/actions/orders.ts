@@ -139,7 +139,8 @@ export async function updateOrderStatus(orderId: number, newStatus: string) {
         revalidatePath("/pedidos");
 
         // Send Telegram Notification for Status Change
-        const telegramMsg = `🔄 <b>ACTUALIZACIÓN DE PEDIDO: ${order.codigo}</b>\n\n` +
+        const telegramMsg = `🔄 <b>ACTUALIZACION DE PEDIDO: ${order.codigo}</b>\n\n` +
+            `🏢 <b>Cliente:</b> ${escapeHTML(order.clienteNombre || 'Cliente General')}\n` +
             `📍 <b>Nuevo Estado:</b> <code>${escapeHTML(newStatus)}</code>\n` +
             `👤 <b>Actualizado por:</b> ${escapeHTML(session.user.name || session.user.username)}`;
 
