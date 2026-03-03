@@ -153,6 +153,25 @@ export async function updateOrderStatus(orderId: number, newStatus: string) {
     }
 }
 
+export async function deleteOrder(orderId: number) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id || session.user.role !== 'admin') {
+        return { success: false, error: "No tienes permiso para eliminar pedidos" };
+    }
+
+    try {
+        await prisma.order.delete({
+            where: { id: orderId }
+        });
+
+        revalidatePath("/pedidos");
+        return { success: true };
+    } catch (error: any) {
+        console.error("Error deleting order:", error);
+        return { success: false, error: "Error al eliminar el pedido" };
+    }
+}
+
 export async function getOrders() {
     try {
         const orders = await prisma.order.findMany({

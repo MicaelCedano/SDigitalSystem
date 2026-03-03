@@ -16,7 +16,8 @@ import {
     Smartphone,
     ArrowRight,
     Loader2,
-    FileText
+    FileText,
+    Trash2
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,7 +35,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn, formatDateTime } from "@/lib/utils";
-import { createOrder, updateOrderStatus } from "@/app/actions/orders";
+import { createOrder, updateOrderStatus, deleteOrder } from "@/app/actions/orders";
+import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -44,6 +46,7 @@ interface OrdersClientProps {
 }
 
 export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
+    const { data: session } = useSession();
     const router = useRouter();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -99,6 +102,19 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
         const res = await updateOrderStatus(orderId, nextStatus);
         if (res.success) {
             toast.success(`Pedido actualizado a ${nextStatus}`);
+            router.refresh();
+        } else {
+            toast.error(res.error);
+        }
+    };
+
+    const handleDeleteOrder = async (orderId: number) => {
+        if (!confirm("¿Estás seguro de que deseas eliminar este pedido? Esta acción no se puede deshacer.")) return;
+
+        const res = await deleteOrder(orderId);
+        if (res.success) {
+            toast.success("Pedido eliminado correctamente");
+            setIsDetailsOpen(false);
             router.refresh();
         } else {
             toast.error(res.error);
@@ -204,16 +220,28 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
                                                         <ArrowRight className="ml-2 h-4 w-4" />
                                                     </Button>
                                                 )}
-                                                <Button
-                                                    variant="ghost"
-                                                    className="text-slate-400 hover:text-indigo-600 font-black text-[10px] uppercase tracking-[0.2em] transition-colors"
-                                                    onClick={() => {
-                                                        setSelectedOrder(order);
-                                                        setIsDetailsOpen(true);
-                                                    }}
-                                                >
-                                                    EXPLORAR PEDIDO
-                                                </Button>
+                                                <div className="flex items-center gap-2">
+                                                    <Button
+                                                        variant="ghost"
+                                                        className="text-slate-400 hover:text-indigo-600 font-black text-[10px] uppercase tracking-[0.2em] transition-colors"
+                                                        onClick={() => {
+                                                            setSelectedOrder(order);
+                                                            setIsDetailsOpen(true);
+                                                        }}
+                                                    >
+                                                        EXPLORAR
+                                                    </Button>
+                                                    {session?.user?.role === 'admin' && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                                                            onClick={() => handleDeleteOrder(order.id)}
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -349,18 +377,29 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
                             </div>
 
                             <DialogFooter className="p-4 md:p-8 bg-white border-t border-slate-100 flex flex-row items-center justify-end gap-2 md:gap-3">
-                                <Button
-                                    variant="ghost"
-                                    onClick={() => setIsDetailsOpen(false)}
-                                    className="rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-[0.2em] text-slate-400 hover:text-slate-600 h-10 md:h-12 px-4 md:px-6"
-                                >
-                                    CERRAR VISTA
-                                </Button>
+                                <div className="flex flex-row items-center gap-2">
+                                    {session?.user?.role === 'admin' && (
+                                        <Button
+                                            variant="ghost"
+                                            onClick={() => handleDeleteOrder(selectedOrder.id)}
+                                            className="rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-[0.2em] text-rose-400 hover:text-rose-600 hover:bg-rose-50 h-10 md:h-12 px-4 md:px-6"
+                                        >
+                                            ELIMINAR
+                                        </Button>
+                                    )}
+                                    <Button
+                                        variant="ghost"
+                                        onClick={() => setIsDetailsOpen(false)}
+                                        className="rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-[0.2em] text-slate-400 hover:text-slate-600 h-10 md:h-12 px-4 md:px-6"
+                                    >
+                                        CERRAR
+                                    </Button>
+                                </div>
                                 <Button
                                     className="rounded-xl bg-slate-900 hover:bg-black text-white font-black text-[9px] md:text-[10px] uppercase tracking-[0.2em] h-10 md:h-12 px-4 md:px-6 shadow-xl shadow-slate-200"
                                     onClick={() => window.print()}
                                 >
-                                    IMPRIMIR COMPROBANTE
+                                    IMPRIMIR
                                 </Button>
                             </DialogFooter>
                         </div>
