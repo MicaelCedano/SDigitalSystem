@@ -85,7 +85,7 @@ export const authOptions: NextAuthOptions = {
                 session.user.id = token.id as string;
                 session.user.role = token.role as string;
                 session.user.username = token.username as string;
-                session.user.image = token.image as string;
+                session.user.image = token.image as string | null;
                 session.user.canCreateGarantias = token.canCreateGarantias as boolean;
                 session.user.canManageOrders = token.canManageOrders as boolean;
             }
@@ -96,7 +96,7 @@ export const authOptions: NextAuthOptions = {
                 token.id = user.id;
                 token.role = user.role;
                 token.username = user.username;
-                token.image = user.image;
+                token.image = user.image ?? undefined;
                 token.canCreateGarantias = (user as any).canCreateGarantias;
                 token.canManageOrders = (user as any).canManageOrders;
             }
