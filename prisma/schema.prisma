@@ -16,6 +16,7 @@ model User {
   passwordHash            String                         @map("password_hash") @db.VarChar(200)
   role                    String                         @db.VarChar(20)
   canCreateGarantias      Boolean?                       @map("can_create_garantias")
+  canManageOrders         Boolean?                       @default(false) @map("can_manage_orders")
   profileImage            String?                        @map("profile_image") @db.VarChar(200)
   conducesCancelados      ConduceEnvio[]                 @relation("ConduceCancelado")
   conducesGenerados       ConduceEnvio[]                 @relation("ConduceGenerado")

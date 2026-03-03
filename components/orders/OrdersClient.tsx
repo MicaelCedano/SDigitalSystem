@@ -256,7 +256,7 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
                                             </div>
 
                                             <div className="flex flex-col lg:items-end gap-3">
-                                                {session?.user?.id && (session.user.role === 'admin' || session.user.role === 'almacen') && order.status !== 'ENTREGADO' && order.status !== 'CANCELADO' && (
+                                                {session?.user?.id && (session.user.role === 'admin' || session.user.role === 'almacen' || session.user.canManageOrders === true) && order.status !== 'ENTREGADO' && order.status !== 'CANCELADO' && (
                                                     <Button
                                                         onClick={() => handleStatusUpdate(order.id, order.status)}
                                                         className="rounded-full bg-slate-900 hover:bg-black text-white px-8 font-black text-xs h-12 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-slate-200"

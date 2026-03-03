@@ -156,12 +156,14 @@ export async function updateProfile(userId: number, formData: FormData) {
 export async function updateUserAdmin(userId: number, formData: FormData) {
     const role = formData.get("role") as string;
     const canCreateGarantias = formData.get("canCreateGarantias") === "true";
+    const canManageOrders = formData.get("canManageOrders") === "true";
     const password = formData.get("password") as string;
 
     try {
         const updateData: any = {
             role,
-            canCreateGarantias
+            canCreateGarantias,
+            canManageOrders
         };
 
         if (password && password.trim().length > 0) {

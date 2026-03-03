@@ -7,6 +7,8 @@ declare module "next-auth" {
             id: string;
             role: string;
             username: string;
+            canCreateGarantias?: boolean;
+            canManageOrders?: boolean;
         } & DefaultSession["user"];
     }
 
@@ -14,6 +16,8 @@ declare module "next-auth" {
         id: string;
         role: string;
         username: string;
+        canCreateGarantias?: boolean;
+        canManageOrders?: boolean;
     }
 }
 
@@ -21,5 +25,9 @@ declare module "next-auth/jwt" {
     interface JWT {
         id: string;
         role: string;
+        username?: string;
+        image?: string;
+        canCreateGarantias?: boolean;
+        canManageOrders?: boolean;
     }
 }

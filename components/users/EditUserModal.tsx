@@ -22,6 +22,7 @@ export function EditUserModal({ user, isOpen, onClose }: EditUserModalProps) {
     // Initial states based on user
     const [role, setRole] = useState(user?.role || "tecnico");
     const [canCreateGarantias, setCanCreateGarantias] = useState(user?.canCreateGarantias || false);
+    const [canManageOrders, setCanManageOrders] = useState(user?.canManageOrders || false);
     const [password, setPassword] = useState("");
 
     async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -31,6 +32,7 @@ export function EditUserModal({ user, isOpen, onClose }: EditUserModalProps) {
         const formData = new FormData();
         formData.append("role", role);
         formData.append("canCreateGarantias", canCreateGarantias.toString());
+        formData.append("canManageOrders", canManageOrders.toString());
         if (password) {
             formData.append("password", password);
         }
@@ -83,24 +85,43 @@ export function EditUserModal({ user, isOpen, onClose }: EditUserModalProps) {
                             </Select>
                         </div>
 
-                        {(role === "control_calidad" || role === "tecnico_garantias") && (
-                            <div className="flex items-start space-x-3 p-3 bg-white border border-slate-200 rounded-xl">
+                        <div className="space-y-3">
+                            {(role === "control_calidad" || role === "tecnico_garantias" || role === "admin") && (
+                                <div className="flex items-start space-x-3 p-3 bg-white border border-slate-200 rounded-xl shadow-sm">
+                                    <Checkbox
+                                        id="canCreate"
+                                        checked={canCreateGarantias}
+                                        onCheckedChange={(checked) => setCanCreateGarantias(checked as boolean)}
+                                        className="mt-0.5"
+                                    />
+                                    <div className="space-y-1 leading-none">
+                                        <label htmlFor="canCreate" className="text-[13px] font-bold text-slate-700 cursor-pointer">
+                                            Permisos de Garantías/RMA
+                                        </label>
+                                        <p className="text-[11px] text-slate-500">
+                                            Permite recibir ingresos de nuevos lotes.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="flex items-start space-x-3 p-3 bg-white border border-slate-200 rounded-xl shadow-sm">
                                 <Checkbox
-                                    id="canCreate"
-                                    checked={canCreateGarantias}
-                                    onCheckedChange={(checked) => setCanCreateGarantias(checked as boolean)}
+                                    id="canManageOrders"
+                                    checked={canManageOrders}
+                                    onCheckedChange={(checked) => setCanManageOrders(checked as boolean)}
                                     className="mt-0.5"
                                 />
                                 <div className="space-y-1 leading-none">
-                                    <label htmlFor="canCreate" className="text-[13px] font-bold text-slate-700 cursor-pointer">
-                                        Puede crear Garantías/RMA
+                                    <label htmlFor="canManageOrders" className="text-[13px] font-bold text-slate-700 cursor-pointer">
+                                        Permisos de Almacén/Pedidos
                                     </label>
                                     <p className="text-[11px] text-slate-500">
-                                        Permite registrar ingresos de nuevos lotes.
+                                        Permite aceptar, alistar y entregar pedidos.
                                     </p>
                                 </div>
                             </div>
-                        )}
+                        </div>
 
                         <div className="border-t border-slate-200/60 my-2"></div>
 

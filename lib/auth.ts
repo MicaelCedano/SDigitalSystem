@@ -73,6 +73,8 @@ export const authOptions: NextAuthOptions = {
                     role: user.role,
                     username: user.username,
                     image: user.profileImage,
+                    canCreateGarantias: (user as any).canCreateGarantias || false,
+                    canManageOrders: (user as any).canManageOrders || false,
                 };
             }
         })
@@ -84,6 +86,8 @@ export const authOptions: NextAuthOptions = {
                 session.user.role = token.role as string;
                 session.user.username = token.username as string;
                 session.user.image = token.image as string;
+                session.user.canCreateGarantias = token.canCreateGarantias as boolean;
+                session.user.canManageOrders = token.canManageOrders as boolean;
             }
             return session;
         },
@@ -93,10 +97,12 @@ export const authOptions: NextAuthOptions = {
                 token.role = user.role;
                 token.username = user.username;
                 token.image = user.image;
+                token.canCreateGarantias = (user as any).canCreateGarantias;
+                token.canManageOrders = (user as any).canManageOrders;
             }
-            if (trigger === "update") {
-                if (session?.image) token.image = session.image;
-                if (session?.name) token.name = session.name;
+            if (trigger === "update" && session) {
+                if (session.image) token.image = session.image as string;
+                if (session.name) token.name = session.name as string;
             }
             return token;
         }
