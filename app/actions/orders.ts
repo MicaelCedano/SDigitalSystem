@@ -96,7 +96,7 @@ export async function createOrder(data: z.infer<typeof CreateOrderSchema>) {
 
 export async function updateOrderStatus(orderId: number, newStatus: string) {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id || session.user.role !== 'admin') {
+    if (!session?.user?.id || (session.user.role !== 'admin' && session.user.role !== 'almacen')) {
         return { success: false, error: "No tienes permiso para gestionar estados de pedidos" };
     }
 
