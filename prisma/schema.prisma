@@ -43,6 +43,8 @@ model User {
   wallet                  Wallet[]
   walletTransactions      WalletTransaction[]
   conversations           Conversation[]
+  orders                  Order[]
+  orderHistory            OrderHistory[]
 
   @@map("users")
 }
@@ -90,6 +92,7 @@ model DeviceModel {
   imageFilename String?        @map("image_filename") @db.VarChar(255)
   equipos       Equipo[]
   purchaseItems PurchaseItem[]
+  orderItems    OrderItem[]
 
   @@unique([brand, modelName, storageGb, color], name: "unique_device_model", map: "unique_device_model")
   @@map("device_model")
@@ -280,6 +283,7 @@ model Cliente {
   fechaRegistro DateTime?            @map("fecha_registro") @db.Timestamp(6)
   activo        Boolean?
   ultimosUsos   UltimoClienteUsado[]
+  orders        Order[]
 
   @@map("cliente")
 }
@@ -495,4 +499,46 @@ model system_setting {
   value       String?   @db.VarChar(255)
   description String?   @db.VarChar(255)
   updated_at  DateTime? @db.Timestamp(6)
+}
+
+model Order {
+  id                 Int            @id @default(autoincrement())
+  codigo             String?        @unique @db.VarChar(32)
+  clienteId          Int?           @map("client_id")
+  usuarioId          Int            @map("usuario_id")
+  status             String         @default("PENDIENTE") @db.VarChar(32) // PENDIENTE, PROCESO, LISTO, ENTREGADO, CANCELADO
+  observaciones      String?
+  fechaCreacion      DateTime       @default(now()) @map("fecha_creacion") @db.Timestamp(6)
+  fechaActualizacion DateTime       @updatedAt @map("fecha_actualizacion") @db.Timestamp(6)
+  
+  cliente            Cliente?       @relation(fields: [clienteId], references: [id])
+  usuario            User           @relation(fields: [usuarioId], references: [id])
+  items              OrderItem[]
+  historial          OrderHistory[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id              Int            @id @default(autoincrement())
+  orderId         Int            @map("order_id")
+  modelId         Int            @map("model_id")
+  cantidad        Int
+  order           Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  model           DeviceModel    @relation(fields: [modelId], references: [id])
+
+  @@map("order_items")
+}
+
+model OrderHistory {
+  id              Int            @id @default(autoincrement())
+  orderId         Int            @map("order_id")
+  estadoAnterior  String?        @map("estado_anterior")
+  estadoNuevo     String         @map("estado_nuevo")
+  usuarioId       Int            @map("usuario_id")
+  fecha           DateTime       @default(now()) @map("fecha") @db.Timestamp(6)
+  order           Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  usuario         User           @relation(fields: [usuarioId], references: [id])
+
+  @@map("order_history")
 }

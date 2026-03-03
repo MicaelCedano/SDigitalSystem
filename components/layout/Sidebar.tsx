@@ -131,6 +131,7 @@ const Sidebar = ({ initialUser, forceShow = false }: { initialUser?: any, forceS
                                         <SubNavItem href="/admin/pagos" label="Gestión de Pagos" />
                                         <SubNavItem href="/admin/penalidades" label="Historial Penalidades" />
                                         <SubNavItem href="/garantias" label="Garantías" />
+                                        <SubNavItem href="/pedidos" label="Pedidos & Novedades" />
                                     </div>
                                 )}
                             </div>
