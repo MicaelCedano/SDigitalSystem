@@ -49,6 +49,28 @@ export async function createOrder(data: z.infer<typeof CreateOrderSchema>) {
                     }
                 }
             });
+
+            // Notify admins
+            const admins = await tx.user.findMany({
+                where: { role: 'admin' },
+                select: { id: true }
+            });
+
+            if (admins.length > 0) {
+                await tx.notification.createMany({
+                    data: admins.map(admin => ({
+                        tecnicoId: admin.id,
+                        tipo: 'pedido_nuevo',
+                        titulo: 'Nuevo Pedido Solicitado',
+                        mensaje: `El técnico ${session.user.name || session.user.username} ha solicitado mercancía para: ${clienteNombre || 'Cliente General'}.`,
+                        fromUserId: Number(session.user.id),
+                        redirectUrl: '/pedidos',
+                        fecha: new Date(),
+                        leida: false
+                    }))
+                });
+            }
+
             return newOrder;
         });
 
@@ -84,6 +106,20 @@ export async function updateOrderStatus(orderId: number, newStatus: string) {
                     estadoNuevo: newStatus,
                     usuarioId: Number(session.user.id),
                     fecha: new Date()
+                }
+            });
+
+            // Notify the user who created the order
+            await tx.notification.create({
+                data: {
+                    tecnicoId: order.usuarioId,
+                    tipo: 'pedido_actualizado',
+                    titulo: `Pedido ${newStatus.toLowerCase()}`,
+                    mensaje: `Tu pedido ${order.codigo} ahora está en estado: ${newStatus}.`,
+                    fromUserId: Number(session.user.id),
+                    redirectUrl: '/pedidos',
+                    fecha: new Date(),
+                    leida: false
                 }
             });
         });

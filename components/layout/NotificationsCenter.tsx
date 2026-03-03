@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, Check, Circle, ExternalLink, Inbox, Sparkles, User, Wallet, Package, Activity } from "lucide-react";
+import { Bell, Check, Circle, ExternalLink, Inbox, Sparkles, User, Wallet, Package, Activity, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -65,6 +65,10 @@ export function NotificationsCenter() {
                 return <div className="p-2 bg-amber-100 text-amber-600 rounded-xl"><Sparkles className="w-4 h-4" /></div>;
             case 'lote':
                 return <div className="p-2 bg-indigo-100 text-indigo-600 rounded-xl"><Package className="w-4 h-4" /></div>;
+            case 'pedido':
+            case 'pedido_nuevo':
+            case 'pedido_actualizado':
+                return <div className="p-2 bg-blue-100 text-blue-600 rounded-xl"><ShoppingBag className="w-4 h-4" /></div>;
             default:
                 return <div className="p-2 bg-slate-100 text-slate-500 rounded-xl"><Activity className="w-4 h-4" /></div>;
         }

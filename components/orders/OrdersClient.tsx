@@ -48,12 +48,14 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // New Order Form State
     const [newOrder, setNewOrder] = useState({
         clienteNombre: "",
         detalle: "",
         observaciones: ""
     });
+
+    const [selectedOrder, setSelectedOrder] = useState<any>(null);
+    const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
     const statusConfig: any = {
         'PENDIENTE': { label: 'Pendiente', color: 'bg-amber-100 text-amber-700 border-amber-200', icon: Clock },
@@ -206,10 +208,11 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
                                                     variant="ghost"
                                                     className="text-slate-400 hover:text-indigo-600 font-black text-[10px] uppercase tracking-[0.2em] transition-colors"
                                                     onClick={() => {
-                                                        toast.info("Detalle completo: " + order.detalle);
+                                                        setSelectedOrder(order);
+                                                        setIsDetailsOpen(true);
                                                     }}
                                                 >
-                                                    VER DETALLES COMPLETOS
+                                                    EXPLORAR PEDIDO
                                                 </Button>
                                             </div>
                                         </div>
@@ -220,6 +223,151 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
                     </div>
                 )}
             </div>
+
+            {/* Order Details Modal */}
+            <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+                <DialogContent className="max-w-4xl rounded-[3rem] border-none p-0 overflow-hidden shadow-2xl bg-slate-50">
+                    {selectedOrder && (
+                        <div className="flex flex-col">
+                            {/* Header Section */}
+                            <div className="bg-white p-10 border-b border-slate-100">
+                                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                                    <div className="flex items-center gap-6">
+                                        <div className={cn(
+                                            "h-20 w-20 rounded-[2rem] flex items-center justify-center shadow-lg",
+                                            statusConfig[selectedOrder.status].color
+                                        )}>
+                                            {(() => {
+                                                const Icon = statusConfig[selectedOrder.status].icon;
+                                                return <Icon className="h-10 w-10" />;
+                                            })()}
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <Badge className="bg-slate-900 text-white font-mono px-3 py-1 rounded-lg text-xs">
+                                                    {selectedOrder.codigo}
+                                                </Badge>
+                                                <Badge className={cn("rounded-full font-black text-[10px] uppercase px-3", statusConfig[selectedOrder.status].color)}>
+                                                    {statusConfig[selectedOrder.status].label}
+                                                </Badge>
+                                            </div>
+                                            <h2 className="text-3xl font-black text-slate-800 tracking-tight flex items-center gap-3">
+                                                {selectedOrder.clienteNombre || selectedOrder.cliente?.nombre || 'Cliente General'}
+                                            </h2>
+                                            <div className="flex items-center gap-4 mt-2">
+                                                <div className="flex items-center gap-2 text-slate-500 text-sm font-medium">
+                                                    <UserIcon className="h-4 w-4 text-indigo-500" />
+                                                    {selectedOrder.usuario.name || selectedOrder.usuario.username}
+                                                </div>
+                                                <div className="w-1 h-1 rounded-full bg-slate-300" />
+                                                <div className="flex items-center gap-2 text-slate-500 text-sm font-medium">
+                                                    <Clock className="h-4 w-4 text-indigo-500" />
+                                                    {formatDateTime(selectedOrder.fechaCreacion)}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {selectedOrder.status !== 'ENTREGADO' && selectedOrder.status !== 'CANCELADO' && (
+                                        <Button
+                                            onClick={() => {
+                                                handleStatusUpdate(selectedOrder.id, selectedOrder.status);
+                                                setIsDetailsOpen(false);
+                                            }}
+                                            className="h-16 px-10 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-lg shadow-xl shadow-indigo-100 transition-all hover:scale-105"
+                                        >
+                                            AVANZAR ESTADO
+                                            <ArrowRight className="ml-2 h-6 w-6" />
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="p-10 grid grid-cols-1 lg:grid-cols-3 gap-10">
+                                {/* Left Side: Order Items/Detail */}
+                                <div className="lg:col-span-2 space-y-8">
+                                    <div className="bg-white rounded-[2.5rem] p-10 shadow-sm border border-slate-100">
+                                        <div className="flex items-center gap-4 mb-8">
+                                            <div className="p-3 bg-indigo-50 rounded-2xl text-indigo-600">
+                                                <ShoppingBag className="w-6 h-6" />
+                                            </div>
+                                            <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Desglose del Pedido</h3>
+                                        </div>
+
+                                        <div className="prose prose-slate max-w-none">
+                                            <div className="p-8 bg-slate-50 rounded-3xl border border-slate-100 min-h-[150px]">
+                                                <p className="text-slate-800 text-lg font-bold leading-relaxed whitespace-pre-wrap">
+                                                    {selectedOrder.detalle}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {selectedOrder.observaciones && (
+                                            <div className="mt-8 p-6 bg-amber-50/50 rounded-2xl border border-amber-100 flex gap-4">
+                                                <AlertCircle className="w-6 h-6 text-amber-600 shrink-0" />
+                                                <div>
+                                                    <p className="text-[10px] font-black uppercase text-amber-600 tracking-wider mb-1">Notas de Almacén</p>
+                                                    <p className="text-amber-700 font-medium">{selectedOrder.observaciones}</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Right Side: Timeline/History */}
+                                <div className="space-y-8">
+                                    <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100">
+                                        <div className="flex items-center gap-4 mb-8">
+                                            <div className="p-3 bg-slate-900 rounded-2xl text-white">
+                                                <History className="w-5 h-5" />
+                                            </div>
+                                            <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight">Crono-Flujo</h3>
+                                        </div>
+
+                                        <div className="relative space-y-8 before:absolute before:inset-0 before:ml-4 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-indigo-500 before:via-slate-200 before:to-transparent">
+                                            {selectedOrder.historial?.map((item: any, idx: number) => (
+                                                <div key={item.id} className="relative flex items-center justify-between gap-4 pl-10">
+                                                    <div className={cn(
+                                                        "absolute left-0 h-8 w-8 rounded-full border-4 border-white flex items-center justify-center -translate-x-1/2 shadow-md",
+                                                        idx === 0 ? "bg-indigo-600" : "bg-slate-200"
+                                                    )}>
+                                                        {idx === 0 && <div className="h-2 w-2 rounded-full bg-white animate-pulse" />}
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <p className="text-xs font-black text-slate-800 uppercase">{item.estadoNuevo}</p>
+                                                        <p className="text-[10px] text-slate-500 font-medium">
+                                                            Por: <span className="font-bold text-slate-700">{item.usuario.name || item.usuario.username}</span>
+                                                        </p>
+                                                        <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">
+                                                            {formatDateTime(item.fecha)}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <DialogFooter className="p-8 bg-white border-t border-slate-100">
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => setIsDetailsOpen(false)}
+                                    className="rounded-full font-black text-xs uppercase tracking-[0.2em] text-slate-400 h-14 px-10"
+                                >
+                                    CERRAR VISTA
+                                </Button>
+                                <Button
+                                    className="rounded-full bg-slate-900 text-white font-black text-xs uppercase tracking-[0.2em] h-14 px-10"
+                                    onClick={() => window.print()}
+                                >
+                                    IMPRIMIR COMPROBANTE
+                                </Button>
+                            </DialogFooter>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
 
             <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
                 <DialogContent className="max-w-xl rounded-[2rem] border-none p-0 overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-300 mx-4">
