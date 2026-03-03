@@ -89,14 +89,8 @@ export async function approveLote(loteId: number) {
                 data: { estado: 'Entregado' }
             });
 
-            // 2. Update equipments to En Inventario (Available for sale/dispatch now that they are reviewed)
-            await tx.equipo.updateMany({
-                where: { loteId: loteId, estado: 'Revisado' },
-                data: {
-                    estado: 'En Inventario',
-                    userId: null // Free from the technician
-                }
-            });
+            // 2. Keep reviewed equipment status untouched.
+            // NOTE: Approving a lote should not send reviewed equipment back to inventory.
 
             // 3. Process Payment to Wallet
             if (paymentAmount > 0) {
