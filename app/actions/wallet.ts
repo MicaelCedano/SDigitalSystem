@@ -135,6 +135,8 @@ export async function requestWithdrawal(amount: number) {
                         titulo: "Nueva Solicitud de Retiro",
                         mensaje: `El técnico ${tecnico?.name || tecnico?.username} ha solicitado un retiro de RD$ ${amount.toLocaleString()}.`,
                         monto: amount,
+                        fromUserId: userId,
+                        redirectUrl: `/admin/pagos/${userId}`,
                         fecha: new Date(),
                         leida: false
                     }))

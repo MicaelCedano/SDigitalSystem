@@ -41,6 +41,8 @@ export async function submitLoteForReview(loteId: number) {
             titulo: 'Nuevo Lote para Revisión',
             mensaje: `El técnico ${tecnicoName} ha enviado el lote ${lote.codigo} para su aprobación.`,
             loteCodigo: lote.codigo,
+            fromUserId: Number(session.user.id),
+            redirectUrl: `/qc?lote=${lote.codigo}`,
             leida: false,
             fecha: new Date()
         }));
@@ -160,6 +162,8 @@ export async function approveLote(loteId: number) {
                     mensaje: `Tu lote ${lote.codigo} ha sido aprobado. Se han acreditado RD$ ${paymentAmount.toLocaleString()} a tu cuenta.`,
                     monto: paymentAmount,
                     loteCodigo: lote.codigo,
+                    fromUserId: Number(session.user.id),
+                    redirectUrl: `/qc?lote=${lote.codigo}`,
                     leida: false,
                     fecha: new Date()
                 }
@@ -206,6 +210,8 @@ export async function rejectLote(loteId: number) {
                 titulo: 'Lote Devuelto',
                 mensaje: `Tu lote ${lote.codigo} ha sido devuelto por el administrador para correcciones.`,
                 loteCodigo: lote.codigo,
+                fromUserId: Number(session.user.id),
+                redirectUrl: `/qc?lote=${lote.codigo}`,
                 leida: false,
                 fecha: new Date()
             }

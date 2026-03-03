@@ -24,6 +24,13 @@ export async function getNotifications() {
                     username: true,
                     profileImage: true
                 }
+            },
+            sender: {
+                select: {
+                    name: true,
+                    username: true,
+                    profileImage: true
+                }
             }
         }
     });

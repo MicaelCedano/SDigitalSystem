@@ -111,62 +111,81 @@ export function NotificationsCenter() {
                     {notifications.length > 0 ? (
                         <div className="space-y-1">
                             {notifications.map((n) => (
-                                <div
-                                    key={n.id}
-                                    onClick={() => !n.leida && handleMarkAsRead(n.id)}
-                                    className={cn(
-                                        "relative flex gap-4 p-4 rounded-[1.5rem] transition-all cursor-pointer group hover:bg-slate-50",
-                                        !n.leida ? "bg-indigo-50/30" : ""
-                                    )}
-                                >
-                                    <div className="flex-shrink-0">
-                                        {n.tecnico?.profileImage ? (
-                                            <div className="w-12 h-12 rounded-2xl overflow-hidden border-2 border-white shadow-sm ring-1 ring-slate-100">
-                                                <img
-                                                    src={getProfileImageUrl(n.tecnico.profileImage) || ""}
-                                                    alt="User"
-                                                    className="w-full h-full object-cover"
-                                                />
+                                <div key={n.id} className="relative">
+                                    <div
+                                        onClick={() => !n.leida && !n.redirectUrl && handleMarkAsRead(n.id)}
+                                        className={cn(
+                                            "flex gap-4 p-4 rounded-[1.5rem] transition-all cursor-pointer group hover:bg-slate-50",
+                                            !n.leida ? "bg-indigo-50/30" : ""
+                                        )}
+                                    >
+                                        <div className="flex-shrink-0">
+                                            {n.sender?.profileImage ? (
+                                                <div className="w-12 h-12 rounded-2xl overflow-hidden border-2 border-white shadow-sm ring-1 ring-slate-100">
+                                                    <img
+                                                        src={getProfileImageUrl(n.sender.profileImage) || ""}
+                                                        alt="Sender"
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                </div>
+                                            ) : n.tecnico?.profileImage ? (
+                                                <div className="w-12 h-12 rounded-2xl overflow-hidden border-2 border-white shadow-sm ring-1 ring-slate-100">
+                                                    <img
+                                                        src={getProfileImageUrl(n.tecnico.profileImage) || ""}
+                                                        alt="User"
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                </div>
+                                            ) : (
+                                                getIcon(n.tipo)
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0 space-y-1">
+                                            <div className="flex items-center justify-between">
+                                                <p className={cn(
+                                                    "text-sm font-black text-slate-800",
+                                                    !n.leida && "text-indigo-900"
+                                                )}>
+                                                    {n.titulo}
+                                                </p>
+                                                {!n.leida && (
+                                                    <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-lg shadow-indigo-200" />
+                                                )}
                                             </div>
-                                        ) : (
-                                            getIcon(n.tipo)
+                                            <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                                                {n.mensaje}
+                                            </p>
+                                            <div className="flex items-center justify-between pt-1">
+                                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                                                    {formatDistanceToNow(new Date(n.fecha), { addSuffix: true, locale: es })}
+                                                </span>
+                                                {n.monto && (
+                                                    <span className="text-xs font-black text-emerald-600 font-mono">
+                                                        +RD$ {n.monto.toFixed(2)}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Link decoration like a social tag */}
+                                        {(n.redirectUrl || !n.leida) && (
+                                            <div className="absolute right-4 bottom-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <div className="px-2 py-1 bg-white rounded-lg shadow-sm border border-slate-100 text-[9px] font-black uppercase text-indigo-500 flex items-center gap-1">
+                                                    <span>Ver Detalle</span>
+                                                    <ExternalLink className="w-2.5 h-2.5" />
+                                                </div>
+                                            </div>
                                         )}
                                     </div>
-                                    <div className="flex-1 min-w-0 space-y-1">
-                                        <div className="flex items-center justify-between">
-                                            <p className={cn(
-                                                "text-sm font-black text-slate-800",
-                                                !n.leida && "text-indigo-900"
-                                            )}>
-                                                {n.titulo}
-                                            </p>
-                                            {!n.leida && (
-                                                <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-lg shadow-indigo-200" />
-                                            )}
-                                        </div>
-                                        <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                                            {n.mensaje}
-                                        </p>
-                                        <div className="flex items-center justify-between pt-1">
-                                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                                                {formatDistanceToNow(new Date(n.fecha), { addSuffix: true, locale: es })}
-                                            </span>
-                                            {n.monto && (
-                                                <span className="text-xs font-black text-emerald-600 font-mono">
-                                                    +RD$ {n.monto.toFixed(2)}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Link decoration like a social tag */}
-                                    {!n.leida && (
-                                        <div className="absolute right-4 bottom-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <div className="px-2 py-1 bg-white rounded-lg shadow-sm border border-slate-100 text-[9px] font-black uppercase text-indigo-500 flex items-center gap-1">
-                                                <span>Ver Detalle</span>
-                                                <ExternalLink className="w-2.5 h-2.5" />
-                                            </div>
-                                        </div>
+                                    {n.redirectUrl && (
+                                        <Link
+                                            href={n.redirectUrl}
+                                            className="absolute inset-0 z-10"
+                                            onClick={() => {
+                                                if (!n.leida) handleMarkAsRead(n.id);
+                                                setOpen(false);
+                                            }}
+                                        />
                                     )}
                                 </div>
                             ))}

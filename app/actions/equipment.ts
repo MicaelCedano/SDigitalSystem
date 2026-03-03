@@ -198,11 +198,13 @@ export async function assignToQualityControl(equipoIds: number[], qcId: number) 
 
             await tx.notification.create({
                 data: {
-                    tecnicoId: qcUser.id,
+                    tecnicoId: qcId,
                     tipo: 'lote_asignado',
                     titulo: 'Nuevo Lote Asignado',
                     mensaje: `Se te ha asignado el lote ${codigoLote} con ${equipoIds.length} equipos.`,
                     loteCodigo: codigoLote,
+                    fromUserId: adminId,
+                    redirectUrl: `/qc?lote=${codigoLote}`,
                     leida: false,
                     fecha: new Date()
                 }

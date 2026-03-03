@@ -97,7 +97,7 @@ export function RankingClient({ topDia, topMes, topGlobal, currentUser }: Rankin
                                         <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 font-black text-lg overflow-hidden shrink-0">
                                             {item.tecnico.profileImage ? (
                                                 <img
-                                                    src={`/profile_images/${item.tecnico.profileImage}`}
+                                                    src={item.tecnico.profileImage}
                                                     alt={item.tecnico.username}
                                                     className="w-full h-full object-cover"
                                                 />
@@ -178,7 +178,7 @@ function PodiumCard({ rank, data, className, color, medal }: { rank: number, dat
                             rank === 2 ? "bg-slate-400" : "bg-orange-400"
                     )}>
                         {data.tecnico.profileImage ? (
-                            <img src={`/profile_images/${data.tecnico.profileImage}`} className="w-full h-full object-cover rounded-[2rem]" />
+                            <img src={data.tecnico.profileImage} className="w-full h-full object-cover rounded-[2rem]" />
                         ) : (
                             data.tecnico.name?.substring(0, 1) || data.tecnico.username?.substring(0, 1)
                         )}

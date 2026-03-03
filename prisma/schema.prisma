@@ -29,6 +29,7 @@ model User {
   lotes                   Lote[]
   sentMessages            Message[]                      @relation("SentMessages")
   notificaciones          Notification[]
+  notificacionesEnviadas  Notification[]                 @relation("NotificationSender")
   pagosGarantias          PagoGarantia[]
   penalidadesCreadas      Penalidad[]                    @relation("PenalidadAdmin")
   penalidades             Penalidad[]                    @relation("PenalidadTecnico")
@@ -321,16 +322,19 @@ model ModelColorReference {
 }
 
 model Notification {
-  id         Int       @id @default(autoincrement())
-  tecnicoId  Int       @map("tecnico_id")
-  tipo       String    @db.VarChar(50)
-  titulo     String    @db.VarChar(200)
-  mensaje    String
-  monto      Float?
-  loteCodigo String?   @map("lote_codigo") @db.VarChar(32)
-  leida      Boolean?
-  fecha      DateTime? @db.Timestamp(6)
-  tecnico    User      @relation(fields: [tecnicoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id           Int       @id @default(autoincrement())
+  tecnicoId    Int       @map("tecnico_id")
+  tipo         String    @db.VarChar(50)
+  titulo       String    @db.VarChar(200)
+  mensaje      String
+  monto        Float?
+  loteCodigo   String?   @map("lote_codigo") @db.VarChar(32)
+  fromUserId   Int?      @map("from_user_id")
+  redirectUrl  String?   @map("redirect_url") @db.VarChar(255)
+  leida        Boolean?
+  fecha        DateTime? @db.Timestamp(6)
+  tecnico      User      @relation(fields: [tecnicoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sender       User?     @relation("NotificationSender", fields: [fromUserId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@map("notification")
 }

@@ -85,10 +85,20 @@ export async function getQCDashboardData() {
 
         // helper to get ranking data
         const getRanking = async (since?: Date, limit: number = 5) => {
+            const adminUsers = await prisma.user.findMany({
+                where: { role: 'admin' },
+                select: { id: true }
+            });
+            const adminIds = adminUsers.map(u => u.id);
+
             const query = await prisma.equipoHistorial.groupBy({
                 by: ['userId'],
                 where: {
                     estado: 'Revisado',
+                    userId: {
+                        not: null,
+                        notIn: adminIds
+                    }, // Exclude records without a user and administrators
                     ...(since ? { fecha: { gte: since } } : {})
                 },
                 _count: { id: true },
@@ -104,11 +114,21 @@ export async function getQCDashboardData() {
 
             return query.map(q => {
                 const user = users.find(u => u.id === q.userId);
+
+                // Helper to get image URL similar to lib/utils
+                const getImageUrl = (img: string | null | undefined) => {
+                    if (!img) return null;
+                    if (img.startsWith('http')) return img;
+                    // Get only the filename if it's a path, and point to /profile_images/
+                    const filename = img.split(/[/\\]/).pop();
+                    return `/profile_images/${filename}`;
+                };
+
                 return {
                     tecnico: {
-                        name: user?.name,
+                        name: user?.name || user?.username || "Técnico",
                         username: user?.username,
-                        profileImage: user?.profileImage
+                        profileImage: getImageUrl(user?.profileImage)
                     },
                     count: q._count.id
                 };
