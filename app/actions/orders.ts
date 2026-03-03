@@ -7,6 +7,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
 const CreateOrderSchema = z.object({
+    clienteNombre: z.string().optional().nullable(),
     clienteId: z.coerce.number().optional().nullable(),
     detalle: z.string().min(5, "El detalle del pedido debe tener al menos 5 caracteres"),
     observaciones: z.string().optional().nullable(),
@@ -21,7 +22,7 @@ export async function createOrder(data: z.infer<typeof CreateOrderSchema>) {
         return { success: false, error: "Datos inválidos: " + result.error.issues.map(i => i.message).join(", ") };
     }
 
-    const { clienteId, detalle, observaciones } = result.data;
+    const { clienteId, clienteNombre, detalle, observaciones } = result.data;
 
     try {
         const order = await prisma.$transaction(async (tx) => {
@@ -33,6 +34,7 @@ export async function createOrder(data: z.infer<typeof CreateOrderSchema>) {
             const newOrder = await tx.order.create({
                 data: {
                     codigo,
+                    clienteNombre: clienteNombre || null,
                     clienteId: clienteId || null,
                     usuarioId: Number(session.user.id),
                     detalle,

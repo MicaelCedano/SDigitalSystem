@@ -504,6 +504,7 @@ model system_setting {
 model Order {
   id                 Int            @id @default(autoincrement())
   codigo             String?        @unique @db.VarChar(32)
+  clienteNombre      String?        @map("cliente_nombre") @db.VarChar(100)
   clienteId          Int?           @map("client_id")
   usuarioId          Int            @map("usuario_id")
   status             String         @default("PENDIENTE") @db.VarChar(32) // PENDIENTE, PROCESO, LISTO, ENTREGADO, CANCELADO

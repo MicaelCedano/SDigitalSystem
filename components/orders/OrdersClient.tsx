@@ -50,7 +50,7 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
 
     // New Order Form State
     const [newOrder, setNewOrder] = useState({
-        clienteId: "",
+        clienteNombre: "",
         detalle: "",
         observaciones: ""
     });
@@ -71,7 +71,7 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
 
         setIsSubmitting(true);
         const res = await createOrder({
-            clienteId: newOrder.clienteId ? Number(newOrder.clienteId) : null,
+            clienteNombre: newOrder.clienteNombre,
             detalle: newOrder.detalle,
             observaciones: newOrder.observaciones
         });
@@ -80,7 +80,7 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
         if (res.success) {
             toast.success("Pedido registrado correctamente");
             setIsCreateModalOpen(false);
-            setNewOrder({ clienteId: "", detalle: "", observaciones: "" });
+            setNewOrder({ clienteNombre: "", detalle: "", observaciones: "" });
             router.refresh();
         } else {
             toast.error(res.error);
@@ -171,7 +171,7 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
                                                 </div>
                                                 <h3 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
                                                     <UserIcon className="h-5 w-5 text-indigo-500" />
-                                                    {order.cliente?.nombre || 'Cliente General'}
+                                                    {order.clienteNombre || order.cliente?.nombre || 'Cliente General'}
                                                 </h3>
                                                 <p className="text-slate-400 text-sm font-medium mt-1">
                                                     Pedido por: <span className="text-slate-600 font-bold">{order.usuario.name || order.usuario.username}</span>
@@ -236,21 +236,13 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
 
                     <div className="p-10 bg-slate-50 space-y-8">
                         <div className="space-y-4">
-                            <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Cliente Solicitante (Opcional)</Label>
-                            <Select
-                                value={newOrder.clienteId}
-                                onValueChange={(val) => setNewOrder(prev => ({ ...prev, clienteId: val }))}
-                            >
-                                <SelectTrigger className="h-16 rounded-2xl bg-white border-none shadow-lg shadow-slate-200/50 font-bold text-slate-700 text-lg px-8">
-                                    <SelectValue placeholder="Seleccionar Cliente..." />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-2xl border-slate-100 shadow-2xl">
-                                    <SelectItem value="0" className="font-bold py-3">Cliente General / Stock</SelectItem>
-                                    {clientes.map(c => (
-                                        <SelectItem key={c.id} value={c.id.toString()} className="font-bold py-3">{c.nombre}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Cliente Solicitante (Nombre)</Label>
+                            <Input
+                                placeholder="Escribe el nombre del cliente..."
+                                className="h-16 rounded-2xl border-none shadow-lg shadow-slate-200/50 bg-white font-bold text-slate-700 text-lg px-8 focus:ring-2 ring-indigo-500/20"
+                                value={newOrder.clienteNombre}
+                                onChange={(e) => setNewOrder(prev => ({ ...prev, clienteNombre: e.target.value }))}
+                            />
                         </div>
 
                         <div className="space-y-4">
