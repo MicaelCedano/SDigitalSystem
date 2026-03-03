@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { sendTelegramMessage } from "@/lib/telegram";
 
 const CreateOrderSchema = z.object({
     clienteNombre: z.string().optional().nullable(),
@@ -75,6 +76,16 @@ export async function createOrder(data: z.infer<typeof CreateOrderSchema>) {
         });
 
         revalidatePath("/pedidos");
+
+        // Send Telegram Notification
+        const telegramMsg = `📦 <b>NUEVO PEDIDO: ${order.codigo}</b>\n\n` +
+            `👤 <b>Técnico:</b> ${session.user.name || session.user.username}\n` +
+            `🏢 <b>Cliente:</b> ${clienteNombre || 'Cliente General'}\n` +
+            `📝 <b>Detalle:</b> ${detalle}\n` +
+            `${observaciones ? `ℹ️ <b>Nota:</b> ${observaciones}` : ''}`;
+
+        sendTelegramMessage(telegramMsg);
+
         return { success: true, orderId: order.id };
     } catch (error: any) {
         console.error("Error creating order:", error);
@@ -125,6 +136,14 @@ export async function updateOrderStatus(orderId: number, newStatus: string) {
         });
 
         revalidatePath("/pedidos");
+
+        // Send Telegram Notification for Status Change
+        const telegramMsg = `🔄 <b>ACTUALIZACIÓN DE PEDIDO: ${order.codigo}</b>\n\n` +
+            `📍 <b>Nuevo Estado:</b> ${newStatus}\n` +
+            `👤 <b>Actualizado por:</b> ${session.user.name || session.user.username}`;
+
+        sendTelegramMessage(telegramMsg);
+
         return { success: true };
     } catch (error: any) {
         console.error("Error updating order status:", error);
