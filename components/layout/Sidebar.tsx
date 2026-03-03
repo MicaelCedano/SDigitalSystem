@@ -64,8 +64,9 @@ const Sidebar = ({ initialUser, forceShow = false }: { initialUser?: any, forceS
 
     const role = user?.role?.toLowerCase() || '';
     const isAdmin = role === 'admin';
-    const isQC = role === 'control_calidad' || role === 'admin';
-    const isGarantiaTec = role === 'tecnico_garantias' || role === 'admin';
+    const isAlmacen = role === 'almacen' || user?.canManageOrders === true;
+    const isQC = role === 'control_calidad' || isAdmin;
+    const isGarantiaTec = role === 'tecnico_garantias' || isAdmin;
 
     return (
         <TooltipProvider>
@@ -135,8 +136,11 @@ const Sidebar = ({ initialUser, forceShow = false }: { initialUser?: any, forceS
                                     </div>
                                 )}
                             </div>
-                            <NavItem href="/pedidos" icon={<Package size={20} />} label="Pedidos Almacén" active={pathname === '/pedidos'} collapsed={collapsed} user={user} />
                         </div>
+                    )}
+
+                    {(isAdmin || isAlmacen) && (
+                        <NavItem href="/pedidos" icon={<Package size={20} />} label="Pedidos Almacén" active={pathname === '/pedidos'} collapsed={collapsed} user={user} />
                     )}
 
                     {(isQC || isAdmin) && (
