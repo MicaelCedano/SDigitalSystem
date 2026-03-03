@@ -46,6 +46,7 @@ export default async function UsersPage() {
             email: true,
             role: true,
             canCreateGarantias: true,
+            canManageOrders: true,
             profileImage: true,
             _count: {
                 select: {
