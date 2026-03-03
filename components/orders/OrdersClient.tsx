@@ -35,7 +35,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn, formatDateTime } from "@/lib/utils";
-import { createOrder, updateOrderStatus, deleteOrder } from "@/app/actions/orders";
+import { createOrder, updateOrderStatus, deleteOrder, testTelegram } from "@/app/actions/orders";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -133,13 +133,28 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
                         <p className="text-slate-500 font-medium">Gestiona las solicitudes activas de mercancía.</p>
                     </div>
                 </div>
-                <Button
-                    onClick={() => setIsCreateModalOpen(true)}
-                    className="h-16 px-8 rounded-[2rem] bg-indigo-600 hover:bg-indigo-700 text-white font-black text-lg shadow-xl shadow-indigo-200 transition-all hover:scale-105 active:scale-95"
-                >
-                    <Plus className="mr-2 h-6 w-6" />
-                    NUEVO PEDIDO
-                </Button>
+                <div className="flex gap-2">
+                    {session?.user?.role === 'admin' && (
+                        <Button
+                            variant="outline"
+                            onClick={async () => {
+                                const res = await testTelegram();
+                                if (res.success) toast.success("Prueba de Telegram enviada");
+                                else toast.error(`Error: ${res.error}`);
+                            }}
+                            className="rounded-xl font-bold text-[10px] uppercase tracking-wider border-slate-200"
+                        >
+                            Test Bot
+                        </Button>
+                    )}
+                    <Button
+                        onClick={() => setIsCreateModalOpen(true)}
+                        className="rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-[10px] md:text-xs tracking-[0.15em] h-12 px-8 shadow-lg shadow-indigo-100 transition-all hover:scale-105 active:scale-95 flex items-center"
+                    >
+                        <Plus className="mr-2 h-6 w-6" />
+                        NUEVO PEDIDO
+                    </Button>
+                </div>
             </div>
 
             <div className="space-y-6">

@@ -12,8 +12,8 @@ export async function sendTelegramMessage(message: string) {
     const chatId = process.env.TELEGRAM_CHAT_ID;
 
     if (!token || !chatId) {
-        console.warn("[Telegram] Bot Token o Chat ID no configurados en .env");
-        return;
+        console.warn("[Telegram] Bot Token o Chat ID no configurados");
+        return { success: false, error: "Credenciales no configuradas" };
     }
 
     try {
@@ -25,7 +25,7 @@ export async function sendTelegramMessage(message: string) {
             },
             body: JSON.stringify({
                 chat_id: chatId,
-                text: message,
+                text: message || "",
                 parse_mode: 'HTML',
             }),
         });
@@ -34,22 +34,28 @@ export async function sendTelegramMessage(message: string) {
 
         if (!response.ok) {
             console.error("[Telegram] Error de API:", data);
-            // Si el error es por el parse_mode HTML, intentamos enviarlo como texto plano
+
+            // Reintento sin HTML si falló por parseo
             if (data.description?.includes("can't parse entities")) {
-                console.log("[Telegram] Reintentando como texto plano...");
-                await fetch(url, {
+                const plainText = (message || "").replace(/<[^>]*>?/gm, '');
+                const retryResponse = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         chat_id: chatId,
-                        text: message.replace(/<[^>]*>?/gm, ''), // Quitar etiquetas HTML
+                        text: plainText,
                     }),
                 });
+                const retryData = await retryResponse.json();
+                return { success: retryResponse.ok, data: retryData };
             }
-        } else {
-            console.log("[Telegram] Mensaje enviado correctamente");
+            return { success: false, error: data.description, data };
         }
-    } catch (error) {
-        console.error("[Telegram] Error crítico al enviar mensaje:", error);
+
+        console.log("[Telegram] Mensaje enviado correctamente");
+        return { success: true, data };
+    } catch (error: any) {
+        console.error("[Telegram] Error crítico:", error);
+        return { success: false, error: error.message };
     }
 }

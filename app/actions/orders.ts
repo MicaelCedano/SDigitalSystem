@@ -172,6 +172,19 @@ export async function deleteOrder(orderId: number) {
     }
 }
 
+export async function testTelegram() {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id || session.user.role !== 'admin') {
+        return { success: false, error: "No autorizado" };
+    }
+
+    const testMsg = `🧪 <b>PRUEBA DE CONEXIÓN</b>\n\n` +
+        `Si ves esto en Vercel, las variables están configuradas correctamente.\n` +
+        `⏰ <b>Hora:</b> ${new Date().toLocaleTimeString()}`;
+
+    return await sendTelegramMessage(testMsg);
+}
+
 export async function getOrders() {
     try {
         const orders = await prisma.order.findMany({
