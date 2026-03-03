@@ -84,7 +84,7 @@ export async function createOrder(data: z.infer<typeof CreateOrderSchema>) {
             `📝 <b>Detalle:</b> ${detalle}\n` +
             `${observaciones ? `ℹ️ <b>Nota:</b> ${observaciones}` : ''}`;
 
-        sendTelegramMessage(telegramMsg);
+        await sendTelegramMessage(telegramMsg);
 
         return { success: true, orderId: order.id };
     } catch (error: any) {
@@ -142,7 +142,7 @@ export async function updateOrderStatus(orderId: number, newStatus: string) {
             `📍 <b>Nuevo Estado:</b> ${newStatus}\n` +
             `👤 <b>Actualizado por:</b> ${session.user.name || session.user.username}`;
 
-        sendTelegramMessage(telegramMsg);
+        await sendTelegramMessage(telegramMsg);
 
         return { success: true };
     } catch (error: any) {

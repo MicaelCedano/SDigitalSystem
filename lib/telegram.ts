@@ -8,6 +8,8 @@ export async function sendTelegramMessage(message: string) {
         return;
     }
 
+    console.log(`[Telegram] Intentando enviar mensaje a chat: ${chatId}`);
+
     try {
         const url = `https://api.telegram.org/bot${token}/sendMessage`;
         const response = await fetch(url, {
