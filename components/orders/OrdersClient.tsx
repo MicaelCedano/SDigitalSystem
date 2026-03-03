@@ -221,71 +221,70 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
                 )}
             </div>
 
-            {/* Create Order Dialog */}
             <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-                <DialogContent className="max-w-2xl rounded-[2.5rem] border-none p-0 overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-300">
-                    <DialogHeader className="p-10 bg-white border-b flex flex-row items-center justify-between border-slate-100">
+                <DialogContent className="max-w-xl rounded-[2rem] border-none p-0 overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-300 mx-4">
+                    <DialogHeader className="p-6 md:p-8 bg-white border-b flex flex-row items-center justify-between border-slate-100">
                         <div className="space-y-1">
-                            <DialogTitle className="text-4xl font-black text-slate-800 tracking-tighter uppercase">Nuevo Pedido</DialogTitle>
-                            <DialogDescription className="font-medium text-slate-500 text-lg">Escribe todo lo que necesitas solicitar de almacén.</DialogDescription>
+                            <DialogTitle className="text-2xl md:text-3xl font-black text-slate-800 tracking-tighter uppercase">Nuevo Pedido</DialogTitle>
+                            <DialogDescription className="font-medium text-slate-500 text-sm md:text-base">Registra tu solicitud para almacén.</DialogDescription>
                         </div>
-                        <div className="h-20 w-20 bg-indigo-50 rounded-[2rem] flex items-center justify-center text-indigo-600 shadow-inner">
-                            <FileText className="h-10 w-10 rotate-3" />
+                        <div className="h-12 w-12 md:h-16 md:w-16 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-inner">
+                            <FileText className="h-6 w-6 md:h-8 md:w-8 rotate-3" />
                         </div>
                     </DialogHeader>
 
-                    <div className="p-10 bg-slate-50 space-y-8">
-                        <div className="space-y-4">
-                            <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Cliente Solicitante (Nombre)</Label>
+                    <div className="p-6 md:p-8 bg-slate-50 space-y-6">
+                        <div className="space-y-3">
+                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Cliente Solicitante</Label>
                             <Input
-                                placeholder="Escribe el nombre del cliente..."
-                                className="h-16 rounded-2xl border-none shadow-lg shadow-slate-200/50 bg-white font-bold text-slate-700 text-lg px-8 focus:ring-2 ring-indigo-500/20"
+                                placeholder="Nombre del cliente..."
+                                className="h-12 md:h-14 rounded-xl border-none shadow-md shadow-slate-200/50 bg-white font-bold text-slate-700 text-sm md:text-base px-6 focus:ring-2 ring-indigo-500/20"
                                 value={newOrder.clienteNombre}
                                 onChange={(e) => setNewOrder(prev => ({ ...prev, clienteNombre: e.target.value }))}
                             />
                         </div>
 
-                        <div className="space-y-4">
-                            <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">¿Qué necesitas del almacén? (Equipos, Cantidades, etc.)</Label>
+                        <div className="space-y-3">
+                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Detalle del Pedido</Label>
                             <Textarea
-                                placeholder="Ej: 5 iPhone 13 128GB Azul, 3 Samsung S22 Ultra..."
-                                className="rounded-[2rem] border-none shadow-lg shadow-slate-200/50 bg-white min-h-[180px] font-bold p-8 text-lg text-slate-700 placeholder:text-slate-300 focus:ring-2 ring-indigo-500/20"
+                                placeholder="Ej: 5 iPhone 13, 3 Samsung S22..."
+                                className="rounded-2xl border-none shadow-md shadow-slate-200/50 bg-white min-h-[120px] md:min-h-[150px] font-bold p-6 text-sm md:text-base text-slate-700 placeholder:text-slate-300 focus:ring-2 ring-indigo-500/20"
                                 value={newOrder.detalle}
                                 onChange={(e) => setNewOrder(prev => ({ ...prev, detalle: e.target.value }))}
                             />
                         </div>
 
-                        <div className="space-y-4">
-                            <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Notas u Observaciones (Opcional)</Label>
+                        <div className="space-y-3">
+                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Observaciones (Opcional)</Label>
                             <Input
-                                placeholder="Nota interna..."
-                                className="h-14 rounded-2xl border-none shadow-md shadow-slate-100 bg-white/80 font-medium px-6 focus:bg-white transition-colors"
+                                placeholder="Nota rápida..."
+                                className="h-12 rounded-xl border-none shadow-sm shadow-slate-100 bg-white/80 font-medium px-6 focus:bg-white transition-colors text-sm"
                                 value={newOrder.observaciones}
                                 onChange={(e) => setNewOrder(prev => ({ ...prev, observaciones: e.target.value }))}
                             />
                         </div>
                     </div>
 
-                    <DialogFooter className="p-10 bg-white border-t border-slate-100 flex items-center justify-between sm:justify-between">
+                    <DialogFooter className="p-6 md:p-8 bg-white border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
                         <Button
                             variant="ghost"
                             onClick={() => setIsCreateModalOpen(false)}
-                            className="rounded-full font-black text-sm uppercase tracking-[0.2em] text-slate-400 hover:text-slate-600 h-14 px-10"
+                            className="w-full sm:w-auto rounded-full font-black text-xs uppercase tracking-[0.2em] text-slate-400 hover:text-slate-600 h-12 px-8"
                         >
                             CANCELAR
                         </Button>
                         <Button
                             onClick={handleSubmitOrder}
                             disabled={isSubmitting}
-                            className="h-16 px-12 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-lg shadow-xl shadow-indigo-100 transition-all hover:scale-105 active:scale-95"
+                            className="w-full sm:w-auto h-14 md:h-16 px-10 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-base md:text-lg shadow-xl shadow-indigo-100 transition-all hover:scale-105 active:scale-95"
                         >
                             {isSubmitting ? (
                                 <>
-                                    <Loader2 className="mr-2 h-6 w-6 animate-spin" />
-                                    REGISTRANDO...
+                                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                    ENVIANDO...
                                 </>
                             ) : (
-                                "CONFIRMAR SOLICITUD"
+                                "CONFIRMAR"
                             )}
                         </Button>
                     </DialogFooter>
