@@ -12,26 +12,18 @@ export async function POST(req: Request) {
         if (body.message && body.message.text) {
             const { text, chat, from, message_id } = body.message;
 
-            if (text.startsWith('/start') || text.startsWith('/ayuda') || text.startsWith('/menu')) {
-                const helpMsg = `👋 <b>¡Hola! Soy el asistente de SDigital.</b>\n\n` +
-                    `Puedes gestionar pedidos directamente desde aquí:\n\n` +
-                    `✨ <b>NUEVO:</b> Ahora puedes usar nuestra <b>Mini App</b> para una experiencia más cómoda:\n\n` +
-                    `📝 <b>Formato de comando:</b>\n` +
-                    `<code>/pedido Cliente | Detalle</code>`;
+            if (text.startsWith('/start') || text.startsWith('/ayuda')) {
+                const helpMsg = `👋 <b>Asistente de SDigital</b>\n\n` +
+                    `Usa el botón azul <b>"🛍️ CREAR PEDIDO"</b> que aparece abajo a la izquierda para gestionar tus pedidos de forma rápida y segura.`;
 
                 const buttons = [
                     [
                         {
-                            text: "📝 PONGA LA ORDEN",
+                            text: "📝 ABRIR FORMULARIO",
                             web_app: { url: "https://sdigitalsystem.vercel.app/pedidos/nuevo" }
                         }
                     ]
                 ];
-
-                const keyboard = {
-                    keyboard: [[{ text: "/pedido " }], [{ text: "/ayuda" }]],
-                    resize_keyboard: true
-                };
 
                 await sendTelegramMessage(helpMsg, buttons);
                 return NextResponse.json({ ok: true });
