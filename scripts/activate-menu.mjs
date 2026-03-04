@@ -6,7 +6,12 @@ const url = `https://api.telegram.org/bot${token}/sendMessage`;
 
 const menuKeyboard = {
     keyboard: [
-        [{ text: "/pedido " }],
+        [
+            {
+                text: "📝 PONGA LA ORDEN",
+                web_app: { url: "https://sdigitalsystem.vercel.app/pedidos/nuevo" }
+            }
+        ],
         [{ text: "/ayuda" }]
     ],
     resize_keyboard: true

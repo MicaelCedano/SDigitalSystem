@@ -15,17 +15,25 @@ export async function POST(req: Request) {
             if (text.startsWith('/start') || text.startsWith('/ayuda') || text.startsWith('/menu')) {
                 const helpMsg = `👋 <b>¡Hola! Soy el asistente de SDigital.</b>\n\n` +
                     `Puedes gestionar pedidos directamente desde aquí:\n\n` +
-                    `📝 <b>Para crear un pedido usa los botones de abajo o escribe:</b>\n` +
-                    `<code>/pedido Cliente | Detalle del pedido</code>\n\n` +
-                    `<i>Ejemplo:</i>\n` +
-                    `<code>/pedido Juan Perez | 2 iPhone 13, 1 S22</code>`;
+                    `✨ <b>NUEVO:</b> Ahora puedes usar nuestra <b>Mini App</b> para una experiencia más cómoda:\n\n` +
+                    `📝 <b>Formato de comando:</b>\n` +
+                    `<code>/pedido Cliente | Detalle</code>`;
+
+                const buttons = [
+                    [
+                        {
+                            text: "📝 PONGA LA ORDEN",
+                            web_app: { url: "https://sdigitalsystem.vercel.app/pedidos/nuevo" }
+                        }
+                    ]
+                ];
 
                 const keyboard = {
                     keyboard: [[{ text: "/pedido " }], [{ text: "/ayuda" }]],
                     resize_keyboard: true
                 };
 
-                await sendTelegramMessage(helpMsg, keyboard);
+                await sendTelegramMessage(helpMsg, buttons);
                 return NextResponse.json({ ok: true });
             }
 
@@ -33,8 +41,17 @@ export async function POST(req: Request) {
                 const content = text.replace('/pedido ', '').trim();
                 const parts = content.split('|');
 
-                if (parts.length < 2) {
-                    await sendTelegramMessage("❌ <b>Formato incorrecto.</b>\nUsa: <code>/pedido Cliente | Detalle</code>");
+                if (content.length === 0 || parts.length < 2) {
+                    const helpMsg = `✨ <b>Usa nuestra Mini App para crear pedidos más rápido:</b>`;
+                    const buttons = [
+                        [
+                            {
+                                text: "📝 PONGA LA ORDEN",
+                                web_app: { url: "https://sdigitalsystem.vercel.app/pedidos/nuevo" }
+                            }
+                        ]
+                    ];
+                    await sendTelegramMessage(helpMsg, buttons);
                     return NextResponse.json({ ok: true });
                 }
 
