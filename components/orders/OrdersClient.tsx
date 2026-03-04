@@ -304,52 +304,52 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
             </div>
 
             <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-                <DialogContent className="max-w-5xl w-[95vw] rounded-[2.5rem] border-none p-0 overflow-hidden shadow-2xl bg-white focus:outline-none">
+                <DialogContent className="max-w-4xl w-[95vw] rounded-[2.5rem] border-none p-0 overflow-hidden shadow-2xl bg-white focus:outline-none">
                     {selectedOrder && (
-                        <div className="flex flex-col h-full max-h-[90vh]">
+                        <div className="flex flex-col h-full max-h-[85vh]">
                             {/* Header Section */}
-                            <div className="p-8 md:p-10 bg-white border-b border-slate-100 relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-600/5 rounded-full blur-3xl -mr-32 -mt-32"></div>
-                                <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-600/5 rounded-full blur-3xl -ml-20 -mb-20"></div>
+                            <div className="p-6 md:p-8 bg-white border-b border-slate-100 relative overflow-hidden shrink-0">
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/5 rounded-full blur-3xl -mr-24 -mt-24"></div>
+                                <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-600/5 rounded-full blur-3xl -ml-16 -mb-16"></div>
 
-                                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
-                                    <div className="flex items-center gap-8">
+                                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
+                                    <div className="flex items-center gap-6">
                                         <div className={cn(
-                                            "h-20 w-20 rounded-3xl flex items-center justify-center shadow-xl shadow-slate-200 border border-slate-50 transition-transform hover:rotate-3",
+                                            "h-16 w-16 rounded-2xl flex items-center justify-center shadow-lg shadow-slate-100 border border-slate-50 transition-transform hover:rotate-3",
                                             selectedOrder.status === 'LISTO' ? 'bg-emerald-50 text-emerald-600' :
                                                 selectedOrder.status === 'PROCESO' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-600'
                                         )}>
                                             {(() => {
                                                 const Icon = statusConfig[selectedOrder.status].icon;
-                                                return <Icon className="h-10 w-10" />;
+                                                return <Icon className="h-8 w-8" />;
                                             })()}
                                         </div>
                                         <div>
-                                            <div className="flex flex-wrap items-center gap-3 mb-2">
-                                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Expediente</span>
-                                                <span className="bg-slate-900 text-white text-[11px] font-bold px-3 py-1 rounded-lg font-mono tracking-widest">
+                                            <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                                                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Expediente</span>
+                                                <span className="bg-slate-900 text-white text-[10px] font-bold px-2 py-0.5 rounded font-mono tracking-widest">
                                                     {selectedOrder.codigo}
                                                 </span>
-                                                <Badge className={cn("rounded-full font-black text-[10px] uppercase px-4 py-1.5 border-none shadow-sm ml-2", statusConfig[selectedOrder.status].color)}>
+                                                <Badge className={cn("rounded-full font-black text-[9px] uppercase px-3 py-1 border-none shadow-sm ml-1", statusConfig[selectedOrder.status].color)}>
                                                     {statusConfig[selectedOrder.status].label}
                                                 </Badge>
                                             </div>
-                                            <h2 className="text-3xl md:text-5xl font-black tracking-tighter text-slate-800 leading-none">
+                                            <h2 className="text-xl md:text-2xl font-black tracking-tighter text-slate-800 leading-tight">
                                                 {selectedOrder.clienteNombre || selectedOrder.cliente?.nombre || 'Cliente General'}
                                             </h2>
-                                            <div className="flex flex-wrap items-center gap-x-8 gap-y-2 mt-4">
+                                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2.5">
                                                 <div className="flex flex-col">
-                                                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">Solicitado por</span>
-                                                    <div className="flex items-center gap-2 text-slate-600 text-sm font-bold">
-                                                        <UserIcon className="h-4 w-4 text-indigo-500" />
+                                                    <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400 mb-0.5">Solicitado por</span>
+                                                    <div className="flex items-center gap-1.5 text-slate-600 text-[12px] font-bold">
+                                                        <UserIcon className="h-3 w-3 text-indigo-500" />
                                                         {selectedOrder.usuario.name || selectedOrder.usuario.username}
                                                     </div>
                                                 </div>
-                                                <div className="h-8 w-px bg-slate-100 hidden md:block"></div>
+                                                <div className="h-5 w-px bg-slate-100 hidden md:block"></div>
                                                 <div className="flex flex-col">
-                                                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">Fecha de Registro</span>
-                                                    <div className="flex items-center gap-2 text-slate-600 text-sm font-bold">
-                                                        <Clock className="h-4 w-4 text-indigo-500" />
+                                                    <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400 mb-0.5">Fecha de Registro</span>
+                                                    <div className="flex items-center gap-1.5 text-slate-600 text-[12px] font-bold">
+                                                        <Clock className="h-3 w-3 text-indigo-500" />
                                                         {formatDateTime(selectedOrder.fechaCreacion)}
                                                     </div>
                                                 </div>
@@ -363,41 +363,41 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
                                                 handleStatusUpdate(selectedOrder.id, selectedOrder.status);
                                                 setIsDetailsOpen(false);
                                             }}
-                                            className="h-16 px-10 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm shadow-2xl shadow-indigo-200 transition-all hover:scale-105 active:scale-95 group shrink-0"
+                                            className="h-12 px-6 rounded-xl bg-slate-900 hover:bg-black text-white font-black text-[10px] tracking-widest shadow-lg shadow-slate-200 transition-all hover:scale-105 active:scale-95 group shrink-0"
                                         >
                                             {selectedOrder.status === 'PENDIENTE' && 'ACEPTAR PEDIDO'}
                                             {selectedOrder.status === 'PROCESO' && 'MARCAR COMO LISTO'}
                                             {selectedOrder.status === 'LISTO' && 'ENTREGAR MERCANCIA'}
-                                            <ArrowRight className="ml-3 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                                            <ArrowRight className="ml-2 h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
                                         </Button>
                                     )}
                                 </div>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 md:p-10 bg-slate-50/50">
-                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+                            <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 md:p-8 bg-slate-50/50">
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
                                     {/* Left Side: Order Items/Detail */}
-                                    <div className="lg:col-span-12 xl:col-span-7 flex">
-                                        <div className="bg-white rounded-[2.5rem] p-8 md:p-10 shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col w-full relative overflow-hidden group">
-                                            <div className="absolute -top-8 -right-8 w-32 h-32 bg-indigo-600/5 rounded-full transition-transform group-hover:scale-110"></div>
+                                    <div className="flex">
+                                        <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col w-full relative overflow-hidden group">
+                                            <div className="absolute -top-8 -right-8 w-24 h-24 bg-indigo-600/5 rounded-full transition-transform group-hover:scale-110"></div>
 
-                                            <div className="flex items-center justify-between mb-8 relative z-10">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-100">
-                                                        <ShoppingBag className="w-7 h-7" />
+                                            <div className="flex items-center justify-between mb-5 relative z-10">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-50">
+                                                        <ShoppingBag className="w-5 h-5" />
                                                     </div>
                                                     <div>
-                                                        <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Desglose Técnico</h3>
-                                                        <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mt-0.5">Especificaciones del Pedido</p>
+                                                        <h3 className="text-base font-black text-slate-800 uppercase tracking-tight">Desglose Técnico</h3>
+                                                        <p className="text-[8px] text-slate-400 font-black uppercase tracking-[0.2em] mt-0.5">Especificaciones</p>
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            <div className="bg-slate-50/80 rounded-[2rem] p-8 md:p-10 border border-slate-100 relative min-h-[200px] flex-1">
-                                                <div className="absolute top-6 right-8 opacity-[0.03]">
-                                                    <Plus className="w-24 h-24 text-slate-900" />
+                                            <div className="bg-slate-50/80 rounded-2xl p-5 border border-slate-100 relative min-h-[100px] flex-1">
+                                                <div className="absolute top-4 right-6 opacity-[0.03]">
+                                                    <Plus className="w-10 h-10 text-slate-900" />
                                                 </div>
-                                                <div className="text-slate-800 text-xl md:text-2xl font-black leading-relaxed whitespace-pre-wrap font-mono tracking-tighter relative z-10">
+                                                <div className="text-slate-800 text-[13px] md:text-sm font-bold leading-relaxed whitespace-pre-wrap break-words tracking-tight relative z-10">
                                                     {selectedOrder.detalle}
                                                 </div>
                                             </div>
@@ -417,40 +417,40 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
                                     </div>
 
                                     {/* Right Side: Timeline/History */}
-                                    <div className="lg:col-span-12 xl:col-span-5 flex">
-                                        <div className="bg-white rounded-[2.5rem] p-8 md:p-10 shadow-xl shadow-slate-200/40 border border-slate-100 w-full relative overflow-hidden group">
-                                            <div className="absolute -top-8 -right-8 w-32 h-32 bg-slate-900/5 rounded-full transition-transform group-hover:scale-110"></div>
+                                    <div className="flex">
+                                        <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-xl shadow-slate-200/40 border border-slate-100 w-full relative overflow-hidden group">
+                                            <div className="absolute -top-8 -right-8 w-24 h-24 bg-slate-900/5 rounded-full transition-transform group-hover:scale-110"></div>
 
-                                            <div className="flex items-center gap-4 mb-10 relative z-10">
-                                                <div className="w-14 h-14 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-slate-200">
-                                                    <History className="w-7 h-7" />
+                                            <div className="flex items-center gap-3 mb-6 relative z-10">
+                                                <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white shadow-lg shadow-slate-100">
+                                                    <History className="w-5 h-5" />
                                                 </div>
                                                 <div>
-                                                    <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Actividad</h3>
-                                                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mt-0.5">Seguimiento de tiempos</p>
+                                                    <h3 className="text-base font-black text-slate-800 uppercase tracking-tight">Actividad</h3>
+                                                    <p className="text-[8px] text-slate-400 font-black uppercase tracking-[0.2em] mt-0.5">Tiempos</p>
                                                 </div>
                                             </div>
 
-                                            <div className="relative space-y-8 before:absolute before:inset-0 before:ml-[27px] before:-translate-x-px before:h-full before:w-1 before:bg-slate-100 before:rounded-full">
+                                            <div className="relative space-y-4 before:absolute before:inset-0 before:ml-[19px] before:-translate-x-px before:h-full before:w-1 before:bg-slate-100 before:rounded-full">
                                                 {selectedOrder.historial?.map((item: any, idx: number) => (
-                                                    <div key={item.id} className="relative flex items-start gap-8 pl-14">
+                                                    <div key={item.id} className="relative flex items-start gap-4 pl-10">
                                                         <div className={cn(
-                                                            "absolute left-0 mt-0.5 h-14 w-14 rounded-2xl border-4 border-white flex items-center justify-center -translate-x-px shadow-xl z-10 transition-all group/item hover:scale-110",
+                                                            "absolute left-0 mt-0.5 h-10 w-10 rounded-xl border-4 border-white flex items-center justify-center -translate-x-px shadow-md z-10 transition-all hover:scale-105",
                                                             idx === 0 ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-400"
                                                         )}>
-                                                            <div className={cn("h-2.5 w-2.5 rounded-full bg-current", idx === 0 && "animate-pulse")} />
+                                                            <div className={cn("h-1.5 w-1.5 rounded-full bg-current", idx === 0 && "animate-pulse")} />
                                                         </div>
-                                                        <div className="pt-1">
+                                                        <div className="pt-0.5">
                                                             <div className="flex flex-col gap-0.5">
-                                                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Estado</span>
-                                                                <p className="text-[13px] font-black text-slate-800 uppercase tracking-tight leading-none mb-2">{item.estadoNuevo}</p>
+                                                                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Estado</span>
+                                                                <p className="text-[12px] font-black text-slate-800 uppercase tracking-tight leading-none mb-1.5">{item.estadoNuevo}</p>
                                                             </div>
-                                                            <div className="flex flex-col gap-1 mt-3">
-                                                                <p className="text-[11px] text-slate-500 font-bold flex items-center gap-2">
-                                                                    <div className="h-1 w-1 rounded-full bg-slate-300" />
+                                                            <div className="flex flex-col gap-1 mt-2">
+                                                                <p className="text-[11px] text-slate-500 font-bold flex items-center gap-1.5">
+                                                                    <div className="h-1 w-1 rounded-full bg-slate-200" />
                                                                     {item.usuario.name || item.usuario.username}
                                                                 </p>
-                                                                <p className="text-[10px] text-indigo-500 font-black uppercase tracking-widest">
+                                                                <p className="text-[10px] text-indigo-400 font-black uppercase tracking-widest">
                                                                     {formatDateTime(item.fecha)}
                                                                 </p>
                                                             </div>
@@ -463,31 +463,31 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
                                 </div>
                             </div>
 
-                            <DialogFooter className="p-8 md:p-10 bg-white border-t border-slate-100 flex flex-wrap md:flex-nowrap items-center justify-between gap-6">
-                                <div className="flex gap-4 w-full md:w-auto">
+                            <DialogFooter className="p-4 md:p-6 bg-white border-t border-slate-100 flex flex-nowrap items-center justify-between gap-4 shrink-0">
+                                <div className="flex gap-2">
                                     {session?.user?.role === 'admin' && (
                                         <Button
                                             variant="ghost"
                                             onClick={() => handleDeleteOrder(selectedOrder.id)}
-                                            className="flex-1 md:flex-none rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] text-rose-500 hover:text-rose-600 hover:bg-rose-50 h-16 px-8 border border-transparent hover:border-rose-100 transition-all flex items-center justify-center gap-2"
+                                            className="rounded-xl font-black text-[9px] uppercase tracking-[0.2em] text-rose-500 hover:text-rose-600 hover:bg-rose-50 h-12 px-4 border border-transparent hover:border-rose-100 transition-all flex items-center justify-center gap-1.5"
                                         >
-                                            <Trash2 className="h-5 w-5" />
+                                            <Trash2 className="h-3.5 w-3.5" />
                                             <span>ELIMINAR</span>
                                         </Button>
                                     )}
                                     <Button
                                         variant="ghost"
                                         onClick={() => setIsDetailsOpen(false)}
-                                        className="flex-1 md:flex-none rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] text-slate-400 hover:text-slate-600 hover:bg-slate-50 h-16 px-10 border border-transparent hover:border-slate-100 transition-all"
+                                        className="rounded-xl font-black text-[9px] uppercase tracking-[0.2em] text-slate-400 hover:text-slate-600 hover:bg-slate-50 h-12 px-6 border border-transparent hover:border-slate-100 transition-all font-bold"
                                     >
                                         CERRAR
                                     </Button>
                                 </div>
                                 <Button
-                                    className="w-full md:w-auto rounded-2xl bg-slate-900 hover:bg-black text-white font-black text-[11px] uppercase tracking-[0.2em] h-16 px-12 shadow-2xl shadow-slate-900/20 transition-all hover:scale-105 flex items-center justify-center gap-3 shrink-0"
+                                    className="rounded-xl bg-slate-900 hover:bg-black text-white font-black text-[9px] uppercase tracking-[0.2em] h-12 px-8 shadow-lg shadow-slate-900/10 transition-all hover:scale-105 flex items-center justify-center gap-2 shrink-0"
                                     onClick={() => window.print()}
                                 >
-                                    <Printer className="h-5 w-5" />
+                                    <Printer className="h-3.5 w-3.5" />
                                     <span>IMPRIMIR</span>
                                 </Button>
                             </DialogFooter>
