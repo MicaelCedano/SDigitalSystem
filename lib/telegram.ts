@@ -25,9 +25,14 @@ export async function sendTelegramMessage(message: string, buttons?: any) {
         };
 
         if (buttons) {
-            body.reply_markup = {
-                inline_keyboard: buttons
-            };
+            // Check if it's already a full reply_markup object or just an array for inline_keyboard
+            if (buttons.inline_keyboard || buttons.keyboard) {
+                body.reply_markup = buttons;
+            } else {
+                body.reply_markup = {
+                    inline_keyboard: buttons
+                };
+            }
         }
 
         const response = await fetch(url, {

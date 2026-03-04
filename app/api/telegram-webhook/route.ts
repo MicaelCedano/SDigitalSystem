@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { editTelegramMessage, answerCallbackQuery, escapeHTML } from "@/lib/telegram";
+import { sendTelegramMessage, editTelegramMessage, answerCallbackQuery, escapeHTML } from "@/lib/telegram";
 
 export async function POST(req: Request) {
     try {
@@ -8,6 +8,87 @@ export async function POST(req: Request) {
 
         // Log update for debugging
         console.log("[Telegram Webhook] Recibido:", JSON.stringify(body, null, 2));
+
+        if (body.message && body.message.text) {
+            const { text, chat, from, message_id } = body.message;
+
+            if (text.startsWith('/start') || text.startsWith('/ayuda') || text.startsWith('/menu')) {
+                const helpMsg = `👋 <b>¡Hola! Soy el asistente de SDigital.</b>\n\n` +
+                    `Puedes gestionar pedidos directamente desde aquí:\n\n` +
+                    `📝 <b>Para crear un pedido usa los botones de abajo o escribe:</b>\n` +
+                    `<code>/pedido Cliente | Detalle del pedido</code>\n\n` +
+                    `<i>Ejemplo:</i>\n` +
+                    `<code>/pedido Juan Perez | 2 iPhone 13, 1 S22</code>`;
+
+                const keyboard = {
+                    keyboard: [[{ text: "/pedido " }], [{ text: "/ayuda" }]],
+                    resize_keyboard: true
+                };
+
+                await sendTelegramMessage(helpMsg, keyboard);
+                return NextResponse.json({ ok: true });
+            }
+
+            if (text.startsWith('/pedido ')) {
+                const content = text.replace('/pedido ', '').trim();
+                const parts = content.split('|');
+
+                if (parts.length < 2) {
+                    await sendTelegramMessage("❌ <b>Formato incorrecto.</b>\nUsa: <code>/pedido Cliente | Detalle</code>");
+                    return NextResponse.json({ ok: true });
+                }
+
+                const clienteNombre = parts[0].trim();
+                const detalle = parts[1].trim();
+
+                try {
+                    // Try to find a user to associate this with (using the first admin for now or linking by telegram)
+                    const admin = await prisma.user.findFirst({ where: { role: 'admin' } });
+                    if (!admin) throw new Error("No hay un administrador configurado para procesar este pedido.");
+
+                    const result = await prisma.$transaction(async (tx) => {
+                        const count = await (tx as any).order.count();
+                        const year = new Date().getFullYear();
+                        const codigo = `PED-${year}-${(count + 1).toString().padStart(4, '0')}`;
+
+                        const order = await (tx as any).order.create({
+                            data: {
+                                codigo,
+                                clienteNombre,
+                                detalle,
+                                usuarioId: admin.id,
+                                status: 'PENDIENTE'
+                            }
+                        });
+
+                        await (tx as any).orderHistory.create({
+                            data: {
+                                orderId: order.id,
+                                estadoAnterior: null,
+                                estadoNuevo: 'PENDIENTE',
+                                usuarioId: admin.id
+                            }
+                        });
+
+                        return order;
+                    });
+
+                    const successMsg = `✅ <b>PEDIDO CREADO: ${result.codigo}</b>\n\n` +
+                        `👤 <b>Por:</b> ${from.first_name} (Telegram)\n` +
+                        `🏢 <b>Cliente:</b> ${clienteNombre}\n` +
+                        `📝 <b>Detalle:</b>\n${detalle}`;
+
+                    const buttons = [
+                        [{ text: "✅ ACEPTAR PEDIDO", callback_data: `update_status:${result.id}:PROCESO` }]
+                    ];
+
+                    await sendTelegramMessage(successMsg, buttons);
+                } catch (e: any) {
+                    await sendTelegramMessage(`❌ <b>Error al crear pedido:</b> ${e.message}`);
+                }
+                return NextResponse.json({ ok: true });
+            }
+        }
 
         if (body.callback_query) {
             const { id, data, message, from } = body.callback_query;
@@ -22,7 +103,7 @@ export async function POST(req: Request) {
                 }
 
                 // Get order to check current status and details
-                const order = await prisma.order.findUnique({
+                const order = await (prisma as any).order.findUnique({
                     where: { id: orderId },
                     include: {
                         usuario: true,
@@ -45,12 +126,12 @@ export async function POST(req: Request) {
 
                 // Perform the update
                 await prisma.$transaction(async (tx) => {
-                    await tx.order.update({
+                    await (tx as any).order.update({
                         where: { id: orderId },
                         data: { status: newStatus }
                     });
 
-                    await tx.orderHistory.create({
+                    await (tx as any).orderHistory.create({
                         data: {
                             orderId: orderId,
                             estadoAnterior: order.status,
