@@ -96,7 +96,7 @@ export const authOptions: NextAuthOptions = {
                 token.id = user.id;
                 token.role = user.role;
                 token.username = user.username;
-                token.image = user.image ?? undefined;
+                token.image = (user as any).image || undefined;
                 token.canCreateGarantias = (user as any).canCreateGarantias;
                 token.canManageOrders = (user as any).canManageOrders;
             }
