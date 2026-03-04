@@ -81,7 +81,7 @@ export async function createOrder(data: z.infer<typeof CreateOrderSchema>) {
         const telegramMsg = `📦 <b>NUEVO PEDIDO: ${order.codigo}</b>\n\n` +
             `👤 <b>Técnico:</b> ${escapeHTML(session.user.name || session.user.username)}\n` +
             `🏢 <b>Cliente:</b> ${escapeHTML(clienteNombre || 'Cliente General')}\n` +
-            `📝 <b>Detalle:</b> ${escapeHTML(detalle)}\n` +
+            `📝 <b>Detalle:</b>\n${escapeHTML(detalle)}\n` +
             `${observaciones ? `ℹ️ <b>Nota:</b> ${escapeHTML(observaciones)}` : ''}`;
 
         console.log(`[Orders] Enviando notificación a Telegram para pedido: ${order.codigo}`);
