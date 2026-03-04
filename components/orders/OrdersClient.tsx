@@ -17,7 +17,8 @@ import {
     ArrowRight,
     Loader2,
     FileText,
-    Trash2
+    Trash2,
+    Printer
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -305,37 +306,38 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
                     {selectedOrder && (
                         <div className="flex flex-col h-full max-h-[90vh]">
                             {/* Header Section */}
-                            <div className="p-6 md:p-8 bg-slate-900 text-white relative">
-                                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                                    <div className="flex items-center gap-5">
+                            <div className="p-8 md:p-10 bg-slate-900 text-white relative">
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
+                                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+                                    <div className="flex items-center gap-6">
                                         <div className={cn(
-                                            "h-14 w-14 md:h-16 md:w-16 rounded-2xl flex items-center justify-center shadow-lg bg-white/10 backdrop-blur-md",
+                                            "h-16 w-16 md:h-20 md:w-20 rounded-[2rem] flex items-center justify-center shadow-2xl bg-white/10 backdrop-blur-md border border-white/10",
                                             statusConfig[selectedOrder.status].color.split(' ')[0].replace('bg-', 'text-')
                                         )}>
                                             {(() => {
                                                 const Icon = statusConfig[selectedOrder.status].icon;
-                                                return <Icon className="h-7 w-7 md:h-8 md:w-8" />;
+                                                return <Icon className="h-8 w-8 md:h-10 md:w-10" />;
                                             })()}
                                         </div>
                                         <div>
-                                            <div className="flex flex-wrap items-center gap-2 mb-1.5 md:mb-2">
-                                                <Badge className="bg-white/20 hover:bg-white/30 text-white border-none font-mono px-2 py-0.5 rounded text-[10px] md:text-xs tracking-tighter">
+                                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                                                <Badge className="bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 font-mono px-2 py-0.5 rounded text-[10px] md:text-sm tracking-widest font-bold">
                                                     {selectedOrder.codigo}
                                                 </Badge>
-                                                <Badge className={cn("rounded-full font-black text-[9px] md:text-[10px] uppercase px-3 py-0.5 border-none", statusConfig[selectedOrder.status].color)}>
+                                                <Badge className={cn("rounded-full font-black text-[10px] uppercase px-4 py-1 border-none shadow-sm", statusConfig[selectedOrder.status].color)}>
                                                     {statusConfig[selectedOrder.status].label}
                                                 </Badge>
                                             </div>
-                                            <h2 className="text-xl md:text-3xl font-black tracking-tight leading-tight text-white line-clamp-1">
+                                            <h2 className="text-2xl md:text-4xl font-black tracking-tighter leading-tight text-white">
                                                 {selectedOrder.clienteNombre || selectedOrder.cliente?.nombre || 'Cliente General'}
                                             </h2>
-                                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 md:mt-2">
-                                                <div className="flex items-center gap-1.5 text-white/60 text-[10px] md:text-xs font-bold uppercase tracking-wider">
-                                                    <UserIcon className="h-3 md:h-3.5 w-3 md:w-3.5" />
+                                            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-3">
+                                                <div className="flex items-center gap-2 text-white/50 text-[11px] md:text-xs font-black uppercase tracking-[0.2em]">
+                                                    <UserIcon className="h-4 w-4 text-indigo-400" />
                                                     {selectedOrder.usuario.name || selectedOrder.usuario.username}
                                                 </div>
-                                                <div className="flex items-center gap-1.5 text-white/60 text-[10px] md:text-xs font-bold uppercase tracking-wider">
-                                                    <Clock className="h-3 md:h-3.5 w-3 md:w-3.5" />
+                                                <div className="flex items-center gap-2 text-white/50 text-[11px] md:text-xs font-black uppercase tracking-[0.2em]">
+                                                    <Clock className="h-4 w-4 text-indigo-400" />
                                                     {formatDateTime(selectedOrder.fechaCreacion)}
                                                 </div>
                                             </div>
@@ -357,30 +359,40 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
                                 </div>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-50/50">
-                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-8">
+                            <div className="flex-1 overflow-y-auto p-4 md:p-10 bg-slate-50">
+                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                                     {/* Left Side: Order Items/Detail */}
-                                    <div className="lg:col-span-8 space-y-4 md:space-y-6">
-                                        <div className="bg-white rounded-2xl md:rounded-3xl p-5 md:p-8 shadow-sm border border-slate-100">
-                                            <div className="flex items-center gap-3 mb-4 md:mb-6">
-                                                <div className="p-2 md:p-2.5 bg-indigo-50 rounded-xl text-indigo-600">
-                                                    <ShoppingBag className="w-4 md:w-5 h-4 md:h-5" />
+                                    <div className="lg:col-span-12 xl:col-span-8 space-y-8">
+                                        <div className="bg-white rounded-[2.5rem] p-8 md:p-10 shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col h-full">
+                                            <div className="flex items-center justify-between mb-8">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
+                                                        <ShoppingBag className="w-6 h-6" />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Desglose Técnico</h3>
+                                                        <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-0.5">Lista de Productos requeridos</p>
+                                                    </div>
                                                 </div>
-                                                <h3 className="text-base md:text-lg font-black text-slate-800 uppercase tracking-tight">Desglose del Pedido</h3>
                                             </div>
 
-                                            <div className="bg-slate-50 rounded-xl md:rounded-2xl p-5 md:p-6 border border-slate-100 min-h-[100px] md:min-h-[120px]">
-                                                <p className="text-slate-700 text-base md:text-lg font-bold leading-relaxed whitespace-pre-wrap">
+                                            <div className="bg-slate-50/50 rounded-3xl p-8 md:p-10 border border-slate-100/80 relative">
+                                                <div className="absolute top-4 right-6 opacity-10">
+                                                    <Plus className="w-20 h-20 text-slate-900" />
+                                                </div>
+                                                <div className="text-slate-700 text-lg md:text-xl font-black leading-relaxed whitespace-pre-wrap font-mono tracking-tight">
                                                     {selectedOrder.detalle}
-                                                </p>
+                                                </div>
                                             </div>
 
                                             {selectedOrder.observaciones && (
-                                                <div className="mt-4 md:mt-6 p-4 bg-amber-50 rounded-xl border border-amber-100 flex gap-3">
-                                                    <AlertCircle className="w-4 md:w-5 h-4 md:h-5 text-amber-600 shrink-0 mt-0.5" />
+                                                <div className="mt-8 p-6 bg-indigo-50/50 rounded-3xl border border-indigo-100 flex gap-4">
+                                                    <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shrink-0 mt-1">
+                                                        <AlertCircle className="w-6 h-6" />
+                                                    </div>
                                                     <div>
-                                                        <p className="text-[9px] font-black uppercase text-amber-600 tracking-[0.15em] mb-0.5">Notas Adicionales</p>
-                                                        <p className="text-amber-800 text-xs md:text-sm font-semibold">{selectedOrder.observaciones}</p>
+                                                        <p className="text-[10px] font-black uppercase text-indigo-600 tracking-[0.2em] mb-1">Notas del Técnico</p>
+                                                        <p className="text-slate-700 text-sm md:text-base font-bold leading-relaxed">{selectedOrder.observaciones}</p>
                                                     </div>
                                                 </div>
                                             )}
@@ -388,30 +400,33 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
                                     </div>
 
                                     {/* Right Side: Timeline/History */}
-                                    <div className="lg:col-span-4 h-full">
-                                        <div className="bg-white rounded-2xl md:rounded-3xl p-5 md:p-8 shadow-sm border border-slate-100 h-full">
-                                            <div className="flex items-center gap-3 mb-4 md:mb-6">
-                                                <div className="p-2 md:p-2.5 bg-slate-100 rounded-xl text-slate-600">
-                                                    <History className="w-4 md:w-5 h-4 md:h-5" />
+                                    <div className="lg:col-span-12 xl:col-span-4 h-full">
+                                        <div className="bg-white rounded-[2.5rem] p-8 md:p-10 shadow-xl shadow-slate-200/50 border border-slate-100 h-full">
+                                            <div className="flex items-center gap-4 mb-10">
+                                                <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-lg">
+                                                    <History className="w-6 h-6" />
                                                 </div>
-                                                <h3 className="text-base md:text-lg font-black text-slate-800 uppercase tracking-tight">Actividad</h3>
+                                                <div>
+                                                    <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Actividad</h3>
+                                                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-0.5">Historial de estados</p>
+                                                </div>
                                             </div>
 
-                                            <div className="relative space-y-6 before:absolute before:inset-0 before:ml-[15px] before:-translate-x-px before:h-full before:w-0.5 before:bg-slate-100">
+                                            <div className="relative space-y-8 before:absolute before:inset-0 before:ml-[23px] before:-translate-x-px before:h-full before:w-1 before:bg-slate-100 before:rounded-full">
                                                 {selectedOrder.historial?.map((item: any, idx: number) => (
-                                                    <div key={item.id} className="relative flex items-start gap-4 pl-8">
+                                                    <div key={item.id} className="relative flex items-start gap-6 pl-12">
                                                         <div className={cn(
-                                                            "absolute left-0 mt-1 h-8 w-8 rounded-full border-4 border-white flex items-center justify-center -translate-x-px shadow-sm z-10",
+                                                            "absolute left-0 mt-1 h-12 w-12 rounded-2xl border-4 border-slate-50 flex items-center justify-center -translate-x-px shadow-md z-10 transition-transform hover:scale-110",
                                                             idx === 0 ? "bg-indigo-600 text-white" : "bg-slate-200 text-slate-500"
                                                         )}>
-                                                            <div className={cn("h-1.5 w-1.5 rounded-full bg-current", idx === 0 && "animate-pulse")} />
+                                                            <div className={cn("h-2 w-2 rounded-full bg-current", idx === 0 && "animate-pulse")} />
                                                         </div>
-                                                        <div className="pt-0.5">
-                                                            <p className="text-[10px] md:text-[11px] font-black text-slate-800 uppercase leading-none mb-1">{item.estadoNuevo}</p>
-                                                            <p className="text-[9px] md:text-[10px] text-slate-500 font-bold leading-none">
+                                                        <div className="pt-1.5">
+                                                            <p className="text-[12px] font-black text-slate-800 uppercase leading-none mb-1.5 tracking-tight">{item.estadoNuevo}</p>
+                                                            <p className="text-[11px] text-slate-500 font-bold leading-none">
                                                                 {item.usuario.name || item.usuario.username}
                                                             </p>
-                                                            <p className="text-[8px] md:text-[9px] text-slate-400 font-bold uppercase mt-1">
+                                                            <p className="text-[10px] text-slate-400 font-black uppercase mt-2 tracking-widest">
                                                                 {formatDateTime(item.fecha)}
                                                             </p>
                                                         </div>
@@ -423,31 +438,35 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
                                 </div>
                             </div>
 
-                            <DialogFooter className="p-4 md:p-8 bg-white border-t border-slate-100 flex flex-row items-center justify-end gap-2 md:gap-3">
-                                <div className="flex flex-row items-center gap-2">
+                            <DialogFooter className="p-8 md:p-10 bg-white border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-6">
+                                <div className="flex gap-4 order-2 sm:order-1">
                                     {session?.user?.role === 'admin' && (
                                         <Button
                                             variant="ghost"
                                             onClick={() => handleDeleteOrder(selectedOrder.id)}
-                                            className="rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-[0.2em] text-rose-400 hover:text-rose-600 hover:bg-rose-50 h-10 md:h-12 px-4 md:px-6"
+                                            className="rounded-2xl font-black text-[11px] md:text-xs uppercase tracking-[0.2em] text-rose-500 hover:text-rose-600 hover:bg-rose-50 h-14 px-8 border border-transparent hover:border-rose-100 transition-all font-mono"
                                         >
+                                            <Trash2 className="mr-2 h-4 w-4" />
                                             ELIMINAR
                                         </Button>
                                     )}
                                     <Button
                                         variant="ghost"
                                         onClick={() => setIsDetailsOpen(false)}
-                                        className="rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-[0.2em] text-slate-400 hover:text-slate-600 h-10 md:h-12 px-4 md:px-6"
+                                        className="rounded-2xl font-black text-[11px] md:text-xs uppercase tracking-[0.2em] text-slate-400 hover:text-slate-600 hover:bg-slate-50 h-14 px-8 transition-all"
                                     >
                                         CERRAR
                                     </Button>
                                 </div>
-                                <Button
-                                    className="rounded-xl bg-slate-900 hover:bg-black text-white font-black text-[9px] md:text-[10px] uppercase tracking-[0.2em] h-10 md:h-12 px-4 md:px-6 shadow-xl shadow-slate-200"
-                                    onClick={() => window.print()}
-                                >
-                                    IMPRIMIR
-                                </Button>
+                                <div className="flex gap-4 order-1 sm:order-2 w-full sm:w-auto">
+                                    <Button
+                                        className="flex-1 sm:flex-none rounded-2xl bg-slate-900 hover:bg-black text-white font-black text-[11px] md:text-xs uppercase tracking-[0.2em] h-14 px-10 shadow-2xl shadow-slate-900/20 transition-all hover:scale-105"
+                                        onClick={() => window.print()}
+                                    >
+                                        <Printer className="mr-2 h-4 w-4" />
+                                        IMPRIMIR
+                                    </Button>
+                                </div>
                             </DialogFooter>
                         </div>
                     )}
