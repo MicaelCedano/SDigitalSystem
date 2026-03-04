@@ -125,33 +125,35 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700">
-            <div className="flex justify-between items-center bg-white p-8 rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-50">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-8 md:p-10 rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-50 gap-6">
                 <div className="flex items-center gap-6">
-                    <div className="h-16 w-16 bg-indigo-600 rounded-3xl flex items-center justify-center text-white shadow-lg shadow-indigo-100">
-                        <Package className="h-8 w-8" />
+                    <div className="h-16 w-16 md:h-20 md:w-20 bg-indigo-600 rounded-3xl flex items-center justify-center text-white shadow-xl shadow-indigo-100 rotate-3 transition-transform hover:rotate-0">
+                        <Package className="h-8 w-8 md:h-10 md:w-10" />
                     </div>
                     <div>
-                        <h2 className="text-2xl font-black text-slate-800 tracking-tight uppercase">Listado de Pedidos</h2>
-                        <p className="text-slate-500 font-medium">Gestiona las solicitudes activas de mercancía.</p>
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600 ml-1">Módulo de Almacén</span>
+                        <h2 className="text-3xl md:text-4xl font-black text-slate-800 tracking-tighter uppercase leading-tight">Pedidos</h2>
+                        <p className="text-slate-400 font-medium text-sm">Gestiona las solicitudes activas de mercancía.</p>
                     </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-4 w-full md:w-auto">
                     {session?.user?.role === 'admin' && (
                         <Button
-                            variant="outline"
+                            variant="ghost"
                             onClick={async () => {
                                 const res = await testTelegram();
                                 if (res.success) toast.success("Prueba de Telegram enviada");
                                 else toast.error(`Error: ${res.error}`);
                             }}
-                            className="rounded-xl font-bold text-[10px] uppercase tracking-wider border-slate-200"
+                            className="rounded-2xl font-black text-[10px] uppercase tracking-widest text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 h-14 px-6 border border-slate-100 transition-all flex items-center gap-2"
                         >
-                            Test Bot
+                            <AlertCircle className="h-4 w-4" />
+                            TEST BOT
                         </Button>
                     )}
                     <Button
                         onClick={() => setIsCreateModalOpen(true)}
-                        className="rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-[10px] md:text-xs tracking-[0.15em] h-12 px-8 shadow-lg shadow-indigo-100 transition-all hover:scale-105 active:scale-95 flex items-center"
+                        className="flex-1 md:flex-none rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs tracking-[0.15em] h-14 px-8 shadow-xl shadow-indigo-100 transition-all hover:scale-105 active:scale-95 flex items-center justify-center"
                     >
                         <Plus className="mr-2 h-6 w-6" />
                         NUEVO PEDIDO
@@ -202,7 +204,8 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
                         }).map((order) => {
                             const StatusIcon = statusConfig[order.status].icon;
                             return (
-                                <Card key={order.id} className="rounded-[2.5rem] border-none shadow-xl hover:shadow-2xl transition-all group bg-white border border-slate-50 overflow-hidden">
+                                <Card key={order.id} className="rounded-[2.5rem] border-none shadow-xl hover:shadow-2xl transition-all group bg-white border border-slate-50 overflow-hidden relative">
+                                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-slate-900/5 rounded-full transition-transform group-hover:scale-150"></div>
                                     <div className="flex flex-col lg:flex-row">
                                         {/* Status Column */}
                                         <div className={cn(
@@ -300,45 +303,55 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
                 )}
             </div>
 
-            {/* Order Details Modal */}
             <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-                <DialogContent className="max-w-4xl w-[95vw] rounded-[2rem] border-none p-0 overflow-hidden shadow-2xl bg-white focus:outline-none">
+                <DialogContent className="max-w-5xl w-[95vw] rounded-[2.5rem] border-none p-0 overflow-hidden shadow-2xl bg-white focus:outline-none">
                     {selectedOrder && (
                         <div className="flex flex-col h-full max-h-[90vh]">
                             {/* Header Section */}
-                            <div className="p-8 md:p-10 bg-slate-900 text-white relative">
-                                <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
+                            <div className="p-8 md:p-10 bg-white border-b border-slate-100 relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-600/5 rounded-full blur-3xl -mr-32 -mt-32"></div>
+                                <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-600/5 rounded-full blur-3xl -ml-20 -mb-20"></div>
+
                                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
-                                    <div className="flex items-center gap-6">
+                                    <div className="flex items-center gap-8">
                                         <div className={cn(
-                                            "h-16 w-16 md:h-20 md:w-20 rounded-[2rem] flex items-center justify-center shadow-2xl bg-white/10 backdrop-blur-md border border-white/10",
-                                            statusConfig[selectedOrder.status].color.split(' ')[0].replace('bg-', 'text-')
+                                            "h-20 w-20 rounded-3xl flex items-center justify-center shadow-xl shadow-slate-200 border border-slate-50 transition-transform hover:rotate-3",
+                                            selectedOrder.status === 'LISTO' ? 'bg-emerald-50 text-emerald-600' :
+                                                selectedOrder.status === 'PROCESO' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-600'
                                         )}>
                                             {(() => {
                                                 const Icon = statusConfig[selectedOrder.status].icon;
-                                                return <Icon className="h-8 w-8 md:h-10 md:w-10" />;
+                                                return <Icon className="h-10 w-10" />;
                                             })()}
                                         </div>
                                         <div>
-                                            <div className="flex flex-wrap items-center gap-2 mb-2">
-                                                <Badge className="bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 font-mono px-2 py-0.5 rounded text-[10px] md:text-sm tracking-widest font-bold">
+                                            <div className="flex flex-wrap items-center gap-3 mb-2">
+                                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Expediente</span>
+                                                <span className="bg-slate-900 text-white text-[11px] font-bold px-3 py-1 rounded-lg font-mono tracking-widest">
                                                     {selectedOrder.codigo}
-                                                </Badge>
-                                                <Badge className={cn("rounded-full font-black text-[10px] uppercase px-4 py-1 border-none shadow-sm", statusConfig[selectedOrder.status].color)}>
+                                                </span>
+                                                <Badge className={cn("rounded-full font-black text-[10px] uppercase px-4 py-1.5 border-none shadow-sm ml-2", statusConfig[selectedOrder.status].color)}>
                                                     {statusConfig[selectedOrder.status].label}
                                                 </Badge>
                                             </div>
-                                            <h2 className="text-2xl md:text-4xl font-black tracking-tighter leading-tight text-white">
+                                            <h2 className="text-3xl md:text-5xl font-black tracking-tighter text-slate-800 leading-none">
                                                 {selectedOrder.clienteNombre || selectedOrder.cliente?.nombre || 'Cliente General'}
                                             </h2>
-                                            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-3">
-                                                <div className="flex items-center gap-2 text-white/50 text-[11px] md:text-xs font-black uppercase tracking-[0.2em]">
-                                                    <UserIcon className="h-4 w-4 text-indigo-400" />
-                                                    {selectedOrder.usuario.name || selectedOrder.usuario.username}
+                                            <div className="flex flex-wrap items-center gap-x-8 gap-y-2 mt-4">
+                                                <div className="flex flex-col">
+                                                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">Solicitado por</span>
+                                                    <div className="flex items-center gap-2 text-slate-600 text-sm font-bold">
+                                                        <UserIcon className="h-4 w-4 text-indigo-500" />
+                                                        {selectedOrder.usuario.name || selectedOrder.usuario.username}
+                                                    </div>
                                                 </div>
-                                                <div className="flex items-center gap-2 text-white/50 text-[11px] md:text-xs font-black uppercase tracking-[0.2em]">
-                                                    <Clock className="h-4 w-4 text-indigo-400" />
-                                                    {formatDateTime(selectedOrder.fechaCreacion)}
+                                                <div className="h-8 w-px bg-slate-100 hidden md:block"></div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">Fecha de Registro</span>
+                                                    <div className="flex items-center gap-2 text-slate-600 text-sm font-bold">
+                                                        <Clock className="h-4 w-4 text-indigo-500" />
+                                                        {formatDateTime(selectedOrder.fechaCreacion)}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -350,48 +363,52 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
                                                 handleStatusUpdate(selectedOrder.id, selectedOrder.status);
                                                 setIsDetailsOpen(false);
                                             }}
-                                            className="h-12 md:h-14 px-6 md:px-8 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs md:text-base shadow-xl shadow-indigo-900/20 transition-all hover:scale-105 shrink-0"
+                                            className="h-16 px-10 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm shadow-2xl shadow-indigo-200 transition-all hover:scale-105 active:scale-95 group shrink-0"
                                         >
-                                            AVANZAR ESTADO
-                                            <ArrowRight className="ml-2 h-4 md:h-5 w-4 md:w-5" />
+                                            {selectedOrder.status === 'PENDIENTE' && 'ACEPTAR PEDIDO'}
+                                            {selectedOrder.status === 'PROCESO' && 'MARCAR COMO LISTO'}
+                                            {selectedOrder.status === 'LISTO' && 'ENTREGAR MERCANCIA'}
+                                            <ArrowRight className="ml-3 h-5 w-5 transition-transform group-hover:translate-x-1" />
                                         </Button>
                                     )}
                                 </div>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto p-4 md:p-10 bg-slate-50">
-                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                            <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 md:p-10 bg-slate-50/50">
+                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
                                     {/* Left Side: Order Items/Detail */}
-                                    <div className="lg:col-span-12 xl:col-span-8 space-y-8">
-                                        <div className="bg-white rounded-[2.5rem] p-8 md:p-10 shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col h-full">
-                                            <div className="flex items-center justify-between mb-8">
+                                    <div className="lg:col-span-12 xl:col-span-7 flex">
+                                        <div className="bg-white rounded-[2.5rem] p-8 md:p-10 shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col w-full relative overflow-hidden group">
+                                            <div className="absolute -top-8 -right-8 w-32 h-32 bg-indigo-600/5 rounded-full transition-transform group-hover:scale-110"></div>
+
+                                            <div className="flex items-center justify-between mb-8 relative z-10">
                                                 <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
-                                                        <ShoppingBag className="w-6 h-6" />
+                                                    <div className="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-100">
+                                                        <ShoppingBag className="w-7 h-7" />
                                                     </div>
                                                     <div>
                                                         <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Desglose Técnico</h3>
-                                                        <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-0.5">Lista de Productos requeridos</p>
+                                                        <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mt-0.5">Especificaciones del Pedido</p>
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            <div className="bg-slate-50/50 rounded-3xl p-8 md:p-10 border border-slate-100/80 relative">
-                                                <div className="absolute top-4 right-6 opacity-10">
-                                                    <Plus className="w-20 h-20 text-slate-900" />
+                                            <div className="bg-slate-50/80 rounded-[2rem] p-8 md:p-10 border border-slate-100 relative min-h-[200px] flex-1">
+                                                <div className="absolute top-6 right-8 opacity-[0.03]">
+                                                    <Plus className="w-24 h-24 text-slate-900" />
                                                 </div>
-                                                <div className="text-slate-700 text-lg md:text-xl font-black leading-relaxed whitespace-pre-wrap font-mono tracking-tight">
+                                                <div className="text-slate-800 text-xl md:text-2xl font-black leading-relaxed whitespace-pre-wrap font-mono tracking-tighter relative z-10">
                                                     {selectedOrder.detalle}
                                                 </div>
                                             </div>
 
                                             {selectedOrder.observaciones && (
-                                                <div className="mt-8 p-6 bg-indigo-50/50 rounded-3xl border border-indigo-100 flex gap-4">
-                                                    <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shrink-0 mt-1">
+                                                <div className="mt-8 p-6 bg-amber-50/50 rounded-3xl border border-amber-100 flex gap-5">
+                                                    <div className="w-12 h-12 bg-amber-500 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg shadow-amber-100">
                                                         <AlertCircle className="w-6 h-6" />
                                                     </div>
                                                     <div>
-                                                        <p className="text-[10px] font-black uppercase text-indigo-600 tracking-[0.2em] mb-1">Notas del Técnico</p>
+                                                        <p className="text-[10px] font-black uppercase text-amber-600 tracking-[0.2em] mb-1">Notas del Técnico</p>
                                                         <p className="text-slate-700 text-sm md:text-base font-bold leading-relaxed">{selectedOrder.observaciones}</p>
                                                     </div>
                                                 </div>
@@ -400,35 +417,43 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
                                     </div>
 
                                     {/* Right Side: Timeline/History */}
-                                    <div className="lg:col-span-12 xl:col-span-4 h-full">
-                                        <div className="bg-white rounded-[2.5rem] p-8 md:p-10 shadow-xl shadow-slate-200/50 border border-slate-100 h-full">
-                                            <div className="flex items-center gap-4 mb-10">
-                                                <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-lg">
-                                                    <History className="w-6 h-6" />
+                                    <div className="lg:col-span-12 xl:col-span-5 flex">
+                                        <div className="bg-white rounded-[2.5rem] p-8 md:p-10 shadow-xl shadow-slate-200/40 border border-slate-100 w-full relative overflow-hidden group">
+                                            <div className="absolute -top-8 -right-8 w-32 h-32 bg-slate-900/5 rounded-full transition-transform group-hover:scale-110"></div>
+
+                                            <div className="flex items-center gap-4 mb-10 relative z-10">
+                                                <div className="w-14 h-14 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-slate-200">
+                                                    <History className="w-7 h-7" />
                                                 </div>
                                                 <div>
                                                     <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Actividad</h3>
-                                                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-0.5">Historial de estados</p>
+                                                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mt-0.5">Seguimiento de tiempos</p>
                                                 </div>
                                             </div>
 
-                                            <div className="relative space-y-8 before:absolute before:inset-0 before:ml-[23px] before:-translate-x-px before:h-full before:w-1 before:bg-slate-100 before:rounded-full">
+                                            <div className="relative space-y-8 before:absolute before:inset-0 before:ml-[27px] before:-translate-x-px before:h-full before:w-1 before:bg-slate-100 before:rounded-full">
                                                 {selectedOrder.historial?.map((item: any, idx: number) => (
-                                                    <div key={item.id} className="relative flex items-start gap-6 pl-12">
+                                                    <div key={item.id} className="relative flex items-start gap-8 pl-14">
                                                         <div className={cn(
-                                                            "absolute left-0 mt-1 h-12 w-12 rounded-2xl border-4 border-slate-50 flex items-center justify-center -translate-x-px shadow-md z-10 transition-transform hover:scale-110",
-                                                            idx === 0 ? "bg-indigo-600 text-white" : "bg-slate-200 text-slate-500"
+                                                            "absolute left-0 mt-0.5 h-14 w-14 rounded-2xl border-4 border-white flex items-center justify-center -translate-x-px shadow-xl z-10 transition-all group/item hover:scale-110",
+                                                            idx === 0 ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-400"
                                                         )}>
-                                                            <div className={cn("h-2 w-2 rounded-full bg-current", idx === 0 && "animate-pulse")} />
+                                                            <div className={cn("h-2.5 w-2.5 rounded-full bg-current", idx === 0 && "animate-pulse")} />
                                                         </div>
-                                                        <div className="pt-1.5">
-                                                            <p className="text-[12px] font-black text-slate-800 uppercase leading-none mb-1.5 tracking-tight">{item.estadoNuevo}</p>
-                                                            <p className="text-[11px] text-slate-500 font-bold leading-none">
-                                                                {item.usuario.name || item.usuario.username}
-                                                            </p>
-                                                            <p className="text-[10px] text-slate-400 font-black uppercase mt-2 tracking-widest">
-                                                                {formatDateTime(item.fecha)}
-                                                            </p>
+                                                        <div className="pt-1">
+                                                            <div className="flex flex-col gap-0.5">
+                                                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Estado</span>
+                                                                <p className="text-[13px] font-black text-slate-800 uppercase tracking-tight leading-none mb-2">{item.estadoNuevo}</p>
+                                                            </div>
+                                                            <div className="flex flex-col gap-1 mt-3">
+                                                                <p className="text-[11px] text-slate-500 font-bold flex items-center gap-2">
+                                                                    <div className="h-1 w-1 rounded-full bg-slate-300" />
+                                                                    {item.usuario.name || item.usuario.username}
+                                                                </p>
+                                                                <p className="text-[10px] text-indigo-500 font-black uppercase tracking-widest">
+                                                                    {formatDateTime(item.fecha)}
+                                                                </p>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -438,35 +463,33 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
                                 </div>
                             </div>
 
-                            <DialogFooter className="p-8 md:p-10 bg-white border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-6">
-                                <div className="flex gap-4 order-2 sm:order-1">
+                            <DialogFooter className="p-8 md:p-10 bg-white border-t border-slate-100 flex flex-wrap md:flex-nowrap items-center justify-between gap-6">
+                                <div className="flex gap-4 w-full md:w-auto">
                                     {session?.user?.role === 'admin' && (
                                         <Button
                                             variant="ghost"
                                             onClick={() => handleDeleteOrder(selectedOrder.id)}
-                                            className="rounded-2xl font-black text-[11px] md:text-xs uppercase tracking-[0.2em] text-rose-500 hover:text-rose-600 hover:bg-rose-50 h-14 px-8 border border-transparent hover:border-rose-100 transition-all font-mono"
+                                            className="flex-1 md:flex-none rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] text-rose-500 hover:text-rose-600 hover:bg-rose-50 h-16 px-8 border border-transparent hover:border-rose-100 transition-all flex items-center justify-center gap-2"
                                         >
-                                            <Trash2 className="mr-2 h-4 w-4" />
-                                            ELIMINAR
+                                            <Trash2 className="h-5 w-5" />
+                                            <span>ELIMINAR</span>
                                         </Button>
                                     )}
                                     <Button
                                         variant="ghost"
                                         onClick={() => setIsDetailsOpen(false)}
-                                        className="rounded-2xl font-black text-[11px] md:text-xs uppercase tracking-[0.2em] text-slate-400 hover:text-slate-600 hover:bg-slate-50 h-14 px-8 transition-all"
+                                        className="flex-1 md:flex-none rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] text-slate-400 hover:text-slate-600 hover:bg-slate-50 h-16 px-10 border border-transparent hover:border-slate-100 transition-all"
                                     >
                                         CERRAR
                                     </Button>
                                 </div>
-                                <div className="flex gap-4 order-1 sm:order-2 w-full sm:w-auto">
-                                    <Button
-                                        className="flex-1 sm:flex-none rounded-2xl bg-slate-900 hover:bg-black text-white font-black text-[11px] md:text-xs uppercase tracking-[0.2em] h-14 px-10 shadow-2xl shadow-slate-900/20 transition-all hover:scale-105"
-                                        onClick={() => window.print()}
-                                    >
-                                        <Printer className="mr-2 h-4 w-4" />
-                                        IMPRIMIR
-                                    </Button>
-                                </div>
+                                <Button
+                                    className="w-full md:w-auto rounded-2xl bg-slate-900 hover:bg-black text-white font-black text-[11px] uppercase tracking-[0.2em] h-16 px-12 shadow-2xl shadow-slate-900/20 transition-all hover:scale-105 flex items-center justify-center gap-3 shrink-0"
+                                    onClick={() => window.print()}
+                                >
+                                    <Printer className="h-5 w-5" />
+                                    <span>IMPRIMIR</span>
+                                </Button>
                             </DialogFooter>
                         </div>
                     )}
@@ -474,33 +497,40 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
             </Dialog>
 
             <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-                <DialogContent className="max-w-xl rounded-[2rem] border-none p-0 overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-300 mx-4">
-                    <DialogHeader className="p-6 md:p-8 bg-white border-b flex flex-row items-center justify-between border-slate-100">
-                        <div className="space-y-1">
-                            <DialogTitle className="text-2xl md:text-3xl font-black text-slate-800 tracking-tighter uppercase">Nuevo Pedido</DialogTitle>
-                            <DialogDescription className="font-medium text-slate-500 text-sm md:text-base">Registra tu solicitud para almacén.</DialogDescription>
+                <DialogContent className="max-w-2xl rounded-[2.5rem] border-none p-0 overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-300 mx-4 bg-white">
+                    <DialogHeader className="p-8 md:p-10 bg-white border-b flex flex-row items-center justify-between border-slate-100 relative overflow-hidden">
+                        <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-600/5 rounded-full blur-2xl"></div>
+                        <div className="space-y-1 relative z-10">
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600">Almacén Digital</span>
+                            <DialogTitle className="text-3xl md:text-4xl font-black text-slate-800 tracking-tighter uppercase leading-none">Nuevo Pedido</DialogTitle>
+                            <DialogDescription className="font-medium text-slate-400 text-sm md:text-base">Registra tu solicitud de mercancía.</DialogDescription>
                         </div>
-                        <div className="h-12 w-12 md:h-16 md:w-16 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-inner">
-                            <FileText className="h-6 w-6 md:h-8 md:w-8 rotate-3" />
+                        <div className="h-16 w-16 bg-slate-900 rounded-[1.5rem] flex items-center justify-center text-white shadow-xl shadow-slate-200 rotate-3 transition-transform hover:rotate-0">
+                            <ShoppingBag className="h-8 w-8" />
                         </div>
                     </DialogHeader>
 
-                    <div className="p-6 md:p-8 bg-slate-50 space-y-6">
+                    <div className="p-8 md:p-10 bg-slate-50/50 space-y-8">
                         <div className="space-y-3">
                             <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Cliente Solicitante</Label>
-                            <Input
-                                placeholder="Nombre del cliente..."
-                                className="h-12 md:h-14 rounded-xl border-none shadow-md shadow-slate-200/50 bg-white font-bold text-slate-700 text-sm md:text-base px-6 focus:ring-2 ring-indigo-500/20"
-                                value={newOrder.clienteNombre}
-                                onChange={(e) => setNewOrder(prev => ({ ...prev, clienteNombre: e.target.value }))}
-                            />
+                            <div className="relative group">
+                                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors">
+                                    <UserIcon className="h-5 w-5" />
+                                </div>
+                                <Input
+                                    placeholder="¿Para quién es este pedido?"
+                                    className="h-16 rounded-2xl border-none shadow-xl shadow-slate-200/50 bg-white font-bold text-slate-700 text-lg px-14 focus:ring-4 ring-indigo-500/10 transition-all placeholder:text-slate-300"
+                                    value={newOrder.clienteNombre}
+                                    onChange={(e) => setNewOrder(prev => ({ ...prev, clienteNombre: e.target.value }))}
+                                />
+                            </div>
                         </div>
 
                         <div className="space-y-3">
                             <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Detalle del Pedido</Label>
                             <Textarea
-                                placeholder="Ej: 5 iPhone 13, 3 Samsung S22..."
-                                className="rounded-2xl border-none shadow-md shadow-slate-200/50 bg-white min-h-[120px] md:min-h-[150px] font-bold p-6 text-sm md:text-base text-slate-700 placeholder:text-slate-300 focus:ring-2 ring-indigo-500/20"
+                                placeholder="Escribe aquí los productos y cantidades..."
+                                className="rounded-[2rem] border-none shadow-xl shadow-slate-200/50 bg-white min-h-[180px] font-bold p-8 text-lg text-slate-700 placeholder:text-slate-300 focus:ring-4 ring-indigo-500/10 transition-all"
                                 value={newOrder.detalle}
                                 onChange={(e) => setNewOrder(prev => ({ ...prev, detalle: e.target.value }))}
                             />
@@ -509,34 +539,37 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
                         <div className="space-y-3">
                             <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Observaciones (Opcional)</Label>
                             <Input
-                                placeholder="Nota rápida..."
-                                className="h-12 rounded-xl border-none shadow-sm shadow-slate-100 bg-white/80 font-medium px-6 focus:bg-white transition-colors text-sm"
+                                placeholder="Nota rápida para el almacén..."
+                                className="h-14 rounded-xl border-none shadow-md shadow-slate-100 bg-white/80 font-bold px-6 focus:bg-white transition-all text-sm text-indigo-600 placeholder:text-slate-300"
                                 value={newOrder.observaciones}
                                 onChange={(e) => setNewOrder(prev => ({ ...prev, observaciones: e.target.value }))}
                             />
                         </div>
                     </div>
 
-                    <DialogFooter className="p-6 md:p-8 bg-white border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <DialogFooter className="p-8 md:p-10 bg-white border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-6">
                         <Button
                             variant="ghost"
                             onClick={() => setIsCreateModalOpen(false)}
-                            className="w-full sm:w-auto rounded-full font-black text-xs uppercase tracking-[0.2em] text-slate-400 hover:text-slate-600 h-12 px-8"
+                            className="w-full sm:w-auto rounded-2xl font-black text-xs uppercase tracking-[0.2em] text-slate-400 hover:text-slate-600 hover:bg-slate-50 h-14 px-10 transition-all"
                         >
                             CANCELAR
                         </Button>
                         <Button
                             onClick={handleSubmitOrder}
                             disabled={isSubmitting}
-                            className="w-full sm:w-auto h-14 md:h-16 px-10 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-base md:text-lg shadow-xl shadow-indigo-100 transition-all hover:scale-105 active:scale-95"
+                            className="w-full sm:w-auto h-16 md:h-20 px-12 rounded-[2rem] bg-indigo-600 hover:bg-indigo-700 text-white font-black text-lg md:text-xl shadow-2xl shadow-indigo-100 transition-all hover:scale-105 active:scale-95 flex items-center justify-center group"
                         >
                             {isSubmitting ? (
                                 <>
-                                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                    ENVIANDO...
+                                    <Loader2 className="mr-3 h-6 w-6 animate-spin" />
+                                    <span>ENVIANDO...</span>
                                 </>
                             ) : (
-                                "CONFIRMAR"
+                                <>
+                                    <span>CONFIRMAR PEDIDO</span>
+                                    <ArrowRight className="ml-3 h-6 w-6 transition-transform group-hover:translate-x-1" />
+                                </>
                             )}
                         </Button>
                     </DialogFooter>
