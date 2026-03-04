@@ -84,8 +84,14 @@ export async function createOrder(data: z.infer<typeof CreateOrderSchema>) {
             `📝 <b>Detalle:</b>\n${escapeHTML(detalle)}\n` +
             `${observaciones ? `ℹ️ <b>Nota:</b> ${escapeHTML(observaciones)}` : ''}`;
 
+        const buttons = [
+            [
+                { text: "✅ ACEPTAR PEDIDO", callback_data: `update_status:${order.id}:PROCESO` }
+            ]
+        ];
+
         console.log(`[Orders] Enviando notificación a Telegram para pedido: ${order.codigo}`);
-        await sendTelegramMessage(telegramMsg);
+        await sendTelegramMessage(telegramMsg, buttons);
 
         return { success: true, orderId: order.id };
     } catch (error: any) {
