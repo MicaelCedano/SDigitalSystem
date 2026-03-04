@@ -375,89 +375,85 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
                             </div>
 
                             <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 md:p-8 bg-slate-50/50">
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-                                    {/* Left Side: Order Items/Detail */}
-                                    <div className="flex">
-                                        <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col w-full relative overflow-hidden group">
-                                            <div className="absolute -top-8 -right-8 w-24 h-24 bg-indigo-600/5 rounded-full transition-transform group-hover:scale-110"></div>
+                                <div className="max-w-3xl mx-auto space-y-6">
+                                    {/* Order Items/Detail Section */}
+                                    <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-xl shadow-slate-200/40 border border-slate-100 relative overflow-hidden group">
+                                        <div className="absolute -top-8 -right-8 w-24 h-24 bg-indigo-600/5 rounded-full transition-transform group-hover:scale-110"></div>
 
-                                            <div className="flex items-center justify-between mb-5 relative z-10">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-50">
-                                                        <ShoppingBag className="w-5 h-5" />
-                                                    </div>
-                                                    <div>
-                                                        <h3 className="text-base font-black text-slate-800 uppercase tracking-tight">Desglose Técnico</h3>
-                                                        <p className="text-[8px] text-slate-400 font-black uppercase tracking-[0.2em] mt-0.5">Especificaciones</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="bg-slate-50/80 rounded-2xl p-5 border border-slate-100 relative min-h-[100px] flex-1">
-                                                <div className="absolute top-4 right-6 opacity-[0.03]">
-                                                    <Plus className="w-10 h-10 text-slate-900" />
-                                                </div>
-                                                <div className="text-slate-800 text-[13px] md:text-sm font-bold leading-relaxed whitespace-pre-wrap break-words tracking-tight relative z-10">
-                                                    {selectedOrder.detalle}
-                                                </div>
-                                            </div>
-
-                                            {selectedOrder.observaciones && (
-                                                <div className="mt-8 p-6 bg-amber-50/50 rounded-3xl border border-amber-100 flex gap-5">
-                                                    <div className="w-12 h-12 bg-amber-500 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg shadow-amber-100">
-                                                        <AlertCircle className="w-6 h-6" />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-[10px] font-black uppercase text-amber-600 tracking-[0.2em] mb-1">Notas del Técnico</p>
-                                                        <p className="text-slate-700 text-sm md:text-base font-bold leading-relaxed">{selectedOrder.observaciones}</p>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Right Side: Timeline/History */}
-                                    <div className="flex">
-                                        <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-xl shadow-slate-200/40 border border-slate-100 w-full relative overflow-hidden group">
-                                            <div className="absolute -top-8 -right-8 w-24 h-24 bg-slate-900/5 rounded-full transition-transform group-hover:scale-110"></div>
-
-                                            <div className="flex items-center gap-3 mb-6 relative z-10">
-                                                <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white shadow-lg shadow-slate-100">
-                                                    <History className="w-5 h-5" />
+                                        <div className="flex items-center justify-between mb-5 relative z-10">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-50">
+                                                    <ShoppingBag className="w-5 h-5" />
                                                 </div>
                                                 <div>
-                                                    <h3 className="text-base font-black text-slate-800 uppercase tracking-tight">Actividad</h3>
-                                                    <p className="text-[8px] text-slate-400 font-black uppercase tracking-[0.2em] mt-0.5">Tiempos</p>
+                                                    <h3 className="text-base font-black text-slate-800 uppercase tracking-tight">Desglose Técnico</h3>
+                                                    <p className="text-[8px] text-slate-400 font-black uppercase tracking-[0.2em] mt-0.5">Especificaciones</p>
                                                 </div>
                                             </div>
+                                        </div>
 
-                                            <div className="relative space-y-4 before:absolute before:inset-0 before:ml-[19px] before:-translate-x-px before:h-full before:w-1 before:bg-slate-100 before:rounded-full">
-                                                {selectedOrder.historial?.map((item: any, idx: number) => (
-                                                    <div key={item.id} className="relative flex items-start gap-4 pl-10">
-                                                        <div className={cn(
-                                                            "absolute left-0 mt-0.5 h-10 w-10 rounded-xl border-4 border-white flex items-center justify-center -translate-x-px shadow-md z-10 transition-all hover:scale-105",
-                                                            idx === 0 ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-400"
-                                                        )}>
-                                                            <div className={cn("h-1.5 w-1.5 rounded-full bg-current", idx === 0 && "animate-pulse")} />
+                                        <div className="bg-slate-50/80 rounded-2xl p-6 border border-slate-100 relative min-h-[100px]">
+                                            <div className="absolute top-4 right-6 opacity-[0.03]">
+                                                <Plus className="w-10 h-10 text-slate-900" />
+                                            </div>
+                                            <div className="text-slate-800 text-[13px] md:text-[15px] font-bold leading-relaxed whitespace-pre-wrap break-words tracking-tight relative z-10">
+                                                {selectedOrder.detalle}
+                                            </div>
+                                        </div>
+
+                                        {selectedOrder.observaciones && (
+                                            <div className="mt-5 p-4 bg-amber-50/50 rounded-2xl border border-amber-100 flex gap-4">
+                                                <div className="w-8 h-8 bg-amber-500 rounded-xl flex items-center justify-center text-white shrink-0 shadow-lg shadow-amber-100">
+                                                    <AlertCircle className="w-4 h-4" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-[8px] font-black uppercase text-amber-600 tracking-[0.2em] mb-0.5">Notas del Técnico</p>
+                                                    <p className="text-slate-700 text-[12px] font-bold leading-relaxed">{selectedOrder.observaciones}</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Timeline/History Section */}
+                                    <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-xl shadow-slate-200/40 border border-slate-100 relative overflow-hidden group">
+                                        <div className="absolute -top-8 -right-8 w-24 h-24 bg-slate-900/5 rounded-full transition-transform group-hover:scale-110"></div>
+
+                                        <div className="flex items-center gap-3 mb-6 relative z-10">
+                                            <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white shadow-lg shadow-slate-100">
+                                                <History className="w-5 h-5" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-base font-black text-slate-800 uppercase tracking-tight">Actividad</h3>
+                                                <p className="text-[8px] text-slate-400 font-black uppercase tracking-[0.2em] mt-0.5">Tiempos</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="relative space-y-4 before:absolute before:inset-0 before:ml-[19px] before:-translate-x-px before:h-full before:w-1 before:bg-slate-100 before:rounded-full">
+                                            {selectedOrder.historial?.map((item: any, idx: number) => (
+                                                <div key={item.id} className="relative flex items-start gap-4 pl-10">
+                                                    <div className={cn(
+                                                        "absolute left-0 mt-0.5 h-10 w-10 rounded-xl border-4 border-white flex items-center justify-center -translate-x-px shadow-md z-10 transition-all hover:scale-105",
+                                                        idx === 0 ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-400"
+                                                    )}>
+                                                        <div className={cn("h-1.5 w-1.5 rounded-full bg-current", idx === 0 && "animate-pulse")} />
+                                                    </div>
+                                                    <div className="pt-0.5">
+                                                        <div className="flex flex-col gap-0.5">
+                                                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Estado</span>
+                                                            <p className="text-[12px] font-black text-slate-800 uppercase tracking-tight leading-none mb-1.5">{item.estadoNuevo}</p>
                                                         </div>
-                                                        <div className="pt-0.5">
-                                                            <div className="flex flex-col gap-0.5">
-                                                                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Estado</span>
-                                                                <p className="text-[12px] font-black text-slate-800 uppercase tracking-tight leading-none mb-1.5">{item.estadoNuevo}</p>
-                                                            </div>
-                                                            <div className="flex flex-col gap-1 mt-2">
-                                                                <p className="text-[11px] text-slate-500 font-bold flex items-center gap-1.5">
-                                                                    <div className="h-1 w-1 rounded-full bg-slate-200" />
-                                                                    {item.usuario.name || item.usuario.username}
-                                                                </p>
-                                                                <p className="text-[10px] text-indigo-400 font-black uppercase tracking-widest">
-                                                                    {formatDateTime(item.fecha)}
-                                                                </p>
-                                                            </div>
+                                                        <div className="flex flex-col gap-1 mt-2">
+                                                            <p className="text-[11px] text-slate-500 font-bold flex items-center gap-1.5">
+                                                                <div className="h-1 w-1 rounded-full bg-slate-200" />
+                                                                {item.usuario.name || item.usuario.username}
+                                                            </p>
+                                                            <p className="text-[10px] text-indigo-400 font-black uppercase tracking-widest">
+                                                                {formatDateTime(item.fecha)}
+                                                            </p>
                                                         </div>
                                                     </div>
-                                                ))}
-                                            </div>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
                                 </div>
