@@ -548,12 +548,17 @@ export async function addEquipmentToPurchase(formData: FormData) {
 
         // Phase 3: Main Transaction (Writing data)
         await prisma.$transaction(async (tx) => {
+            const historyToCreate: any[] = [];
+
+            // 3.1: Handle Existing (Updates)
             for (const row of validatedRows) {
+                const existingEntry = existingEquiposMap.get(row.imei);
+                if (!existingEntry || existingEntry.purchaseId === purchaseId) continue;
+
                 const modelKey = getModelKey(row);
                 let deviceModel = modelsCache.get(modelKey);
 
                 if (!deviceModel) {
-                    // Create model if missing inside transaction
                     deviceModel = await tx.deviceModel.create({
                         data: {
                             brand: row.brand,
@@ -566,64 +571,88 @@ export async function addEquipmentToPurchase(formData: FormData) {
                     modelsCache.set(modelKey, deviceModel);
                 }
 
-                const existingEntry = existingEquiposMap.get(row.imei);
+                await tx.equipo.update({
+                    where: { id: existingEntry.id },
+                    data: {
+                        marca: row.brand,
+                        modelo: row.modelName,
+                        storageGb: row.storageGb,
+                        color: row.color,
+                        deviceModelId: deviceModel.id,
+                        purchaseId: purchaseId,
+                        estado: 'En Inventario',
+                        fechaIngreso: new Date()
+                    }
+                });
 
-                const equipoData = {
-                    marca: row.brand,
-                    modelo: row.modelName,
-                    storageGb: row.storageGb,
-                    color: row.color,
-                    deviceModelId: deviceModel.id,
-                    purchaseId: purchaseId,
+                historyToCreate.push({
+                    equipoId: existingEntry.id,
                     estado: 'En Inventario',
-                    fechaIngreso: new Date(),
-                    grado: null,
-                    observacion: null,
-                    funcionalidad: null,
-                    userId: null,
-                    loteId: null
-                };
-
-                if (existingEntry) {
-                    if (existingEntry.purchaseId === purchaseId) continue;
-
-                    // Reintegrate
-                    await tx.equipo.update({
-                        where: { id: existingEntry.id },
-                        data: equipoData
-                    });
-
-                    await tx.equipoHistorial.create({
-                        data: {
-                            equipoId: existingEntry.id,
-                            estado: 'En Inventario',
-                            fecha: new Date(),
-                            observacion: `Reintegrado a Compra #${purchaseId} vía Excel.`
-                        }
-                    });
-                    equipmentsReintegrated++;
-                } else {
-                    // Create New
-                    const newEq = await tx.equipo.create({
-                        data: {
-                            imei: row.imei,
-                            ...equipoData
-                        }
-                    });
-
-                    await tx.equipoHistorial.create({
-                        data: {
-                            equipoId: newEq.id,
-                            estado: 'En Inventario',
-                            fecha: new Date(),
-                            observacion: `Ingreso por Excel a Compra #${purchaseId}.`
-                        }
-                    });
-                    equipmentsNew++;
-                }
+                    fecha: new Date(),
+                    observacion: `Reintegrado a Compra #${purchaseId} vía Excel.`
+                });
+                equipmentsReintegrated++;
             }
 
-            // Phase 4: Sync Purchase Statistics
+            // 3.2: Handle New (Batch Create)
+            const newRows = validatedRows.filter(r => !existingEquiposMap.has(r.imei));
+            if (newRows.length > 0) {
+                const equipmentsToInsert = [];
+                for (const row of newRows) {
+                    const modelKey = getModelKey(row);
+                    let deviceModel = modelsCache.get(modelKey);
+
+                    if (!deviceModel) {
+                        deviceModel = await tx.deviceModel.create({
+                            data: {
+                                brand: row.brand,
+                                modelName: row.modelName,
+                                storageGb: row.storageGb,
+                                color: row.color,
+                                imageFilename: 'iphone-placeholder.png'
+                            }
+                        });
+                        modelsCache.set(modelKey, deviceModel);
+                    }
+
+                    equipmentsToInsert.push({
+                        imei: row.imei,
+                        marca: row.brand,
+                        modelo: row.modelName,
+                        storageGb: row.storageGb,
+                        color: row.color,
+                        deviceModelId: deviceModel.id,
+                        purchaseId: purchaseId,
+                        estado: 'En Inventario',
+                        fechaIngreso: new Date()
+                    });
+                }
+
+                await tx.equipo.createMany({ data: equipmentsToInsert });
+                equipmentsNew = newRows.length;
+
+                // Fetch new IDs to create history
+                const newlyCreated = await tx.equipo.findMany({
+                    where: { imei: { in: newRows.map(r => r.imei) } },
+                    select: { id: true }
+                });
+
+                newlyCreated.forEach(eq => {
+                    historyToCreate.push({
+                        equipoId: eq.id,
+                        estado: 'En Inventario',
+                        fecha: new Date(),
+                        observacion: `Ingreso por Excel a Compra #${purchaseId}.`
+                    });
+                });
+            }
+
+            // 3.3: Batch Create History
+            if (historyToCreate.length > 0) {
+                await tx.equipoHistorial.createMany({ data: historyToCreate });
+            }
+
+            // Phase 4: Sync Purchase Statistics (Batch)
             const allEquips = await tx.equipo.findMany({
                 where: { purchaseId: purchaseId },
                 select: { deviceModelId: true }
@@ -638,14 +667,14 @@ export async function addEquipmentToPurchase(formData: FormData) {
                 }
             });
 
-            for (const [modelId, count] of modelCounts.entries()) {
-                await tx.purchaseItem.create({
-                    data: {
-                        purchaseId: purchaseId,
-                        deviceModelId: modelId,
-                        quantity: count
-                    }
-                });
+            const purchaseItemsToCreate = Array.from(modelCounts.entries()).map(([modelId, count]) => ({
+                purchaseId: purchaseId,
+                deviceModelId: modelId,
+                quantity: count
+            }));
+
+            if (purchaseItemsToCreate.length > 0) {
+                await tx.purchaseItem.createMany({ data: purchaseItemsToCreate });
             }
 
             await tx.purchase.update({
@@ -654,7 +683,7 @@ export async function addEquipmentToPurchase(formData: FormData) {
             });
 
         }, {
-            timeout: 120000 // 120 seconds (2 minutes)
+            timeout: 180000 // 180 seconds (3 minutes)
         });
 
         revalidatePath(`/compras/${purchaseId}`);
