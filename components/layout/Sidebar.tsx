@@ -97,7 +97,11 @@ const Sidebar = ({ initialUser, forceShow = false }: { initialUser?: any, forceS
                 {!forceShow && (
                     <div className={cn("flex items-center border-b border-white/5 relative z-10 transition-all duration-300", collapsed ? "h-20 justify-center pt-8" : "h-24 px-8")}>
                         <div className="relative group cursor-pointer flex-shrink-0">
-                            <Shield className={cn("text-indigo-500 relative z-10 transform group-hover:scale-110 transition-transform duration-300", collapsed ? "h-8 w-8" : "h-10 w-10 mr-3")} />
+                            <img
+                                src="/logo.png"
+                                alt="Logo"
+                                className={cn("relative z-10 transform group-hover:scale-110 transition-transform duration-300 object-contain", collapsed ? "h-10 w-10" : "h-12 w-12 mr-3")}
+                            />
                         </div>
                         {!collapsed && (
                             <div className="flex flex-col justify-center overflow-hidden animate-in fade-in duration-300">

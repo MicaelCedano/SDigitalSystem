@@ -56,8 +56,8 @@ export default function LoginPage() {
 
                     <div className="relative z-10">
                         <div className="flex items-center gap-3 mb-10">
-                            <div className="w-12 h-12 bg-gradient-to-tr from-primary to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-primary/25">
-                                <ShieldCheck className="text-white w-7 h-7" />
+                            <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-lg overflow-hidden border border-white/10">
+                                <img src="/logo.png" alt="Logo" className="w-full h-full object-contain p-1" />
                             </div>
                             <h2 className="text-2xl font-bold text-white tracking-tight">Señal Digital System</h2>
                         </div>
@@ -84,8 +84,8 @@ export default function LoginPage() {
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-purple-500/10 rounded-full blur-[100px] pointer-events-none" />
 
                     <div className="lg:hidden flex justify-center mb-8 relative z-10">
-                        <div className="w-16 h-16 bg-gradient-to-tr from-primary to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-primary/25 mb-4">
-                            <ShieldCheck className="text-white w-8 h-8" />
+                        <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center shadow-lg overflow-hidden border border-white/10 mb-4">
+                            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain p-2" />
                         </div>
                     </div>
 

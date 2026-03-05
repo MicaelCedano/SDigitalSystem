@@ -466,153 +466,169 @@ export async function addEquipmentToPurchase(formData: FormData) {
         if (!purchase) return { success: false, error: "Compra no encontrada." };
 
         const errors: string[] = [];
-        let equipmentsNew = 0;
-        let equipmentsReintegrated = 0;
+        const validatedRows: any[] = [];
         const imeisSeen = new Set<string>();
 
-        // Increase timeout for large imports (30 seconds)
+        // Phase 1: Validation and Data Collection (Outside Transaction)
+        for (const [index, row] of rows.entries()) {
+            const imei = String(row['IMEI'] || '').trim();
+            if (!imei) {
+                errors.push(`Fila ${index + 2}: IMEI vacío.`);
+                continue;
+            }
+            if (!/^\d{15}$/.test(imei)) {
+                errors.push(`Fila ${index + 2}: IMEI inválido (debe tener 15 dígitos): ${imei}`);
+                continue;
+            }
+            if (imeisSeen.has(imei)) {
+                errors.push(`Fila ${index + 2}: IMEI duplicado en el archivo: ${imei}`);
+                continue;
+            }
+            imeisSeen.add(imei);
+
+            let brand = "";
+            let modelName = "";
+            let storageGb = 0;
+            let color: string | null = null;
+
+            if (importType === 'iphone') {
+                const rawModel = String(row['Modelo'] || '').trim();
+                const parsed = parseIphoneModel(rawModel);
+                brand = "Apple";
+                modelName = parsed.modelName;
+                storageGb = parsed.storageGb;
+                color = parsed.color;
+            } else {
+                brand = String(row['Marca'] || '').trim();
+                modelName = String(row['Modelo'] || '').trim();
+                const gbVal = String(row['GB'] || '').replace(/GB/i, '').trim();
+                storageGb = parseInt(gbVal);
+                color = row['Color'] ? String(row['Color']).trim() : null;
+            }
+
+            if (!brand || !modelName || isNaN(storageGb)) {
+                errors.push(`Fila ${index + 2}: Datos incompletos (Marca: ${brand}, Modelo: ${modelName}, GB: ${storageGb})`);
+                continue;
+            }
+
+            validatedRows.push({
+                imei,
+                brand,
+                modelName,
+                storageGb,
+                color
+            });
+        }
+
+        if (errors.length > 0) {
+            const errorMsg = `Se encontraron ${errors.length} errores:\n` + errors.slice(0, 5).join('\n') + (errors.length > 5 ? `\n...y ${errors.length - 5} más.` : '');
+            return { success: false, error: errorMsg };
+        }
+
+        // Phase 2: Batch Fetching (Outside Transaction to reduce lock time)
+        const allImeis = validatedRows.map(r => r.imei);
+        const existingEquipos = await prisma.equipo.findMany({
+            where: { imei: { in: allImeis } },
+            select: { id: true, imei: true, purchaseId: true }
+        });
+        const existingEquiposMap = new Map(existingEquipos.map(e => [e.imei, e]));
+
+        // Pre-fetch all referenced models
+        const modelNames = [...new Set(validatedRows.map(r => r.modelName))];
+        const allModels = await prisma.deviceModel.findMany({
+            where: { modelName: { in: modelNames } }
+        });
+
+        const getModelKey = (r: any) => `${r.brand}|${r.modelName}|${r.storageGb}|${r.color?.toLowerCase() || 'null'}`;
+        const modelsCache = new Map<string, any>();
+        allModels.forEach(m => modelsCache.set(`${m.brand}|${m.modelName}|${m.storageGb}|${m.color?.toLowerCase() || 'null'}`, m));
+
+        let equipmentsNew = 0;
+        let equipmentsReintegrated = 0;
+
+        // Phase 3: Main Transaction (Writing data)
         await prisma.$transaction(async (tx) => {
-            for (const [index, row] of rows.entries()) {
-                try {
-                    const imei = String(row['IMEI'] || '').trim();
-                    if (!imei) {
-                        errors.push(`Fila ${index + 2}: IMEI vacío.`);
-                        continue;
-                    }
-                    if (!/^\d{15}$/.test(imei)) {
-                        errors.push(`Fila ${index + 2}: IMEI inválido (debe tener 15 dígitos): ${imei}`);
-                        continue;
-                    }
-                    if (imeisSeen.has(imei)) {
-                        errors.push(`Fila ${index + 2}: IMEI duplicado en el archivo: ${imei}`);
-                        continue;
-                    }
-                    imeisSeen.add(imei);
+            for (const row of validatedRows) {
+                const modelKey = getModelKey(row);
+                let deviceModel = modelsCache.get(modelKey);
 
-                    let brand = "";
-                    let modelName = "";
-                    let storageGb = 0;
-                    let color: string | null = null;
+                if (!deviceModel) {
+                    // Create model if missing inside transaction
+                    deviceModel = await tx.deviceModel.create({
+                        data: {
+                            brand: row.brand,
+                            modelName: row.modelName,
+                            storageGb: row.storageGb,
+                            color: row.color,
+                            imageFilename: 'iphone-placeholder.png'
+                        }
+                    });
+                    modelsCache.set(modelKey, deviceModel);
+                }
 
-                    if (importType === 'iphone') {
-                        const rawModel = String(row['Modelo'] || '').trim();
-                        const parsed = parseIphoneModel(rawModel);
-                        brand = "Apple";
-                        modelName = parsed.modelName;
-                        storageGb = parsed.storageGb;
-                        color = parsed.color;
-                    } else {
-                        brand = String(row['Marca'] || '').trim();
-                        modelName = String(row['Modelo'] || '').trim();
-                        const gbVal = String(row['GB'] || '').replace(/GB/i, '').trim();
-                        storageGb = parseInt(gbVal);
-                        color = row['Color'] ? String(row['Color']).trim() : null;
-                    }
+                const existingEntry = existingEquiposMap.get(row.imei);
 
-                    if (!brand || !modelName || isNaN(storageGb)) {
-                        errors.push(`Fila ${index + 2}: Datos incompletos (Marca: ${brand}, Modelo: ${modelName}, GB: ${storageGb})`);
-                        continue;
-                    }
+                const equipoData = {
+                    marca: row.brand,
+                    modelo: row.modelName,
+                    storageGb: row.storageGb,
+                    color: row.color,
+                    deviceModelId: deviceModel.id,
+                    purchaseId: purchaseId,
+                    estado: 'En Inventario',
+                    fechaIngreso: new Date(),
+                    grado: null,
+                    observacion: null,
+                    funcionalidad: null,
+                    userId: null,
+                    loteId: null
+                };
 
-                    // Check or Create DeviceModel
-                    let deviceModel = await tx.deviceModel.findFirst({
-                        where: {
-                            brand,
-                            modelName,
-                            storageGb,
-                            color: color || null
+                if (existingEntry) {
+                    if (existingEntry.purchaseId === purchaseId) continue;
+
+                    // Reintegrate
+                    await tx.equipo.update({
+                        where: { id: existingEntry.id },
+                        data: equipoData
+                    });
+
+                    await tx.equipoHistorial.create({
+                        data: {
+                            equipoId: existingEntry.id,
+                            estado: 'En Inventario',
+                            fecha: new Date(),
+                            observacion: `Reintegrado a Compra #${purchaseId} vía Excel.`
+                        }
+                    });
+                    equipmentsReintegrated++;
+                } else {
+                    // Create New
+                    const newEq = await tx.equipo.create({
+                        data: {
+                            imei: row.imei,
+                            ...equipoData
                         }
                     });
 
-                    if (!deviceModel) {
-                        deviceModel = await tx.deviceModel.create({
-                            data: {
-                                brand,
-                                modelName,
-                                storageGb,
-                                color,
-                                imageFilename: 'iphone-placeholder.png'
-                            }
-                        });
-                    }
-
-                    // Check for existing equipment
-                    const existingEquipment = await tx.equipo.findUnique({
-                        where: { imei }
-                    });
-
-                    const equipoData = {
-                        marca: brand,
-                        modelo: modelName,
-                        storageGb,
-                        color,
-                        deviceModelId: deviceModel.id,
-                        purchaseId: purchaseId,
-                        estado: 'En Inventario',
-                        fechaIngreso: new Date(),
-                        grado: null,
-                        observacion: null,
-                        funcionalidad: null,
-                        userId: null,
-                        loteId: null
-                    };
-
-                    if (existingEquipment) {
-                        if (existingEquipment.purchaseId === purchaseId) {
-                            // Skip if already in this purchase
-                            continue;
+                    await tx.equipoHistorial.create({
+                        data: {
+                            equipoId: newEq.id,
+                            estado: 'En Inventario',
+                            fecha: new Date(),
+                            observacion: `Ingreso por Excel a Compra #${purchaseId}.`
                         }
-
-                        // Reintegrate
-                        await tx.equipo.update({
-                            where: { id: existingEquipment.id },
-                            data: equipoData
-                        });
-
-                        await tx.equipoHistorial.create({
-                            data: {
-                                equipoId: existingEquipment.id,
-                                estado: 'En Inventario',
-                                fecha: new Date(),
-                                observacion: `Reintegrado a Compra #${purchaseId} vía Excel (${importType}).`
-                            }
-                        });
-                        equipmentsReintegrated++;
-                    } else {
-                        // Create New
-                        const newEq = await tx.equipo.create({
-                            data: {
-                                imei,
-                                ...equipoData
-                            }
-                        });
-
-                        await tx.equipoHistorial.create({
-                            data: {
-                                equipoId: newEq.id,
-                                estado: 'En Inventario',
-                                fecha: new Date(),
-                                observacion: `Ingreso por Excel a Compra #${purchaseId}.`
-                            }
-                        });
-                        equipmentsNew++;
-                    }
-                } catch (e: any) {
-                    errors.push(`Fila ${index + 2}: Error inesperado: ${e.message}`);
+                    });
+                    equipmentsNew++;
                 }
             }
 
-            if (errors.length > 0) {
-                const errorMsg = `Se encontraron ${errors.length} errores:\n` + errors.slice(0, 3).join('\n') + (errors.length > 3 ? `\n...y ${errors.length - 3} más.` : '');
-                throw new Error(errorMsg);
-            }
-
-            // Sync PurchaseItems and TotalQuantity
+            // Phase 4: Sync Purchase Statistics
             const allEquips = await tx.equipo.findMany({
-                where: { purchaseId: purchaseId }
+                where: { purchaseId: purchaseId },
+                select: { deviceModelId: true }
             });
 
-            // Recalculate Items
             await tx.purchaseItem.deleteMany({ where: { purchaseId: purchaseId } });
 
             const modelCounts = new Map<number, number>();
@@ -636,8 +652,9 @@ export async function addEquipmentToPurchase(formData: FormData) {
                 where: { id: purchaseId },
                 data: { totalQuantity: allEquips.length }
             });
+
         }, {
-            timeout: 30000 // 30 seconds
+            timeout: 120000 // 120 seconds (2 minutes)
         });
 
         revalidatePath(`/compras/${purchaseId}`);
