@@ -470,7 +470,7 @@ export async function addEquipmentToPurchase(formData: FormData) {
         let equipmentsReintegrated = 0;
         const imeisSeen = new Set<string>();
 
-        // We use a transaction for consistency
+        // Increase timeout for large imports (30 seconds)
         await prisma.$transaction(async (tx) => {
             for (const [index, row] of rows.entries()) {
                 try {
@@ -636,6 +636,8 @@ export async function addEquipmentToPurchase(formData: FormData) {
                 where: { id: purchaseId },
                 data: { totalQuantity: allEquips.length }
             });
+        }, {
+            timeout: 30000 // 30 seconds
         });
 
         revalidatePath(`/compras/${purchaseId}`);
