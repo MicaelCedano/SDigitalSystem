@@ -2,7 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { Purchase, Supplier, PurchaseItem, Equipo, DeviceModel } from "@prisma/client";
+import { Prisma, Purchase, Supplier, PurchaseItem, Equipo, DeviceModel } from "@prisma/client";
 import { z } from "zod";
 
 const CreatePurchaseSchema = z.object({
@@ -33,7 +33,7 @@ function isTransactionNotFoundError(error: unknown): boolean {
 }
 
 async function runTransactionWithRetry<T>(
-    callback: (tx: any) => Promise<T>,
+    callback: (tx: Prisma.TransactionClient) => Promise<T>,
     retries = 2
 ): Promise<T> {
     let lastError: unknown;
@@ -732,6 +732,7 @@ export async function addEquipmentToPurchase(formData: FormData) {
         return { success: false, error: error.message || "Error al procesar el archivo Excel." };
     }
 }
+
 
 
 
