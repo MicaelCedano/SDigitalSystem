@@ -29,6 +29,7 @@ export type PurchaseWithProgress = Purchase & {
 };
 
 export async function createPurchase(data: z.infer<typeof CreatePurchaseSchema>) {
+    console.log(">>> [DEBUG] EXECUTING createPurchase - OPTIMIZED VERSION <<<");
     console.log("Starting createPurchase with items:", data.items.length);
 
     const result = CreatePurchaseSchema.safeParse(data);
@@ -80,6 +81,10 @@ export async function createPurchase(data: z.infer<typeof CreatePurchaseSchema>)
                 }
             });
 
+            const equipmentsToCreate: any[] = [];
+            const historyToCreate: any[] = [];
+            const equipmentsToUpdate: { id: number, data: any }[] = [];
+
             // 2. Process Items
             for (const item of items) {
                 const imeiList = item.imeis.split('\n').map(s => s.trim()).filter(s => s.length > 0);
@@ -127,7 +132,7 @@ export async function createPurchase(data: z.infer<typeof CreatePurchaseSchema>)
                     }
                 });
 
-                // Create/Update Equipos
+                // Prepare Equipos
                 for (const imei of imeiList) {
                     const existing = existingMap.get(imei);
                     const equipoData = {
@@ -138,48 +143,63 @@ export async function createPurchase(data: z.infer<typeof CreatePurchaseSchema>)
                         marca: deviceModel.brand,
                         modelo: deviceModel.modelName,
                         storageGb: deviceModel.storageGb,
-                        color: deviceModel.color
+                        color: deviceModel.color,
+                        grado: null,
+                        observacion: null,
+                        funcionalidad: null,
+                        loteId: null,
+                        userId: null
                     };
 
                     if (existing) {
-                        // Reintegration logic: Reset fields for new revision but keep historical record
-                        await tx.equipo.update({
-                            where: { imei },
-                            data: {
-                                ...equipoData,
-                                grado: null,
-                                observacion: null,
-                                funcionalidad: null,
-                                loteId: null, // Dissociate from any previous lote
-                                userId: null  // Dissociate from any previous technician
-                            }
-                        });
-
-                        // Add Entry to history
-                        await tx.equipoHistorial.create({
-                            data: {
-                                equipoId: existing.id,
-                                estado: 'En Inventario',
-                                fecha: new Date(),
-                                observacion: `Equipo reintegrado en compra #${purchase.id}. Listo para nueva revisión.`
-                            }
+                        equipmentsToUpdate.push({ id: existing.id, data: equipoData });
+                        historyToCreate.push({
+                            equipoId: existing.id,
+                            estado: 'En Inventario',
+                            fecha: new Date(),
+                            observacion: `Equipo reintegrado en compra #${purchase.id}.`
                         });
                     } else {
-                        const newEq = await tx.equipo.create({ data: { imei, ...equipoData } });
-
-                        // Initial history for new equipment
-                        await tx.equipoHistorial.create({
-                            data: {
-                                equipoId: newEq.id,
-                                estado: 'En Inventario',
-                                fecha: new Date(),
-                                observacion: `Ingreso inicial por compra #${purchase.id}.`
-                            }
-                        });
+                        equipmentsToCreate.push({ imei, ...equipoData });
                     }
                 }
             }
+
+            // 3. Batch Operations
+            if (equipmentsToCreate.length > 0) {
+                await tx.equipo.createMany({ data: equipmentsToCreate });
+
+                // Fetch newly created IDs for history
+                const newEqs = await tx.equipo.findMany({
+                    where: { imei: { in: equipmentsToCreate.map(e => e.imei) } },
+                    select: { id: true }
+                });
+                newEqs.forEach(eq => {
+                    historyToCreate.push({
+                        equipoId: eq.id,
+                        estado: 'En Inventario',
+                        fecha: new Date(),
+                        observacion: `Ingreso inicial por compra #${purchase.id}.`
+                    });
+                });
+            }
+
+            if (equipmentsToUpdate.length > 0) {
+                for (const update of equipmentsToUpdate) {
+                    await tx.equipo.update({
+                        where: { id: update.id },
+                        data: update.data
+                    });
+                }
+            }
+
+            if (historyToCreate.length > 0) {
+                await tx.equipoHistorial.createMany({ data: historyToCreate });
+            }
+
             return purchase;
+        }, {
+            timeout: 300000 // 300 seconds (5 minutes)
         });
 
         revalidatePath("/compras");
@@ -426,6 +446,7 @@ function parseIphoneModel(s: string) {
 }
 
 export async function addEquipmentToPurchase(formData: FormData) {
+    console.log(">>> [DEBUG] EXECUTING addEquipmentToPurchase - OPTIMIZED VERSION <<<");
     const file = formData.get("file") as File;
     const purchaseId = Number(formData.get("purchaseId"));
     const importType = formData.get("importType") as string; // 'standard' or 'iphone'
