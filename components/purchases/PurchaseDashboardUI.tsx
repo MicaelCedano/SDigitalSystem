@@ -204,14 +204,14 @@ export function PurchaseDashboardUI({ activePurchases, historyPurchases, draftCo
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-right pr-10">
-                                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-4 group-hover:translate-x-0">
-                                                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50" onClick={() => router.push(`/compras/${purchase.id}`)}>
+                                            <div className="flex items-center justify-end gap-2 transition-all duration-300">
+                                                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-slate-100 shadow-sm border border-slate-50 transition-all hover:scale-110" onClick={() => router.push(`/compras/${purchase.id}`)}>
                                                     <Eye className="h-5 w-5" />
                                                 </Button>
-                                                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-slate-400 hover:text-amber-500 hover:bg-amber-50">
+                                                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-slate-400 hover:text-amber-500 hover:bg-slate-100 shadow-sm border border-slate-50 transition-all hover:scale-110">
                                                     <Pencil className="h-5 w-5" />
                                                 </Button>
-                                                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-slate-400 hover:text-slate-800 hover:bg-slate-100">
+                                                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-slate-100 shadow-sm border border-slate-50 transition-all hover:scale-110">
                                                     <FileText className="h-5 w-5" />
                                                 </Button>
                                             </div>
@@ -274,11 +274,11 @@ export function PurchaseDashboardUI({ activePurchases, historyPurchases, draftCo
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-right pr-10">
-                                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                                                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50" onClick={() => router.push(`/compras/${purchase.id}`)}>
+                                            <div className="flex items-center justify-end gap-2 transition-all duration-300">
+                                                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-slate-100 shadow-sm border border-slate-50 transition-all hover:scale-110" onClick={() => router.push(`/compras/${purchase.id}`)}>
                                                     <Eye className="h-5 w-5" />
                                                 </Button>
-                                                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-slate-400 hover:text-slate-800 hover:bg-slate-100">
+                                                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-slate-400 hover:text-slate-800 hover:bg-slate-100 shadow-sm border border-slate-50 transition-all hover:scale-110">
                                                     <FileText className="h-5 w-5" />
                                                 </Button>
                                             </div>
