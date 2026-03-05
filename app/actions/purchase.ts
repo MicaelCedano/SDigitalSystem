@@ -358,3 +358,298 @@ export async function getPurchaseById(id: number) {
         modelSummary
     } as any;
 }
+
+// Helper for parsing iPhone model string (ported from Python logic)
+function parseIphoneModel(s: string) {
+    s = s.trim().replace(/\s+/g, ' ');
+
+    let gb: number | null = null;
+    let modelPart = "";
+    let colorPart: string | null = null;
+
+    // 1) Try TB
+    const tbMatch = s.match(/(\d+)\s*TB/i);
+    if (tbMatch) {
+        gb = parseInt(tbMatch[1]) * 1024;
+        modelPart = s.substring(0, tbMatch.index).trim();
+        colorPart = s.substring(tbMatch.index! + tbMatch[0].length).trim();
+    } else {
+        // 2) Try GB
+        const gbMatch = s.match(/(\d+)\s*GB?/i);
+        if (gbMatch) {
+            gb = parseInt(gbMatch[1]);
+            modelPart = s.substring(0, gbMatch.index).trim();
+            colorPart = s.substring(gbMatch.index! + gbMatch[0].length).trim();
+        } else {
+            // 3) Fallback: Last number
+            const tokens = s.split(' ');
+            let lastNumIdx = -1;
+            for (let i = 0; i < tokens.length; i++) {
+                if (/^\d+$/.test(tokens[i])) lastNumIdx = i;
+            }
+            if (lastNumIdx !== -1) {
+                gb = parseInt(tokens[lastNumIdx]);
+                modelPart = tokens.slice(0, lastNumIdx).join(' ').trim();
+                colorPart = tokens.slice(lastNumIdx + 1).join(' ').trim();
+            }
+        }
+    }
+
+    // Extract color if not found yet
+    if (!colorPart && modelPart) {
+        const commonColors = [
+            'Space Black', 'Space Gray', 'Midnight Green', 'Pacific Blue', 'Sierra Blue',
+            'Deep Purple', 'Rose Gold', 'Jet Black', 'Matte Black', 'Alpine Green',
+            'Graphite', 'Starlight', 'Midnight', 'Black', 'White', 'Red', 'Blue',
+            'Green', 'Yellow', 'Purple', 'Gold', 'Silver', 'Pink', 'Coral',
+            'Titanium', 'Natural Titanium', 'Blue Titanium', 'White Titanium',
+            'Black Titanium', 'Desert Titanium', 'Gray', 'Grey', 'Teal', 'Ultramarine',
+            'Deep Blue', 'Cosmic Orange'
+        ].sort((a, b) => b.length - a.length);
+
+        for (const col of commonColors) {
+            const regex = new RegExp(`\\b${col}$`, 'i');
+            const match = modelPart.match(regex);
+            if (match) {
+                colorPart = match[0];
+                modelPart = modelPart.replace(regex, '').trim();
+                break;
+            }
+        }
+    }
+
+    if (colorPart && ['nan', 'none', '', '-', '.', 'na', 'n/a'].includes(colorPart.toLowerCase())) {
+        colorPart = null;
+    }
+
+    return { modelName: modelPart, storageGb: gb || 0, color: colorPart };
+}
+
+export async function addEquipmentToPurchase(formData: FormData) {
+    const file = formData.get("file") as File;
+    const purchaseId = Number(formData.get("purchaseId"));
+    const importType = formData.get("importType") as string; // 'standard' or 'iphone'
+
+    if (!file || !purchaseId) {
+        return { success: false, error: "Archivo o ID de compra faltante." };
+    }
+
+    try {
+        const ExcelJS = require('exceljs');
+        const buffer = await file.arrayBuffer();
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(Buffer.from(buffer));
+        const worksheet = workbook.getWorksheet(1);
+
+        if (!worksheet) return { success: false, error: "No se encontró la hoja en el archivo." };
+
+        const rows: any[] = [];
+        const headers: string[] = [];
+
+        worksheet.getRow(1).eachCell((cell: any, colNumber: number) => {
+            headers[colNumber] = cell.text.trim();
+        });
+
+        worksheet.eachRow((row: any, rowNumber: number) => {
+            if (rowNumber === 1) return;
+            const rowData: any = {};
+            row.eachCell((cell: any, colNumber: number) => {
+                rowData[headers[colNumber]] = cell.text;
+            });
+            rows.push(rowData);
+        });
+
+        const purchase = await prisma.purchase.findUnique({
+            where: { id: purchaseId }
+        });
+
+        if (!purchase) return { success: false, error: "Compra no encontrada." };
+
+        const errors: string[] = [];
+        let equipmentsNew = 0;
+        let equipmentsReintegrated = 0;
+        const imeisSeen = new Set<string>();
+
+        // We use a transaction for consistency
+        await prisma.$transaction(async (tx) => {
+            for (const [index, row] of rows.entries()) {
+                try {
+                    const imei = String(row['IMEI'] || '').trim();
+                    if (!imei) {
+                        errors.push(`Fila ${index + 2}: IMEI vacío.`);
+                        continue;
+                    }
+                    if (!/^\d{15}$/.test(imei)) {
+                        errors.push(`Fila ${index + 2}: IMEI inválido (debe tener 15 dígitos): ${imei}`);
+                        continue;
+                    }
+                    if (imeisSeen.has(imei)) {
+                        errors.push(`Fila ${index + 2}: IMEI duplicado en el archivo: ${imei}`);
+                        continue;
+                    }
+                    imeisSeen.add(imei);
+
+                    let brand = "";
+                    let modelName = "";
+                    let storageGb = 0;
+                    let color: string | null = null;
+
+                    if (importType === 'iphone') {
+                        const rawModel = String(row['Modelo'] || '').trim();
+                        const parsed = parseIphoneModel(rawModel);
+                        brand = "Apple";
+                        modelName = parsed.modelName;
+                        storageGb = parsed.storageGb;
+                        color = parsed.color;
+                    } else {
+                        brand = String(row['Marca'] || '').trim();
+                        modelName = String(row['Modelo'] || '').trim();
+                        const gbVal = String(row['GB'] || '').replace(/GB/i, '').trim();
+                        storageGb = parseInt(gbVal);
+                        color = row['Color'] ? String(row['Color']).trim() : null;
+                    }
+
+                    if (!brand || !modelName || isNaN(storageGb)) {
+                        errors.push(`Fila ${index + 2}: Datos incompletos (Marca: ${brand}, Modelo: ${modelName}, GB: ${storageGb})`);
+                        continue;
+                    }
+
+                    // Check or Create DeviceModel
+                    let deviceModel = await tx.deviceModel.findFirst({
+                        where: {
+                            brand,
+                            modelName,
+                            storageGb,
+                            color: color || null
+                        }
+                    });
+
+                    if (!deviceModel) {
+                        deviceModel = await tx.deviceModel.create({
+                            data: {
+                                brand,
+                                modelName,
+                                storageGb,
+                                color,
+                                imageFilename: 'iphone-placeholder.png'
+                            }
+                        });
+                    }
+
+                    // Check for existing equipment
+                    const existingEquipment = await tx.equipo.findUnique({
+                        where: { imei }
+                    });
+
+                    const equipoData = {
+                        marca: brand,
+                        modelo: modelName,
+                        storageGb,
+                        color,
+                        deviceModelId: deviceModel.id,
+                        purchaseId: purchaseId,
+                        estado: 'En Inventario',
+                        fechaIngreso: new Date(),
+                        grado: null,
+                        observacion: null,
+                        funcionalidad: null,
+                        userId: null,
+                        loteId: null
+                    };
+
+                    if (existingEquipment) {
+                        if (existingEquipment.purchaseId === purchaseId) {
+                            // Skip if already in this purchase
+                            continue;
+                        }
+
+                        // Reintegrate
+                        await tx.equipo.update({
+                            where: { id: existingEquipment.id },
+                            data: equipoData
+                        });
+
+                        await tx.equipoHistorial.create({
+                            data: {
+                                equipoId: existingEquipment.id,
+                                estado: 'En Inventario',
+                                fecha: new Date(),
+                                observacion: `Reintegrado a Compra #${purchaseId} vía Excel (${importType}).`
+                            }
+                        });
+                        equipmentsReintegrated++;
+                    } else {
+                        // Create New
+                        const newEq = await tx.equipo.create({
+                            data: {
+                                imei,
+                                ...equipoData
+                            }
+                        });
+
+                        await tx.equipoHistorial.create({
+                            data: {
+                                equipoId: newEq.id,
+                                estado: 'En Inventario',
+                                fecha: new Date(),
+                                observacion: `Ingreso por Excel a Compra #${purchaseId}.`
+                            }
+                        });
+                        equipmentsNew++;
+                    }
+                } catch (e: any) {
+                    errors.push(`Fila ${index + 2}: Error inesperado: ${e.message}`);
+                }
+            }
+
+            if (errors.length > 0) {
+                const errorMsg = `Se encontraron ${errors.length} errores:\n` + errors.slice(0, 3).join('\n') + (errors.length > 3 ? `\n...y ${errors.length - 3} más.` : '');
+                throw new Error(errorMsg);
+            }
+
+            // Sync PurchaseItems and TotalQuantity
+            const allEquips = await tx.equipo.findMany({
+                where: { purchaseId: purchaseId }
+            });
+
+            // Recalculate Items
+            await tx.purchaseItem.deleteMany({ where: { purchaseId: purchaseId } });
+
+            const modelCounts = new Map<number, number>();
+            allEquips.forEach(eq => {
+                if (eq.deviceModelId) {
+                    modelCounts.set(eq.deviceModelId, (modelCounts.get(eq.deviceModelId) || 0) + 1);
+                }
+            });
+
+            for (const [modelId, count] of modelCounts.entries()) {
+                await tx.purchaseItem.create({
+                    data: {
+                        purchaseId: purchaseId,
+                        deviceModelId: modelId,
+                        quantity: count
+                    }
+                });
+            }
+
+            await tx.purchase.update({
+                where: { id: purchaseId },
+                data: { totalQuantity: allEquips.length }
+            });
+        });
+
+        revalidatePath(`/compras/${purchaseId}`);
+        revalidatePath("/compras");
+
+        return {
+            success: true,
+            message: `Proceso completado. Agregados: ${equipmentsNew}, Reintegrados: ${equipmentsReintegrated}.`
+        };
+
+    } catch (error: any) {
+        console.error("Error in addEquipmentToPurchase:", error);
+        return { success: false, error: error.message || "Error al procesar el archivo Excel." };
+    }
+}
+
+

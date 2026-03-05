@@ -40,6 +40,8 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { AddEquipmentDialog } from "./AddEquipmentDialog";
+
 
 interface ModelSummary {
     brand: string;
@@ -149,10 +151,8 @@ export function PurchaseDashboardDetail({ purchase }: PurchaseDetailProps) {
                         </Button>
                     </Link>
 
-                    <Button className="flex-1 md:flex-none h-14 px-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-lg shadow-xl shadow-indigo-100 transition-all hover:scale-[1.02] active:scale-[0.98]">
-                        <Plus className="h-5 w-5 mr-2" />
-                        Agregar Equipos
-                    </Button>
+                    <AddEquipmentDialog purchaseId={purchase.id} purchaseNumber={purchase.id} />
+
 
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>

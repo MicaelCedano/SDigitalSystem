@@ -56,6 +56,7 @@ When creating or updating pages for the RMA Digital application, ALWAYS follow t
 3.  [ ] Are metadata labels `uppercase` with `tracking-[0.2em]`?
 4.  [ ] Did you use entry animations?
 5.  [ ] (For Modals) Is the background solid (`bg-white/bg-slate-50`) to avoid bleed?
+6.  [ ] **Shadcn Integration**: Always prioritize using a `shadcn` component when available (e.g., Dialog, Tabs, Accordion, etc.) and adapt it with the RMA aesthetics (roundness, typography, shadows) to ensure maximum quality and performance.
 
 ---
 *Example of a Premium Row Container:*
