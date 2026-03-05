@@ -525,7 +525,7 @@ export async function addEquipmentToPurchase(formData: FormData) {
             return { success: false, error: errorMsg };
         }
 
-        // Phase 2: Batch Fetching (Outside Transaction to reduce lock time)
+        // Phase 2: Batch Fetching and Model Preparation (Outside Transaction)
         const allImeis = validatedRows.map(r => r.imei);
         const existingEquipos = await prisma.equipo.findMany({
             where: { imei: { in: allImeis } },
@@ -543,6 +543,23 @@ export async function addEquipmentToPurchase(formData: FormData) {
         const modelsCache = new Map<string, any>();
         allModels.forEach(m => modelsCache.set(`${m.brand}|${m.modelName}|${m.storageGb}|${m.color?.toLowerCase() || 'null'}`, m));
 
+        // 2.1: Pre-create missing models OUTSIDE the main transaction
+        for (const row of validatedRows) {
+            const key = getModelKey(row);
+            if (!modelsCache.has(key)) {
+                const newModel = await prisma.deviceModel.create({
+                    data: {
+                        brand: row.brand,
+                        modelName: row.modelName,
+                        storageGb: row.storageGb,
+                        color: row.color,
+                        imageFilename: 'iphone-placeholder.png'
+                    }
+                });
+                modelsCache.set(key, newModel);
+            }
+        }
+
         let equipmentsNew = 0;
         let equipmentsReintegrated = 0;
 
@@ -555,21 +572,7 @@ export async function addEquipmentToPurchase(formData: FormData) {
                 const existingEntry = existingEquiposMap.get(row.imei);
                 if (!existingEntry || existingEntry.purchaseId === purchaseId) continue;
 
-                const modelKey = getModelKey(row);
-                let deviceModel = modelsCache.get(modelKey);
-
-                if (!deviceModel) {
-                    deviceModel = await tx.deviceModel.create({
-                        data: {
-                            brand: row.brand,
-                            modelName: row.modelName,
-                            storageGb: row.storageGb,
-                            color: row.color,
-                            imageFilename: 'iphone-placeholder.png'
-                        }
-                    });
-                    modelsCache.set(modelKey, deviceModel);
-                }
+                const deviceModel = modelsCache.get(getModelKey(row));
 
                 await tx.equipo.update({
                     where: { id: existingEntry.id },
@@ -578,7 +581,7 @@ export async function addEquipmentToPurchase(formData: FormData) {
                         modelo: row.modelName,
                         storageGb: row.storageGb,
                         color: row.color,
-                        deviceModelId: deviceModel.id,
+                        deviceModelId: deviceModel!.id,
                         purchaseId: purchaseId,
                         estado: 'En Inventario',
                         fechaIngreso: new Date()
@@ -599,21 +602,7 @@ export async function addEquipmentToPurchase(formData: FormData) {
             if (newRows.length > 0) {
                 const equipmentsToInsert = [];
                 for (const row of newRows) {
-                    const modelKey = getModelKey(row);
-                    let deviceModel = modelsCache.get(modelKey);
-
-                    if (!deviceModel) {
-                        deviceModel = await tx.deviceModel.create({
-                            data: {
-                                brand: row.brand,
-                                modelName: row.modelName,
-                                storageGb: row.storageGb,
-                                color: row.color,
-                                imageFilename: 'iphone-placeholder.png'
-                            }
-                        });
-                        modelsCache.set(modelKey, deviceModel);
-                    }
+                    const deviceModel = modelsCache.get(getModelKey(row));
 
                     equipmentsToInsert.push({
                         imei: row.imei,
@@ -621,7 +610,7 @@ export async function addEquipmentToPurchase(formData: FormData) {
                         modelo: row.modelName,
                         storageGb: row.storageGb,
                         color: row.color,
-                        deviceModelId: deviceModel.id,
+                        deviceModelId: deviceModel!.id,
                         purchaseId: purchaseId,
                         estado: 'En Inventario',
                         fechaIngreso: new Date()
@@ -683,7 +672,7 @@ export async function addEquipmentToPurchase(formData: FormData) {
             });
 
         }, {
-            timeout: 180000 // 180 seconds (3 minutes)
+            timeout: 300000 // 300 seconds (5 minutes)
         });
 
         revalidatePath(`/compras/${purchaseId}`);
