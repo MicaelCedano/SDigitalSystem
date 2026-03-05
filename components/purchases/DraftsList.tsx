@@ -126,7 +126,7 @@ export function DraftsList({ drafts }: { drafts: DraftPurchase[] }) {
                                 </div>
                             </TableCell>
                             <TableCell className="py-6 px-8 text-right">
-                                <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0">
+                                <div className="flex justify-end gap-3 transition-all duration-300">
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>
                                             <Button
@@ -176,7 +176,7 @@ export function DraftsList({ drafts }: { drafts: DraftPurchase[] }) {
                                                 </div>
                                                 <AlertDialogTitle className="text-3xl font-bold text-slate-800 tracking-tighter">¿Confirmar Ingreso?</AlertDialogTitle>
                                                 <AlertDialogDescription className="text-slate-500 font-medium mt-3 text-lg leading-relaxed">
-                                                    Estás a punto de confirmar el ingreso de este lote. Los equipos pasarán a estado <span className="text-indigo-600 font-bold">"En Inventario"</span> y estarán listos para la venta.
+                                                    Estás a punto de confirmar el ingreso de este lote. Los equipos pasarán a estado <span className="text-indigo-600 font-bold">&quot;En Inventario&quot;</span> y estarán listos para la venta.
                                                 </AlertDialogDescription>
                                             </AlertDialogHeader>
                                             <AlertDialogFooter className="mt-10 gap-4 flex-col sm:flex-row relative z-10">
@@ -196,3 +196,5 @@ export function DraftsList({ drafts }: { drafts: DraftPurchase[] }) {
         </div>
     );
 }
+
+

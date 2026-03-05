@@ -222,7 +222,8 @@ export async function createPurchase(data: z.infer<typeof CreatePurchaseSchema>)
 
             if (historyToCreate.length > 0) {
                 await tx.equipoHistorial.createMany({ data: historyToCreate });
-            }            return purchase;
+            }
+            return purchase;
         }, {
             maxWait: 30000,
             timeout: 300000
@@ -294,22 +295,62 @@ export async function getDraftPurchases() {
         include: {
             supplier: true,
             _count: {
-                select: { equipos: true }
+                select: { equipos: true, items: true }
             }
         }
     }) as any[];
     return drafts;
 }
 
-export async function deleteDraft(id: number) {
-    try {
-        // Delete related items and equipments first (cascade usually handles this but safer to be manual if unsure)
-        await prisma.purchaseItem.deleteMany({ where: { purchaseId: id } });
-        await prisma.equipo.deleteMany({ where: { purchaseId: id } });
-        await prisma.purchase.delete({ where: { id } });
 
+export async function deletePurchase(id: number) {
+    try {
+        await prisma.$transaction(async (tx) => {
+            const equipos = await tx.equipo.findMany({
+                where: { purchaseId: id },
+                select: { id: true }
+            });
+
+            const equipoIds = equipos.map(e => e.id);
+
+            if (equipoIds.length > 0) {
+                await tx.equipoHistorial.deleteMany({ where: { equipoId: { in: equipoIds } } });
+                await tx.penalidad.deleteMany({ where: { equipoId: { in: equipoIds } } });
+                await tx.garantia.deleteMany({ where: { equipoId: { in: equipoIds } } });
+                await tx.equipo.deleteMany({ where: { id: { in: equipoIds } } });
+            }
+
+            await tx.purchaseItem.deleteMany({ where: { purchaseId: id } });
+            await tx.purchase.delete({ where: { id } });
+        }, {
+            maxWait: 30000,
+            timeout: 300000
+        });
+
+        revalidatePath("/compras");
         revalidatePath("/compras/borradores");
         return { success: true };
+    } catch (error: any) {
+        console.error("Error deleting purchase:", error);
+        return { success: false, error: error.message || "Error al eliminar la compra." };
+    }
+}
+export async function deleteDraft(id: number) {
+    try {
+        const draft = await prisma.purchase.findUnique({
+            where: { id },
+            select: { id: true, estado: true }
+        });
+
+        if (!draft) {
+            return { success: false, error: "El borrador no existe." };
+        }
+
+        if (draft.estado !== "borrador") {
+            return { success: false, error: `La compra #${id} no está en borrador.` };
+        }
+
+        return await deletePurchase(id);
     } catch (error) {
         console.error("Error deleting draft:", error);
         return { success: false, error: "Error al eliminar el borrador." };
@@ -318,6 +359,19 @@ export async function deleteDraft(id: number) {
 
 export async function activateDraft(id: number) {
     try {
+        const draft = await prisma.purchase.findUnique({
+            where: { id },
+            select: { id: true, estado: true }
+        });
+
+        if (!draft) {
+            return { success: false, error: "La compra no existe." };
+        }
+
+        if (draft.estado !== "borrador") {
+            return { success: false, error: `La compra #${id} no está en borrador (estado actual: ${draft.estado}).` };
+        }
+
         await prisma.purchase.update({
             where: { id },
             data: { estado: 'activa' }
@@ -325,9 +379,9 @@ export async function activateDraft(id: number) {
         revalidatePath("/compras/borradores");
         revalidatePath("/compras");
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error activating draft:", error);
-        return { success: false, error: "Error al activar la compra." };
+        return { success: false, error: error?.message || "Error al activar la compra." };
     }
 }
 
@@ -733,6 +787,8 @@ export async function addEquipmentToPurchase(formData: FormData) {
         return { success: false, error: error.message || "Error al procesar el archivo Excel." };
     }
 }
+
+
 
 
 

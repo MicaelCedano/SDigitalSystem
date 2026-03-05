@@ -41,6 +41,9 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AddEquipmentDialog } from "./AddEquipmentDialog";
+import { deletePurchase } from "@/app/actions/purchase";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 
 interface ModelSummary {
@@ -73,6 +76,8 @@ interface PurchaseDetailProps {
 export function PurchaseDashboardDetail({ purchase }: PurchaseDetailProps) {
     const [modelSearch, setModelSearch] = useState("");
     const [equipmentSearch, setEquipmentSearch] = useState("");
+    const router = useRouter();
+    const [deleting, setDeleting] = useState(false);
 
     // Filter logic
     const filteredModels = purchase.modelSummary.filter(m =>
@@ -86,6 +91,22 @@ export function PurchaseDashboardDetail({ purchase }: PurchaseDetailProps) {
     );
 
     const isCompleted = purchase.estado === 'activa' && purchase.reviewedCount >= purchase.totalQuantity;
+
+    const handleDeletePurchase = async () => {
+        const confirmed = window.confirm(`¿Eliminar la compra #${purchase.id}? Esta accion no se puede deshacer.`);
+        if (!confirmed) return;
+
+        setDeleting(true);
+        const res = await deletePurchase(purchase.id);
+        if (res.success) {
+            toast.success("Compra eliminada correctamente");
+            router.push("/compras");
+            router.refresh();
+        } else {
+            toast.error(res.error || "No se pudo eliminar la compra");
+        }
+        setDeleting(false);
+    };
 
     return (
         <div className="space-y-10 pb-24 animate-in fade-in slide-in-from-bottom-6 duration-1000">
@@ -165,8 +186,8 @@ export function PurchaseDashboardDetail({ purchase }: PurchaseDetailProps) {
                             <DropdownMenuItem className="rounded-xl font-bold py-3 px-4">
                                 <Pencil className="w-4 h-4 mr-2" /> Editar detalles
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="rounded-xl font-bold py-3 px-4 text-rose-600 focus:text-rose-600 focus:bg-rose-50">
-                                <Trash2 className="w-4 h-4 mr-2" /> Eliminar compra
+                            <DropdownMenuItem disabled={deleting} onClick={handleDeletePurchase} className="rounded-xl font-bold py-3 px-4 text-rose-600 focus:text-rose-600 focus:bg-rose-50">
+                                <Trash2 className="w-4 h-4 mr-2" /> {deleting ? "Eliminando..." : "Eliminar compra"}
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -454,3 +475,10 @@ function ReportCategory({ title, purchaseId, filter, color = "indigo" }: any) {
 function cn(...inputs: any[]) {
     return inputs.filter(Boolean).join(" ");
 }
+
+
+
+
+
+
+
