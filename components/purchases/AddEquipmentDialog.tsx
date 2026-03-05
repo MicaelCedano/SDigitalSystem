@@ -89,8 +89,8 @@ export function AddEquipmentDialog({ purchaseId, purchaseNumber }: AddEquipmentD
                     Agregar Equipos
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden border-none rounded-[2.5rem] shadow-2xl">
-                <div className="bg-white p-8 space-y-8">
+            <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden border-none rounded-[2.5rem] shadow-2xl max-h-[95vh] flex flex-col">
+                <div className="bg-white p-6 md:p-8 space-y-6 md:space-y-8 overflow-y-auto custom-scrollbar">
                     <DialogHeader className="space-y-4">
                         <div className="flex items-center gap-3">
                             <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl">
@@ -132,23 +132,23 @@ export function AddEquipmentDialog({ purchaseId, purchaseNumber }: AddEquipmentD
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-8">
-                        <div className="space-y-6">
-                            <Label className="text-sm font-bold text-slate-700 uppercase tracking-widest pl-1">Formato del Archivo</Label>
+                        <div className="space-y-4 md:space-y-6">
+                            <Label className="text-xs md:text-sm font-bold text-slate-700 uppercase tracking-widest pl-1">Formato del Archivo</Label>
                             <RadioGroup
                                 defaultValue="standard"
                                 onValueChange={setImportType}
-                                className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                                className="grid grid-cols-2 gap-3 md:gap-4"
                             >
                                 <div className="relative">
                                     <RadioGroupItem value="standard" id="standard" className="peer sr-only" />
                                     <Label
                                         htmlFor="standard"
-                                        className="flex flex-col items-center justify-between rounded-3xl border-2 border-slate-100 bg-white p-6 hover:bg-slate-50 hover:border-slate-200 peer-data-[state=checked]:border-indigo-600 peer-data-[state=checked]:bg-indigo-50/30 transition-all cursor-pointer group"
+                                        className="flex flex-col items-center justify-center rounded-3xl border-2 border-slate-100 bg-white p-4 md:p-6 hover:bg-slate-50 hover:border-slate-200 peer-data-[state=checked]:border-indigo-600 peer-data-[state=checked]:bg-indigo-50/30 transition-all cursor-pointer group h-full"
                                     >
-                                        <FileSpreadsheet className="h-8 w-8 mb-3 text-slate-400 group-hover:text-indigo-500 group-peer-data-[state=checked]:text-indigo-600 transition-colors" />
+                                        <FileSpreadsheet className="h-6 w-6 md:h-8 md:w-8 mb-2 md:mb-3 text-slate-400 group-hover:text-indigo-500 group-peer-data-[state=checked]:text-indigo-600 transition-colors" />
                                         <div className="text-center">
-                                            <span className="block text-sm font-bold text-slate-800">Estándar</span>
-                                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">4+ Columnas</span>
+                                            <span className="block text-xs md:text-sm font-bold text-slate-800">Estándar</span>
+                                            <span className="text-[9px] md:text-[10px] text-slate-400 font-bold uppercase tracking-wider">4+ Columnas</span>
                                         </div>
                                     </Label>
                                 </div>
@@ -157,12 +157,12 @@ export function AddEquipmentDialog({ purchaseId, purchaseNumber }: AddEquipmentD
                                     <RadioGroupItem value="iphone" id="iphone" className="peer sr-only" />
                                     <Label
                                         htmlFor="iphone"
-                                        className="flex flex-col items-center justify-between rounded-3xl border-2 border-slate-100 bg-white p-6 hover:bg-slate-50 hover:border-slate-200 peer-data-[state=checked]:border-indigo-600 peer-data-[state=checked]:bg-indigo-50/30 transition-all cursor-pointer group"
+                                        className="flex flex-col items-center justify-center rounded-3xl border-2 border-slate-100 bg-white p-4 md:p-6 hover:bg-slate-50 hover:border-slate-200 peer-data-[state=checked]:border-indigo-600 peer-data-[state=checked]:bg-indigo-50/30 transition-all cursor-pointer group h-full"
                                     >
-                                        <Smartphone className="h-8 w-8 mb-3 text-slate-400 group-hover:text-indigo-500 group-peer-data-[state=checked]:text-indigo-600 transition-colors" />
+                                        <Smartphone className="h-6 w-6 md:h-8 md:w-8 mb-2 md:mb-3 text-slate-400 group-hover:text-indigo-500 group-peer-data-[state=checked]:text-indigo-600 transition-colors" />
                                         <div className="text-center">
-                                            <span className="block text-sm font-bold text-slate-800">Smart iPhone</span>
-                                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Solo IMEI & Modelo</span>
+                                            <span className="block text-xs md:text-sm font-bold text-slate-800">Smart iPhone</span>
+                                            <span className="text-[9px] md:text-[10px] text-slate-400 font-bold uppercase tracking-wider">Solo IMEI & Modelo</span>
                                         </div>
                                     </Label>
                                 </div>
@@ -181,7 +181,7 @@ export function AddEquipmentDialog({ purchaseId, purchaseNumber }: AddEquipmentD
                                 />
                                 <Label
                                     htmlFor="file-upload"
-                                    className="flex flex-col items-center justify-center h-40 border-2 border-dashed border-slate-200 rounded-[2rem] hover:border-indigo-400 hover:bg-indigo-50/30 transition-all cursor-pointer group-hover:shadow-lg group-hover:shadow-indigo-50/50"
+                                    className="flex flex-col items-center justify-center h-28 md:h-40 border-2 border-dashed border-slate-200 rounded-[2rem] hover:border-indigo-400 hover:bg-indigo-50/30 transition-all cursor-pointer group-hover:shadow-lg group-hover:shadow-indigo-50/50"
                                 >
                                     <AnimatePresence mode="wait">
                                         {file ? (
@@ -238,7 +238,7 @@ export function AddEquipmentDialog({ purchaseId, purchaseNumber }: AddEquipmentD
                             <Button
                                 type="submit"
                                 disabled={loading || !file}
-                                className="flex-[2] h-14 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg shadow-xl shadow-indigo-100 transition-all active:scale-95"
+                                className="flex-[2] h-12 md:h-14 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-base md:text-lg shadow-xl shadow-indigo-100 transition-all active:scale-95"
                             >
                                 {loading ? (
                                     <>

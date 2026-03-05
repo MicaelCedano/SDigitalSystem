@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { PurchaseWithProgress } from "@/app/actions/purchase";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,8 @@ import {
     Pencil,
     Activity,
     Clock,
-    AlertCircle
+    AlertCircle,
+    Loader2
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -45,6 +46,12 @@ interface PurchaseDashboardUIProps {
 
 export function PurchaseDashboardUI({ activePurchases, historyPurchases, draftCount }: PurchaseDashboardUIProps) {
     const router = useRouter();
+    const [navigatingId, setNavigatingId] = useState<number | null>(null);
+
+    const handleNavigate = (id: number) => {
+        setNavigatingId(id);
+        router.push(`/compras/${id}`);
+    };
 
     const stats = useMemo(() => [
         {
@@ -205,13 +212,19 @@ export function PurchaseDashboardUI({ activePurchases, historyPurchases, draftCo
                                         </TableCell>
                                         <TableCell className="text-right pr-10">
                                             <div className="flex items-center justify-end gap-2 transition-all duration-300">
-                                                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-slate-100 shadow-sm border border-slate-50 transition-all hover:scale-110" onClick={() => router.push(`/compras/${purchase.id}`)}>
-                                                    <Eye className="h-5 w-5" />
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    disabled={navigatingId === purchase.id}
+                                                    className="h-10 w-10 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 shadow-sm border border-slate-50 transition-all hover:scale-110 active:scale-90 disabled:opacity-50"
+                                                    onClick={() => handleNavigate(purchase.id)}
+                                                >
+                                                    {navigatingId === purchase.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <Eye className="h-5 w-5" />}
                                                 </Button>
-                                                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-slate-400 hover:text-amber-500 hover:bg-slate-100 shadow-sm border border-slate-50 transition-all hover:scale-110">
+                                                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-slate-400 hover:text-amber-500 hover:bg-amber-50 shadow-sm border border-slate-50 transition-all hover:scale-110 active:scale-90">
                                                     <Pencil className="h-5 w-5" />
                                                 </Button>
-                                                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-slate-100 shadow-sm border border-slate-50 transition-all hover:scale-110">
+                                                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 shadow-sm border border-slate-50 transition-all hover:scale-110 active:scale-90">
                                                     <FileText className="h-5 w-5" />
                                                 </Button>
                                             </div>
@@ -275,10 +288,16 @@ export function PurchaseDashboardUI({ activePurchases, historyPurchases, draftCo
                                         </TableCell>
                                         <TableCell className="text-right pr-10">
                                             <div className="flex items-center justify-end gap-2 transition-all duration-300">
-                                                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-slate-100 shadow-sm border border-slate-50 transition-all hover:scale-110" onClick={() => router.push(`/compras/${purchase.id}`)}>
-                                                    <Eye className="h-5 w-5" />
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    disabled={navigatingId === purchase.id}
+                                                    className="h-10 w-10 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 shadow-sm border border-slate-50 transition-all hover:scale-110 active:scale-90 disabled:opacity-50"
+                                                    onClick={() => handleNavigate(purchase.id)}
+                                                >
+                                                    {navigatingId === purchase.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <Eye className="h-5 w-5" />}
                                                 </Button>
-                                                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-slate-400 hover:text-slate-800 hover:bg-slate-100 shadow-sm border border-slate-50 transition-all hover:scale-110">
+                                                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-slate-400 hover:text-slate-800 hover:bg-slate-100 shadow-sm border border-slate-50 transition-all hover:scale-110 active:scale-90">
                                                     <FileText className="h-5 w-5" />
                                                 </Button>
                                             </div>
