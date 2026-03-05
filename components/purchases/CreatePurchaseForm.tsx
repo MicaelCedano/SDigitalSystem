@@ -88,6 +88,7 @@ export function CreatePurchaseForm({ suppliers, deviceModels }: CreatePurchaseFo
     const [importing, setImporting] = useState(false);
     const [dateOpen, setDateOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const submitLockRef = useRef(false);
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema) as any,
@@ -206,6 +207,8 @@ export function CreatePurchaseForm({ suppliers, deviceModels }: CreatePurchaseFo
     };
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
+        if (submitLockRef.current) return;
+        submitLockRef.current = true;
         setLoading(true);
         for (const [index, item] of values.items.entries()) {
             const imeiCount = item.imeis.split('\n').filter(s => s.trim().length > 0).length;
@@ -215,6 +218,7 @@ export function CreatePurchaseForm({ suppliers, deviceModels }: CreatePurchaseFo
                     message: `Mismatch: ${imeiCount} vs ${item.quantity}`
                 });
                 setLoading(false);
+                submitLockRef.current = false;
                 toast.error(`Error en la fila #${index + 1}: La cantidad no coincide con los IMEIs.`);
                 return;
             }
@@ -232,6 +236,7 @@ export function CreatePurchaseForm({ suppliers, deviceModels }: CreatePurchaseFo
             toast.error("Error inesperado");
         } finally {
             setLoading(false);
+            submitLockRef.current = false;
         }
     }
 
@@ -572,3 +577,7 @@ export function CreatePurchaseForm({ suppliers, deviceModels }: CreatePurchaseFo
         </Form>
     );
 }
+
+
+
+

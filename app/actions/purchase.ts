@@ -97,7 +97,7 @@ export async function createPurchase(data: z.infer<typeof CreatePurchaseSchema>)
         const existingMap = new Map(existingEquipos.map(eq => [eq.imei, eq]));
 
         // Transaction Phase
-        const finalPurchase = await runTransactionWithRetry(async (tx) => {
+        const finalPurchase = await prisma.$transaction(async (tx) => {
             // 1. Create Purchase
             const purchase = await tx.purchase.create({
                 data: {
@@ -222,9 +222,10 @@ export async function createPurchase(data: z.infer<typeof CreatePurchaseSchema>)
 
             if (historyToCreate.length > 0) {
                 await tx.equipoHistorial.createMany({ data: historyToCreate });
-            }
-
-            return purchase;
+            }            return purchase;
+        }, {
+            maxWait: 30000,
+            timeout: 300000
         });
 
         revalidatePath("/compras");
@@ -732,6 +733,8 @@ export async function addEquipmentToPurchase(formData: FormData) {
         return { success: false, error: error.message || "Error al procesar el archivo Excel." };
     }
 }
+
+
 
 
 
