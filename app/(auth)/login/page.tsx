@@ -56,8 +56,8 @@ export default function LoginPage() {
 
                     <div className="relative z-10">
                         <div className="flex items-center gap-3 mb-10">
-                            <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-lg overflow-hidden border border-white/10">
-                                <img src="/logo.png" alt="Logo" className="w-full h-full object-contain p-1" />
+                            <div className="w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden">
+                                <img src="/logo.png" alt="Logo" className="w-full h-full object-contain mix-blend-multiply contrast-125 brightness-110" />
                             </div>
                             <h2 className="text-2xl font-bold text-white tracking-tight">Señal Digital System</h2>
                         </div>
@@ -84,8 +84,8 @@ export default function LoginPage() {
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-purple-500/10 rounded-full blur-[100px] pointer-events-none" />
 
                     <div className="lg:hidden flex justify-center mb-8 relative z-10">
-                        <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center shadow-lg overflow-hidden border border-white/10 mb-4">
-                            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain p-2" />
+                        <div className="w-20 h-20 rounded-2xl flex items-center justify-center overflow-hidden mb-4">
+                            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain mix-blend-multiply contrast-125 brightness-110" />
                         </div>
                     </div>
 

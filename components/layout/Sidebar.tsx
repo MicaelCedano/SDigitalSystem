@@ -100,7 +100,7 @@ const Sidebar = ({ initialUser, forceShow = false }: { initialUser?: any, forceS
                             <img
                                 src="/logo.png"
                                 alt="Logo"
-                                className={cn("relative z-10 transform group-hover:scale-110 transition-transform duration-300 object-contain", collapsed ? "h-10 w-10" : "h-12 w-12 mr-3")}
+                                className={cn("relative z-10 transform group-hover:scale-110 transition-transform duration-300 object-contain mix-blend-multiply contrast-125 brightness-110", collapsed ? "h-10 w-10" : "h-12 w-12 mr-3")}
                             />
                         </div>
                         {!collapsed && (

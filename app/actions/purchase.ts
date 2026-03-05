@@ -27,7 +27,34 @@ export type PurchaseWithProgress = Purchase & {
     completedCount: number;
     originalTotal: number;
 };
+function isTransactionNotFoundError(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : String(error);
+    return message.includes("Transaction not found") || message.includes("Transaction API error");
+}
 
+async function runTransactionWithRetry<T>(
+    callback: (tx: any) => Promise<T>,
+    retries = 2
+): Promise<T> {
+    let lastError: unknown;
+
+    for (let attempt = 1; attempt <= retries + 1; attempt++) {
+        try {
+            return await prisma.$transaction(callback, {
+                maxWait: 30000,
+                timeout: 300000
+            });
+        } catch (error) {
+            lastError = error;
+            if (!isTransactionNotFoundError(error) || attempt > retries) {
+                throw error;
+            }
+            console.warn(`[Purchase] Reintentando transaccion (${attempt}/${retries + 1}) por error transitorio.`);
+        }
+    }
+
+    throw lastError;
+}
 export async function createPurchase(data: z.infer<typeof CreatePurchaseSchema>) {
     console.log(">>> [DEBUG] EXECUTING createPurchase - OPTIMIZED VERSION <<<");
     console.log("Starting createPurchase with items:", data.items.length);
@@ -70,7 +97,7 @@ export async function createPurchase(data: z.infer<typeof CreatePurchaseSchema>)
         const existingMap = new Map(existingEquipos.map(eq => [eq.imei, eq]));
 
         // Transaction Phase
-        const finalPurchase = await prisma.$transaction(async (tx) => {
+        const finalPurchase = await runTransactionWithRetry(async (tx) => {
             // 1. Create Purchase
             const purchase = await tx.purchase.create({
                 data: {
@@ -198,8 +225,6 @@ export async function createPurchase(data: z.infer<typeof CreatePurchaseSchema>)
             }
 
             return purchase;
-        }, {
-            timeout: 300000 // 300 seconds (5 minutes)
         });
 
         revalidatePath("/compras");
@@ -585,7 +610,7 @@ export async function addEquipmentToPurchase(formData: FormData) {
         let equipmentsReintegrated = 0;
 
         // Phase 3: Main Transaction (Writing data)
-        await prisma.$transaction(async (tx) => {
+        await runTransactionWithRetry(async (tx) => {
             const historyToCreate: any[] = [];
 
             // 3.1: Handle Existing (Updates)
@@ -692,8 +717,6 @@ export async function addEquipmentToPurchase(formData: FormData) {
                 data: { totalQuantity: allEquips.length }
             });
 
-        }, {
-            timeout: 300000 // 300 seconds (5 minutes)
         });
 
         revalidatePath(`/compras/${purchaseId}`);
@@ -709,5 +732,8 @@ export async function addEquipmentToPurchase(formData: FormData) {
         return { success: false, error: error.message || "Error al procesar el archivo Excel." };
     }
 }
+
+
+
 
 
