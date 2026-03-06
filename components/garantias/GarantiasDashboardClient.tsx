@@ -26,19 +26,22 @@ import { formatDateTime, cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { asignarGarantia, updateGarantia } from "@/app/actions/garantias";
+import { PendingWorkApproval } from "./PendingWorkApproval";
 
 interface GarantiasDashboardClientProps {
     initialGarantias: any[];
     stats: any;
     tecnicos: any[];
     currentUser: any;
+    trabajosPendientes?: any[];
 }
 
 export function GarantiasDashboardClient({
     initialGarantias,
     stats,
     tecnicos,
-    currentUser
+    currentUser,
+    trabajosPendientes = []
 }: GarantiasDashboardClientProps) {
     const router = useRouter();
     const [searchTerm, setSearchTerm] = useState("");
@@ -91,6 +94,7 @@ export function GarantiasDashboardClient({
             case 'Asignado': return 'bg-blue-100 text-blue-700 border-blue-200';
             case 'En Reparación': return 'bg-indigo-100 text-indigo-700 border-indigo-200';
             case 'Reparado': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+            case 'Terminado - Pendiente de Pago': return 'bg-cyan-100 text-cyan-700 border-cyan-200';
             case 'Entregado': return 'bg-purple-100 text-purple-700 border-purple-200';
             case 'Cancelado':
             case 'No Reparado': return 'bg-rose-100 text-rose-700 border-rose-200';
@@ -132,6 +136,9 @@ export function GarantiasDashboardClient({
                     </Button>
                 </div>
             </div>
+
+            {/* Pending Approvals (Admin Only) */}
+            {currentUser.role === 'admin' && <PendingWorkApproval lotes={trabajosPendientes} />}
 
             {/* Stat Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

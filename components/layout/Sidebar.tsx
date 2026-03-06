@@ -19,7 +19,8 @@ import {
     Umbrella,
     Wrench,
     Bell,
-    Package
+    Package,
+    Zap
 } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import { useState } from 'react';
@@ -159,7 +160,12 @@ const Sidebar = ({ initialUser, forceShow = false }: { initialUser?: any, forceS
                     {(isGarantiaTec || isAdmin) && (
                         <div className="space-y-1">
                             {!collapsed && <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mt-4 mb-2 pl-4">Servicio Técnico</div>}
-                            {role === 'tecnico_garantias' && <NavItem href="/wallet" icon={<Wallet size={20} />} label="Mi Wallet" active={pathname === '/wallet'} collapsed={collapsed} user={user} />}
+                            {role === 'tecnico_garantias' && (
+                                <>
+                                    <NavItem href="/garantias/reportar" icon={<Zap size={20} />} label="Reportar Trabajo" active={pathname === '/garantias/reportar'} collapsed={collapsed} user={user} />
+                                    <NavItem href="/wallet" icon={<Wallet size={20} />} label="Mi Wallet" active={pathname === '/wallet'} collapsed={collapsed} user={user} />
+                                </>
+                            )}
 
                             <div className="pt-2">
                                 <SectionHeader

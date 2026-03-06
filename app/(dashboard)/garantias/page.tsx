@@ -1,4 +1,4 @@
-import { getGarantias, getGarantiasStats, getTecnicosGarantias } from "@/app/actions/garantias";
+import { getGarantias, getGarantiasStats, getTecnicosGarantias, getTrabajosPendientesAprobacion } from "@/app/actions/garantias";
 import { GarantiasDashboardClient } from "@/components/garantias/GarantiasDashboardClient";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -16,13 +16,17 @@ export default async function GarantiasPage({ searchParams }: { searchParams: { 
     }
 
     const isTecnico = session.user.role === 'tecnico_garantias';
+    const isAdmin = session.user.role === 'admin';
     const stats = await getGarantiasStats(isTecnico ? Number(session.user.id) : undefined);
     const tecnicos = await getTecnicosGarantias();
     const filters = {
         estado: searchParams.estado,
         tecnicoId: searchParams.tecnico_id ? Number(searchParams.tecnico_id) : undefined
     };
-    const garantias = await getGarantias(filters);
+    const [garantias, trabajosPendientes] = await Promise.all([
+        getGarantias(filters),
+        isAdmin ? getTrabajosPendientesAprobacion() : Promise.resolve([])
+    ]);
 
     return (
         <div className="pt-4 max-w-[1400px] mx-auto w-full">
@@ -31,6 +35,7 @@ export default async function GarantiasPage({ searchParams }: { searchParams: { 
                 stats={stats}
                 tecnicos={tecnicos}
                 currentUser={session.user}
+                trabajosPendientes={trabajosPendientes}
             />
         </div>
     );

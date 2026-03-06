@@ -920,5 +920,221 @@ export async function getConduces() {
     });
 }
 
+/**
+ * Reported work by technicians (Already fixed items)
+ */
+export async function reportarTrabajosRealizados(data: {
+    cliente: string;
+    items: {
+        imeiSn: string;
+        marca?: string;
+        modelo?: string;
+        problema: string;
+        solucion: string;
+    }[]
+}) {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== 'tecnico_garantias') {
+        return { success: false, error: "No autorizado" };
+    }
+
+    try {
+        const tecnicoId = Number(session.user.id);
+        
+        // Count total lotes for numeric code
+        const count = await prisma.garantiaLoteIngreso.count();
+        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const codigoLote = `TRA-${dateStr}-${count + 1}`;
+
+        const result = await prisma.$transaction(async (tx) => {
+            const batch = await tx.garantiaLoteIngreso.create({
+                data: {
+                    codigo: codigoLote,
+                    createdById: tecnicoId,
+                    fechaCreacion: new Date(),
+                    observaciones: `Reporte de trabajo realizado para: ${data.cliente}`
+                }
+            });
+
+            const firstAdmin = await tx.user.findFirst({ where: { role: 'admin' } });
+            if (!firstAdmin) throw new Error("No se encontró ningún administrador.");
+
+            for (const item of data.items) {
+                const gCount = await tx.garantia.count();
+                const gCodigo = `GAR-T-${dateStr}-${gCount + 1}`;
+                
+                const garantia = await tx.garantia.create({
+                    data: {
+                        codigo: gCodigo,
+                        cliente: data.cliente,
+                        imeiSn: item.imeiSn,
+                        marca: item.marca || null,
+                        modelo: item.modelo || null,
+                        problema: item.problema,
+                        diagnostico: item.problema,
+                        solucionAplicada: item.solucion,
+                        estado: 'Terminado - Pendiente de Pago',
+                        tecnicoId: tecnicoId,
+                        adminId: firstAdmin.id,
+                        loteIngresoId: batch.id,
+                        fechaRecepcion: new Date(),
+                        fechaReparacion: new Date()
+                    }
+                });
+
+                await tx.garantiaHistorial.create({
+                    data: {
+                        garantiaId: garantia.id,
+                        estadoNuevo: 'Terminado - Pendiente de Pago',
+                        userId: tecnicoId,
+                        fechaCambio: new Date(),
+                        observacion: 'Trabajo reportado por el técnico.'
+                    }
+                });
+            }
+
+            return batch;
+        });
+
+        revalidatePath("/garantias");
+        return { success: true, batchId: result.id };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Fetch all work reports pending approval (Admin only)
+ */
+export async function getTrabajosPendientesAprobacion() {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== 'admin') return [];
+
+    return await prisma.garantiaLoteIngreso.findMany({
+        where: {
+            garantias: {
+                some: { estado: 'Terminado - Pendiente de Pago' }
+            }
+        },
+        include: {
+            createdBy: { select: { id: true, name: true, username: true } },
+            garantias: true,
+            _count: { select: { garantias: true } }
+        },
+        orderBy: { fechaCreacion: 'desc' }
+    });
+}
+
+/**
+ * Approve a batch of reported work and credit technician wallet.
+ */
+export async function aprobarYPayLoteTrabajo(loteId: number) {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== 'admin') return { success: false, error: "No autorizado" };
+
+    try {
+        return await prisma.$transaction(async (tx) => {
+            const lote = await tx.garantiaLoteIngreso.findUnique({
+                where: { id: loteId },
+                include: { garantias: true, createdBy: true }
+            });
+
+            if (!lote) throw new Error("Lote no encontrado");
+            const tecnicoId = lote.createdById;
+
+            // Get payment configuration
+            const config = await tx.tecnicoGarantiaPago.findFirst({ where: { tecnicoId } });
+            const montoPorEquipo = config?.montoPorReparacion || 50; 
+            const montoTotal = lote.garantias.length * montoPorEquipo;
+
+            // 1. Update guarantees status to 'Entregado'
+            await tx.garantia.updateMany({
+                where: { loteIngresoId: loteId },
+                data: { estado: 'Entregado', fechaEntrega: new Date() }
+            });
+
+            // 2. Add history records
+            for (const g of lote.garantias) {
+                await tx.garantiaHistorial.create({
+                    data: {
+                        garantiaId: g.id,
+                        estadoAnterior: 'Terminado - Pendiente de Pago',
+                        estadoNuevo: 'Entregado',
+                        userId: Number(session.user.id),
+                        fechaCambio: new Date(),
+                        observacion: `Aprobado y pagado RD$ ${montoPorEquipo}`
+                    }
+                });
+            }
+
+            // 3. Credit wallet
+            let wallet = await tx.wallet.findFirst({ where: { tecnicoId } });
+            if (!wallet) {
+                wallet = await tx.wallet.create({ data: { tecnicoId, saldo: 0 } });
+            }
+
+            let principalAcc = await tx.walletAccount.findFirst({
+                where: { walletId: wallet.id, nombre: "Principal" }
+            });
+
+            if (!principalAcc) {
+                principalAcc = await tx.walletAccount.create({
+                    data: {
+                        walletId: wallet.id,
+                        nombre: "Principal",
+                        tipo: "corriente",
+                        saldo: 0,
+                        fechaCreacion: new Date()
+                    }
+                });
+            }
+
+            // Create transaction record
+            await tx.walletTransaction.create({
+                data: {
+                    tecnicoId: tecnicoId,
+                    monto: montoTotal,
+                    tipo: 'ingreso',
+                    estado: 'Completado',
+                    fecha: new Date(),
+                    descripcion: `Pago por lote de trabajo ${lote.codigo} (${lote.garantias.length} equipos)`
+                }
+            });
+
+            // Update balances
+            await tx.walletAccount.update({
+                where: { id: principalAcc.id },
+                data: { saldo: { increment: montoTotal } }
+            });
+
+            await tx.wallet.update({
+                where: { id: wallet.id },
+                data: { saldo: { increment: montoTotal } }
+            });
+
+            // Notify technician
+            await tx.notification.create({
+                data: {
+                    tecnicoId: tecnicoId,
+                    tipo: "PAGO_RECIBIDO",
+                    titulo: "¡Pago acreditado!",
+                    mensaje: `Se ha acreditado RD$ ${montoTotal.toLocaleString()} a tu cuenta por el lote ${lote.codigo}.`,
+                    monto: montoTotal,
+                    redirectUrl: "/wallet",
+                    fecha: new Date(),
+                    leida: false
+                }
+            });
+
+            return { success: true };
+        });
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    } finally {
+        revalidatePath("/garantias");
+        revalidatePath("/wallet");
+    }
+}
+
 
 
