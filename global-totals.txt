@@ -1,0 +1,3 @@
+Sum of Purchase.totalQuantity (active/history): 7705
+Total Equipos in table: 7680
+Difference: 25

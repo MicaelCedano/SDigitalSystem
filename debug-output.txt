@@ -1,0 +1,8 @@
+Checking Purchase #61
+Purchase Total Quantity (db): 150
+Total Equips in table for this purchase: 146
+States distribution: { Entregado: 146 }
+Funcionalidad distribution: { Funcional: 134, 'No funcional': 12 }
+Count with estado in ['Revisado', 'Entregado', 'Vendido']: 146
+Count with funcionalidad != null: 146
+Count with estado='En Inventario' AND funcionalidad!=null: 0

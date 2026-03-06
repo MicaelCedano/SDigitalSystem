@@ -241,24 +241,36 @@ export async function getPurchases() {
     // Calculate progress for each
     for (const purchase of purchases) {
         const totalEquipments = purchase.totalQuantity;
-        // Count completed equipments
+        // Count completed equipments: Anything that has been reviewed (funcionalidad is not null)
+        // or is in a terminal state.
         const completedCount = await prisma.equipo.count({
             where: {
                 purchaseId: purchase.id,
-                estado: { in: ['Revisado', 'Entregado', 'Vendido'] } // Check Python's exact logic
-                // Python: Equipo.estado.in_(['Revisado', 'Entregado'])
-                // But Python also checks if validation is >= 100% to move to history
+                OR: [
+                    { estado: { in: ['Revisado', 'Entregado', 'Vendido'] } },
+                    { funcionalidad: { not: null } }
+                ]
             }
         });
 
-        const percentage = totalEquipments > 0 ? (completedCount / totalEquipments) * 100 : 0;
+        // We should also check the real count in the table. 
+        // If equipment was moved or deleted, totalQuantity might be wrong.
+        const actualTotalInTable = await prisma.equipo.count({
+            where: { purchaseId: purchase.id }
+        });
+
+        // Use the actual count in table as the base if it's different from totalQuantity
+        // this fixes the "97%" stuck issue for old purchases where some items were removed/moved.
+        const referenceTotal = actualTotalInTable > 0 ? actualTotalInTable : totalEquipments;
+
+        const percentage = referenceTotal > 0 ? (completedCount / referenceTotal) * 100 : 0;
 
         const enhancedPurchase: any = {
             ...purchase,
             supplier: (purchase as any).supplier,
             displayProgress: Math.min(percentage, 100),
             completedCount,
-            originalTotal: totalEquipments
+            originalTotal: referenceTotal
         };
 
         if (percentage < 100) {

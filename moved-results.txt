@@ -1,0 +1,11 @@
+Searching for equipments moved from #61...
+Found 3 moved equipments from historical records mentionining '61'
+IMEI: 352281797277753, Original Note: IMEI cambiado de 352834614777759 a 352281797277753, Current PurchaseId: 50
+IMEI: 352834614777759, Original Note: IMEI cambiado de 358187613333577 a 352834614777759, Current PurchaseId: 50
+IMEI: 358187613333577, Original Note: IMEI cambiado de 355168940100049 a 358187613333577, Current PurchaseId: 50
+Purchase #61: DB Total=150, Table Count=146, Diff=4
+Purchase #60: DB Total=117, Table Count=113, Diff=4
+Purchase #58: DB Total=137, Table Count=135, Diff=2
+Purchase #53: DB Total=55, Table Count=52, Diff=3
+Purchase #51: DB Total=191, Table Count=182, Diff=9
+Purchase #38: DB Total=108, Table Count=107, Diff=1

@@ -1,0 +1,9 @@
+Deep search for moved equipments...
+Found 890 hist records mentioning a purchase.
+Summary: 6 equipments moved.
+IMEI: 357590492576664 | Original: #65 | Now: #75 | Note: Ingresado a compra #65
+IMEI: 356199679772160 | Original: #65 | Now: #75 | Note: Ingresado a compra #65
+IMEI: 354455409212790 | Original: #65 | Now: #75 | Note: Ingresado a compra #65
+IMEI: 353669752699947 | Original: #65 | Now: #75 | Note: Ingresado a compra #65
+IMEI: 352569484301419 | Original: #70 | Now: #75 | Note: Ingresado a compra #70
+IMEI: 353559566055339 | Original: #70 | Now: #76 | Note: Ingresado a compra #70
