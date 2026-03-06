@@ -7,6 +7,8 @@ import { cn, getProfileImageUrl } from "@/lib/utils";
 
 import { LoteActionButtons } from "@/components/admin/LoteActionButtons";
 import { LoteDetailsModal } from "@/components/admin/LoteDetailsModal";
+import { getTrabajosPendientesAprobacion } from "@/app/actions/garantias";
+import { PendingWorkApproval } from "@/components/garantias/PendingWorkApproval";
 import {
   Activity,
   DollarSign,
@@ -52,19 +54,23 @@ export default async function Home() {
   }
 
   // Data fetching
+  const results = await Promise.all([
+    prisma.equipo.count({ where: { estado: "En Inventario" } }),
+    prisma.equipo.count({ where: { estado: "En Revisión" } }),
+    prisma.equipo.count({ where: { estado: "Revisado" } }),
+    prisma.lote.count({ where: { estado: "Pendiente" } }),
+    prisma.lote.count({ where: { estado: "Listo para Entrega" } }),
+    isAdmin ? getTrabajosPendientesAprobacion() : Promise.resolve([])
+  ]);
+
   const [
     enInventario,
     enRevision,
     revisados,
     lotesPendientesCount,
-    lotesReadyCount
-  ] = await Promise.all([
-    prisma.equipo.count({ where: { estado: "En Inventario" } }),
-    prisma.equipo.count({ where: { estado: "En Revisión" } }),
-    prisma.equipo.count({ where: { estado: "Revisado" } }),
-    prisma.lote.count({ where: { estado: "Pendiente" } }),
-    prisma.lote.count({ where: { estado: "Listo para Entrega" } })
-  ]);
+    lotesReadyCount,
+    trabajosPendientes
+  ] = results as [number, number, number, number, number, any[]];
 
   // Get lotes if admin
   const lotesToReview = (isAdmin ? await prisma.lote.findMany({
@@ -287,6 +293,13 @@ export default async function Home() {
           </div>
         </div>
       </div>
+
+      {/* Reported Technician Work Pending Approval */}
+      {isAdmin && trabajosPendientes.length > 0 && (
+        <section className="mt-8 animate-in fade-in slide-in-from-right-4 duration-1000">
+          <PendingWorkApproval lotes={trabajosPendientes} />
+        </section>
+      )}
 
       {/* Lotes Pendientes */}
       {isAdmin && (
