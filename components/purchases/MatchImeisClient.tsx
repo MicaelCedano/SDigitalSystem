@@ -26,10 +26,8 @@ export function MatchImeisClient({ purchase }: { purchase: any }) {
         }
 
         // 2. Map database 
-        const funcionalesDB = purchase.equipos.filter((e: any) => e.funcionalidad === 'Funcional');
-        const imeisDbFuncionalesSet = new Set(funcionalesDB.map((e: any) => e.imei));
-        const equiposDbMap = new Map(funcionalesDB.map((e: any) => [e.imei, e]));
         const todosEquiposMap = new Map(purchase.equipos.map((e: any) => [e.imei, e]));
+        const imeisDbSet = new Set(purchase.equipos.map((e: any) => e.imei));
 
         // 3. Compare Lists
         const matches: any[] = [];
@@ -38,27 +36,21 @@ export function MatchImeisClient({ purchase }: { purchase: any }) {
 
         // Check physical ones
         imeisFisicos.forEach(imei => {
-            if (imeisDbFuncionalesSet.has(imei)) {
-                matches.push(equiposDbMap.get(imei));
+            if (imeisDbSet.has(imei)) {
+                matches.push(todosEquiposMap.get(imei));
             } else {
-                let motivo = "No registrado en esta compra";
-                let estado_actual = "Desconocido";
-
-                if (todosEquiposMap.has(imei)) {
-                    const eq: any = todosEquiposMap.get(imei);
-                    motivo = "Existe pero no es 'Funcional'";
-                    estado_actual = `Func: ${eq.funcionalidad || 'Sin Revisar'} | Est: ${eq.estado}`;
-                }
-
-                extraFisicos.push({ imei, motivo, estado_actual });
+                extraFisicos.push({ 
+                    imei, 
+                    motivo: "No registrado en esta compra", 
+                    estado_actual: "Desconocido" 
+                });
             }
         });
 
         // Check missing in physical
-        imeisDbFuncionalesSet.forEach((imei: unknown) => {
-            const imeiStr = String(imei);
-            if (!imeisFisicos.includes(imeiStr)) {
-                missingFisicos.push(equiposDbMap.get(imeiStr));
+        purchase.equipos.forEach((eq: any) => {
+            if (!imeisFisicos.includes(eq.imei)) {
+                missingFisicos.push(eq);
             }
         });
 
@@ -68,7 +60,7 @@ export function MatchImeisClient({ purchase }: { purchase: any }) {
             extraFisicos,
             missingFisicos,
             totalFisicos: imeisFisicos.length,
-            totalDbFuncionales: imeisDbFuncionalesSet.size
+            totalDb: purchase.equipos.length
         });
     };
 
@@ -150,7 +142,7 @@ export function MatchImeisClient({ purchase }: { purchase: any }) {
                     </div>
 
                     <div className="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                        <p className="text-slate-500 font-bold ml-4">IMEIs funcionales totales en sistema ({purchase.id}): <strong className="text-indigo-600">{results.totalDbFuncionales}</strong></p>
+                        <p className="text-slate-500 font-bold ml-4">Total de equipos registrados en esta compra: <strong className="text-indigo-600">{results.totalDb}</strong></p>
                         <Button variant="outline" onClick={() => setResults(null)} className="rounded-xl border-slate-200">
                             Hacer otra verificación
                         </Button>
@@ -164,7 +156,7 @@ export function MatchImeisClient({ purchase }: { purchase: any }) {
                             <div className="bg-white rounded-3xl shadow-xl border border-rose-50 p-6 overflow-hidden">
                                 <h3 className="text-lg font-black text-slate-800 flex items-center gap-2 mb-4 border-b border-slate-50 pb-4">
                                     <AlertCircle className="w-5 h-5 text-rose-500" />
-                                    Excluidos / Erróneos
+                                    No pertenecen a esta compra
                                     <Badge className="ml-auto bg-rose-100 text-rose-700 hover:bg-rose-100">{results.extraFisicos.length}</Badge>
                                 </h3>
 
@@ -174,12 +166,11 @@ export function MatchImeisClient({ purchase }: { purchase: any }) {
                                             <div key={i} className="bg-rose-50/50 p-3 rounded-xl border border-rose-100/50">
                                                 <p className="font-mono font-bold text-slate-800 mb-1">{e.imei}</p>
                                                 <p className="text-xs text-rose-600 font-bold mb-1">{e.motivo}</p>
-                                                <p className="text-[10px] text-slate-500 bg-white inline-block px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">{e.estado_actual}</p>
                                             </div>
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className="text-slate-400 italic text-sm text-center py-4">Sin equipos sobrantes o erróneos.</p>
+                                    <p className="text-slate-400 italic text-sm text-center py-4">Sin equipos sobrantes o de otras compras.</p>
                                 )}
                             </div>
 
@@ -187,7 +178,7 @@ export function MatchImeisClient({ purchase }: { purchase: any }) {
                             <div className="bg-white rounded-3xl shadow-xl border border-amber-50 p-6 overflow-hidden">
                                 <h3 className="text-lg font-black text-slate-800 flex items-center gap-2 mb-4 border-b border-slate-50 pb-4">
                                     <Layers className="w-5 h-5 text-amber-500" />
-                                    Físicos Faltantes
+                                    Pendientes de escaneo físico
                                     <Badge className="ml-auto bg-amber-100 text-amber-700 hover:bg-amber-100">{results.missingFisicos.length}</Badge>
                                 </h3>
 
@@ -213,18 +204,25 @@ export function MatchImeisClient({ purchase }: { purchase: any }) {
                             <div className="bg-white rounded-3xl shadow-xl border border-emerald-50 p-6 overflow-hidden">
                                 <h3 className="text-xl font-black text-slate-800 flex items-center gap-2 mb-6 border-b border-slate-50 pb-4">
                                     <CheckCircle2 className="w-6 h-6 text-emerald-500" />
-                                    Coincidencias Funcionales Exitosas
+                                    Coincidencias de esta compra
                                     <Badge className="ml-auto bg-emerald-100 text-emerald-700 text-lg py-1 px-3 hover:bg-emerald-100">{results.matches.length}</Badge>
                                 </h3>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[850px] overflow-y-auto pr-2">
                                     {results.matches.map((eq: any, i: number) => (
                                         <div key={i} className="flex flex-col bg-slate-50 border border-slate-100 p-3.5 rounded-2xl hover:border-emerald-200 hover:bg-emerald-50/30 transition-colors">
-                                            <div className="flex justify-between items-start mb-1">
+                                            <div className="flex justify-between items-start mb-1 gap-2">
                                                 <p className="font-bold text-slate-800 text-sm leading-tight">
                                                     {eq.deviceModel?.brand} {eq.deviceModel?.modelName} {eq.modelo}
                                                 </p>
-                                                <Badge className="bg-emerald-100 text-emerald-700 tracking-widest font-black text-[9px] uppercase hover:bg-emerald-100">MATCH</Badge>
+                                                <div className="flex flex-col items-end gap-1">
+                                                    <Badge className={eq.funcionalidad === 'Funcional' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700' + " tracking-widest font-black text-[9px] uppercase hover:opacity-100"}>
+                                                        {eq.funcionalidad || 'Sin Revisar'}
+                                                    </Badge>
+                                                    <Badge variant="outline" className="text-[8px] font-bold border-slate-200 text-slate-500 bg-white">
+                                                        {eq.estado}
+                                                    </Badge>
+                                                </div>
                                             </div>
                                             <p className="font-mono font-bold text-slate-600 text-xs">{eq.imei}</p>
                                             <div className="flex gap-2 mt-2">
@@ -236,7 +234,7 @@ export function MatchImeisClient({ purchase }: { purchase: any }) {
                                     ))}
                                     {results.matches.length === 0 && (
                                         <div className="col-span-full py-10 text-center text-slate-400 font-bold italic">
-                                            Ningún IMEI escaneado coincidió con un equipo funcional en el sistema.
+                                            Ningún IMEI escaneado coincidió con un equipo en el sistema.
                                         </div>
                                     )}
                                 </div>

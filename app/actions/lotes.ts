@@ -100,6 +100,27 @@ export async function approveLote(loteId: number) {
                 }
             });
 
+            // 2.5 Create history entries for each equipment moved to inventory
+            const equipmentsInLote = await tx.equipo.findMany({
+                where: { loteId: loteId },
+                select: { id: true }
+            });
+
+            const historyEntries = equipmentsInLote.map(eq => ({
+                equipoId: eq.id,
+                fecha: new Date(),
+                estado: 'En Inventario',
+                userId: Number(session.user.id),
+                observacion: `Aprobación de Lote ${lote.codigo} - Equipo movido a inventario.`,
+                loteId: loteId
+            }));
+
+            if (historyEntries.length > 0) {
+                await tx.equipoHistorial.createMany({
+                    data: historyEntries
+                });
+            }
+
             // 3. Process Payment to Wallet
             if (paymentAmount > 0) {
                 let wallet = await tx.wallet.findFirst({
