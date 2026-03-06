@@ -111,7 +111,10 @@ export default async function Home() {
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
   const qcUsers = await prisma.user.findMany({
-    where: { role: 'control_calidad' },
+    where: { 
+      role: 'control_calidad',
+      isActive: true
+    },
     select: {
       id: true,
       username: true,

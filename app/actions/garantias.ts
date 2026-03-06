@@ -621,7 +621,10 @@ export async function saveConfiguracionPago(tecnicoId: number, data: { montoPorR
 
 export async function getTecnicosPaymentsInfo() {
     const tecnicos = await prisma.user.findMany({
-        where: { role: "tecnico_garantias" },
+        where: { 
+            role: "tecnico_garantias",
+            isActive: true
+        },
         select: {
             id: true,
             name: true,

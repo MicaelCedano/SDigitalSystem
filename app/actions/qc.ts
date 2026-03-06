@@ -129,7 +129,10 @@ export async function getQCDashboardData() {
 
             const userIds = topUsers.map(u => u.userId);
             const users = await prisma.user.findMany({
-                where: { id: { in: userIds } },
+                where: { 
+                    id: { in: userIds },
+                    isActive: true
+                },
                 select: { id: true, name: true, username: true, profileImage: true }
             });
 
