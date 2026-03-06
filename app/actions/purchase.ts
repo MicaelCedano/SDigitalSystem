@@ -86,9 +86,7 @@ export async function createPurchase(data: z.infer<typeof CreatePurchaseSchema>)
             include: { deviceModel: true, purchase: true }
         });
 
-        const blockingImeis = existingEquipos
-            .filter(eq => !['Despachado', 'Entregado', 'Vendido', 'Dañado', 'No Funcional', 'Usado para Piezas', 'Revisado'].includes(eq.estado))
-            .map(eq => eq.imei);
+        const blockingImeis = existingEquipos.map(eq => eq.imei);
 
         if (blockingImeis.length > 0) {
             return { success: false, error: `Los siguientes IMEIs ya están en inventario: ${blockingImeis.slice(0, 5).join(', ')}${blockingImeis.length > 5 ? '...' : ''}` };
@@ -110,7 +108,6 @@ export async function createPurchase(data: z.infer<typeof CreatePurchaseSchema>)
 
             const equipmentsToCreate: any[] = [];
             const historyToCreate: any[] = [];
-            const equipmentsToUpdate: { id: number, data: any }[] = [];
 
             // 2. Process Items
             for (const item of items) {
@@ -179,13 +176,7 @@ export async function createPurchase(data: z.infer<typeof CreatePurchaseSchema>)
                     };
 
                     if (existing) {
-                        equipmentsToUpdate.push({ id: existing.id, data: equipoData });
-                        historyToCreate.push({
-                            equipoId: existing.id,
-                            estado: 'En Inventario',
-                            fecha: new Date(),
-                            observacion: `Equipo reintegrado en compra #${purchase.id}.`
-                        });
+                        throw new Error(`El IMEI ${imei} ya esta registrado en otra compra y no puede reasignarse.`);
                     } else {
                         equipmentsToCreate.push({ imei, ...equipoData });
                     }
@@ -211,14 +202,6 @@ export async function createPurchase(data: z.infer<typeof CreatePurchaseSchema>)
                 });
             }
 
-            if (equipmentsToUpdate.length > 0) {
-                for (const update of equipmentsToUpdate) {
-                    await tx.equipo.update({
-                        where: { id: update.id },
-                        data: update.data
-                    });
-                }
-            }
 
             if (historyToCreate.length > 0) {
                 await tx.equipoHistorial.createMany({ data: historyToCreate });
@@ -489,8 +472,8 @@ function parseIphoneModel(s: string) {
             }
             if (lastNumIdx !== -1) {
                 gb = parseInt(tokens[lastNumIdx]);
-                modelPart = tokens.slice(0, lastNumIdx).join(' ').trim();
-                colorPart = tokens.slice(lastNumIdx + 1).join(' ').trim();
+                modelPart = tokens.slice(0, lastNumIdx).join(', ').trim();
+                colorPart = tokens.slice(lastNumIdx + 1).join(', ').trim();
             }
         }
     }
@@ -634,6 +617,17 @@ export async function addEquipmentToPurchase(formData: FormData) {
         });
         const existingEquiposMap = new Map(existingEquipos.map(e => [e.imei, e]));
 
+        const crossPurchaseImeis = existingEquipos
+            .filter(e => e.purchaseId !== purchaseId)
+            .map(e => e.imei);
+
+        if (crossPurchaseImeis.length > 0) {
+            return {
+                success: false,
+                error: `Estos IMEIs ya pertenecen a otras compras y no se pueden reasignar: ${crossPurchaseImeis.slice(0, 8).join(', ')}${crossPurchaseImeis.length > 8 ? '...' : ''}`
+            };
+        }
+
         // Pre-fetch all referenced models
         const modelNames = [...new Set(validatedRows.map(r => r.modelName))];
         const allModels = await prisma.deviceModel.findMany({
@@ -662,41 +656,13 @@ export async function addEquipmentToPurchase(formData: FormData) {
         }
 
         let equipmentsNew = 0;
-        let equipmentsReintegrated = 0;
+        const equipmentsReintegrated = 0;
 
         // Phase 3: Main Transaction (Writing data)
         await runTransactionWithRetry(async (tx) => {
             const historyToCreate: any[] = [];
 
-            // 3.1: Handle Existing (Updates)
-            for (const row of validatedRows) {
-                const existingEntry = existingEquiposMap.get(row.imei);
-                if (!existingEntry || existingEntry.purchaseId === purchaseId) continue;
-
-                const deviceModel = modelsCache.get(getModelKey(row));
-
-                await tx.equipo.update({
-                    where: { id: existingEntry.id },
-                    data: {
-                        marca: row.brand,
-                        modelo: row.modelName,
-                        storageGb: row.storageGb,
-                        color: row.color,
-                        deviceModelId: deviceModel!.id,
-                        purchaseId: purchaseId,
-                        estado: 'En Inventario',
-                        fechaIngreso: new Date()
-                    }
-                });
-
-                historyToCreate.push({
-                    equipoId: existingEntry.id,
-                    estado: 'En Inventario',
-                    fecha: new Date(),
-                    observacion: `Reintegrado a Compra #${purchaseId} vía Excel.`
-                });
-                equipmentsReintegrated++;
-            }
+            // 3.1: Existing IMEIs from other purchases are blocked before transaction.
 
             // 3.2: Handle New (Batch Create)
             const newRows = validatedRows.filter(r => !existingEquiposMap.has(r.imei));
@@ -787,6 +753,15 @@ export async function addEquipmentToPurchase(formData: FormData) {
         return { success: false, error: error.message || "Error al procesar el archivo Excel." };
     }
 }
+
+
+
+
+
+
+
+
+
 
 
 
