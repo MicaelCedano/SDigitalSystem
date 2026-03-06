@@ -41,7 +41,7 @@ export default async function Home() {
     if (userRole === "control_calidad") {
       redirect("/qc");
     } else if (userRole === "tecnico_garantias") {
-      redirect("/garantias/dashboard");
+      redirect("/garantias");
     } else if (userRole === "tecnico") {
       // O a donde corresponda en Next.js para un técnico standard
       redirect("/profile");

@@ -93,7 +93,7 @@ export async function approveLote(loteId: number) {
 
             // 2. Update equipments to En Inventario (Available for sale/dispatch now that they are reviewed)
             await tx.equipo.updateMany({
-                where: { loteId: loteId, estado: 'Revisado' },
+                where: { loteId: loteId },
                 data: {
                     estado: 'En Inventario',
                     userId: null // Free from the technician

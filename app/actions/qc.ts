@@ -22,25 +22,32 @@ export async function getQCDashboardData() {
         });
         const saldoPrincipal = wallet?.accounts?.[0]?.saldo || 0;
 
-        // Fetch stats for the current user
+        // Fetch stats for the current user (only for active work)
+        const commonWhere: any = {
+            userId: userId,
+            OR: [
+                { loteId: null },
+                { lote: { estado: { notIn: ["Entregado", "Cancelado"] } } }
+            ]
+        };
+
         const cantidadPendientes = await prisma.equipo.count({
             where: {
-                userId: userId,
+                ...commonWhere,
                 estado: "En Revisión"
             }
         });
 
         const totalRevisados = await prisma.equipo.count({
             where: {
-                userId: userId,
+                ...commonWhere,
                 estado: "Revisado",
-                // Assuming lots check is needed, we will just count status for simplicity right now
             }
         });
 
         const totalFuncionales = await prisma.equipo.count({
             where: {
-                userId: userId,
+                ...commonWhere,
                 estado: "Revisado",
                 funcionalidad: "Funcional"
             }
@@ -48,7 +55,7 @@ export async function getQCDashboardData() {
 
         const totalNoFuncionales = await prisma.equipo.count({
             where: {
-                userId: userId,
+                ...commonWhere,
                 estado: "Revisado",
                 funcionalidad: "No funcional"
             }
@@ -65,7 +72,10 @@ export async function getQCDashboardData() {
 
         // Current assigned equipement
         const equipos = await prisma.equipo.findMany({
-            where: { userId: userId },
+            where: {
+                ...commonWhere,
+                estado: { in: ["En Revisión", "Revisado"] }
+            },
             include: { lote: true, deviceModel: true }
         });
 
