@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { ReviewEquipmentModal } from "@/components/qc/ReviewEquipmentModal";
 import { cn } from "@/lib/utils";
 import { submitLoteForReview } from "@/app/actions/lotes";
+import { startReviewing } from "@/app/actions/qc";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -31,6 +32,8 @@ export function QCDashboardClient({ initialData, currentUser }: QCDashboardProps
     const openReviewModal = (equipo: any) => {
         setSelectedEquipo(equipo);
         setIsReviewOpen(true);
+        // Fire and forget to avoid delaying the UI, but it updates the admin dashboard "Live"
+        startReviewing(equipo.id).catch(err => console.error("Error calling startReviewing:", err));
     };
 
     const handleSubmitLote = async (loteId: number) => {

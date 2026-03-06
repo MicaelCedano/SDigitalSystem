@@ -255,3 +255,37 @@ export async function reviewEquipment(equipoId: number, data: {
         return { success: false, error: error.message };
     }
 }
+export async function startReviewing(equipoId: number) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) return { success: false, error: "No autenticado" };
+
+    const userId = Number(session.user.id);
+
+    try {
+        const equipo = await prisma.equipo.findUnique({
+            where: { id: equipoId }
+        });
+
+        if (!equipo) return { success: false, error: "Equipo no encontrado" };
+        if (equipo.userId !== userId && session.user.role !== "admin") {
+            return { success: false, error: "Este equipo no te está asignado" };
+        }
+
+        // Add history log to track active reviewing
+        await prisma.equipoHistorial.create({
+            data: {
+                equipoId: equipoId,
+                estado: "Revisando", // Special state for live activity
+                userId: userId,
+                fecha: new Date(),
+                observacion: "Inició revisión del equipo",
+                loteId: equipo.loteId
+            }
+        });
+
+        return { success: true };
+    } catch (error: any) {
+        console.error("Error starting review:", error);
+        return { success: false, error: error.message };
+    }
+}

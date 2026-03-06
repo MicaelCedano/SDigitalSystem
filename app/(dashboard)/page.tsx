@@ -144,19 +144,26 @@ export default async function Home() {
       }
     });
 
-    // Current work: The latest equipment with status "En Revisión"
-    const equipoActual = await prisma.equipo.findFirst({
+    // Current work: The latest activity recorded in history (either starting a review or finishing one)
+    const latestHistory = await prisma.equipoHistorial.findFirst({
       where: {
         userId: user.id,
-        estado: "En Revisión"
+        estado: { in: ["Revisando", "Revisado", "En Revisión"] }
       },
       include: {
-        deviceModel: true
+        equipo: {
+          include: {
+            deviceModel: true
+          }
+        }
       },
       orderBy: {
         id: 'desc'
       }
     });
+
+    const equipoActual = latestHistory?.equipo;
+    const isLive = latestHistory?.estado === "Revisando";
 
     if (asignados === 0 && entregadosHoy === 0 && !equipoActual) return null;
 
@@ -166,7 +173,8 @@ export default async function Home() {
       revisados: revisadosActivos,
       entregadosHoy,
       avance: asignados > 0 ? (revisadosActivos / asignados) * 100 : 0,
-      equipoActual
+      equipoActual,
+      isLive
     };
   }))).filter(u => u !== null)
     .sort((a: any, b: any) => (b.revisados + b.entregadosHoy) - (a.revisados + a.entregadosHoy))
@@ -298,7 +306,7 @@ export default async function Home() {
                           <div className="flex flex-col gap-0.5">
                             <p className="font-black text-slate-800 leading-tight flex items-center gap-1.5">
                               {qc.name || qc.username}
-                              {qc.equipoActual && (
+                              {qc.isLive && (
                                 <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" title="Trabajando ahora" />
                               )}
                             </p>
@@ -312,9 +320,12 @@ export default async function Home() {
                            {qc.equipoActual ? (
                              <div className="animate-in fade-in slide-in-from-left-2 duration-500">
                                <p className="text-[10px] font-black uppercase text-indigo-500 tracking-widest mb-1 flex items-center gap-1">
-                                 <Activity className="w-3 h-3" /> Revisando ahora:
+                                 <Activity className="w-3 h-3" /> {qc.isLive ? 'Revisando ahora:' : 'Último revisado:'}
                                </p>
-                               <div className="bg-indigo-50 border border-indigo-100/50 p-2 rounded-xl shadow-sm">
+                               <div className={cn(
+                                 "p-2 rounded-xl shadow-sm border transition-colors",
+                                 qc.isLive ? "bg-indigo-50 border-indigo-100/50" : "bg-slate-50 border-slate-100"
+                               )}>
                                  <p className="text-xs font-bold text-slate-700 truncate max-w-[160px]">
                                    {qc.equipoActual.deviceModel?.brand} {qc.equipoActual.deviceModel?.modelName}
                                  </p>
