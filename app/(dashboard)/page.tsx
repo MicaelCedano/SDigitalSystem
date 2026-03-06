@@ -22,7 +22,8 @@ import {
   Medal,
   Users,
   AlertCircle,
-  Briefcase
+  Briefcase,
+  Smartphone
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -103,54 +104,68 @@ export default async function Home() {
     orderBy: { fecha: "desc" }
   }) : []) as any[];
 
-  // QC Performance (Top 5 based on history to persist after lot approval)
-  const rankingDataRaw = await prisma.equipoHistorial.groupBy({
-    by: ['userId', 'equipoId'],
-    where: {
-      estado: "Revisado",
-      user: {
-        role: "control_calidad"
-      }
+  // Accurate Rankings based on current active work and today's activity
+  const now = new Date();
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const qcUsers = await prisma.user.findMany({
+    where: { role: 'control_calidad' },
+    select: {
+      id: true,
+      username: true,
+      name: true,
+      profileImage: true,
     }
   });
 
-  const userCounts = rankingDataRaw.reduce((acc, curr) => {
-    if (curr.userId) {
-      acc[curr.userId] = (acc[curr.userId] || 0) + 1;
-    }
-    return acc;
-  }, {} as Record<number, number>);
+  const qcPerformance = (await Promise.all(qcUsers.map(async (user) => {
+    // Active work: Assigned Eq that are in lotes not yet delivered/cancelled
+    const activeEquipments = await prisma.equipo.findMany({
+      where: {
+        userId: user.id,
+        OR: [
+          { loteId: null },
+          { lote: { estado: { notIn: ["Entregado", "Cancelado"] } } }
+        ]
+      },
+      select: { estado: true }
+    });
 
-  const topUsers = Object.entries(userCounts)
-    .map(([uId, count]) => ({ userId: Number(uId), count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
+    const asignados = activeEquipments.length;
+    const revisadosActivos = activeEquipments.filter(e => e.estado === 'Revisado').length;
 
-  const qcPerformanceFull = await Promise.all(topUsers.map(async (tu) => {
-    const user = await prisma.user.findUnique({
-      where: { id: tu.userId },
-      select: {
-        id: true,
-        username: true,
-        name: true,
-        profileImage: true,
+    // Daily productivity
+    const entregadosHoy = await prisma.equipoHistorial.count({
+      where: {
+        userId: user.id,
+        estado: "Revisado",
+        fecha: { gte: startOfDay }
       }
     });
-    if (!user) return null;
+
+    if (asignados === 0 && entregadosHoy === 0) return null;
+
     return {
       ...user,
-      _count: { equipos: tu.count }
+      asignados,
+      revisados: revisadosActivos,
+      entregadosHoy,
+      avance: asignados > 0 ? (revisadosActivos / asignados) * 100 : 0
     };
-  }));
-
-  const qcPerformance = qcPerformanceFull.filter((u): u is any => u !== null);
+  }))).filter(u => u !== null)
+    .sort((a: any, b: any) => (b.revisados + b.entregadosHoy) - (a.revisados + a.entregadosHoy))
+    .slice(0, 8);
 
   // Recent History
   const recentHistory = await prisma.equipoHistorial.findMany({
-    take: 8,
+    take: 10,
     orderBy: { fecha: "desc" },
     include: {
-      equipo: true,
+      equipo: {
+        include: {
+          deviceModel: true
+        }
+      },
       user: true
     }
   });
@@ -234,15 +249,15 @@ export default async function Home() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {qcPerformance.map((qc, index) => {
-                  const progress = Math.min((qc._count.equipos / 100) * 100, 100);
+                {qcPerformance.map((qc: any, index: number) => {
+                  const progress = qc.avance;
                   return (
                     <TableRow key={qc.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
                       <TableCell className="py-4">
                         <div className="flex items-center gap-3">
                           <div className="relative">
                             {qc.profileImage ? (
-                              <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-200">
+                              <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-200 shadow-sm">
                                 <img
                                   src={getProfileImageUrl(qc.profileImage) || ""}
                                   alt={qc.username}
@@ -256,7 +271,7 @@ export default async function Home() {
                             )}
                             {index < 3 && (
                               <div className={cn(
-                                "absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold border-2 border-white",
+                                "absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold border-2 border-white shadow-sm",
                                 index === 0 ? "bg-amber-400 text-amber-900" : index === 1 ? "bg-slate-300 text-slate-700" : "bg-orange-400 text-orange-800"
                               )}>
                                 {index + 1}
@@ -264,25 +279,31 @@ export default async function Home() {
                             )}
                           </div>
                           <div>
-                            <p className="font-bold text-slate-700">{qc.name || qc.username}</p>
-                            <p className="text-xs text-slate-400">@{qc.username}</p>
+                            <p className="font-bold text-slate-700 leading-tight">{qc.name || qc.username}</p>
+                            <p className="text-[10px] text-slate-400 font-medium">@{qc.username}</p>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-center font-bold text-slate-600">--</TableCell>
-                      <TableCell className="text-center font-bold text-indigo-600 text-lg">{qc._count.equipos}</TableCell>
-                      <TableCell className="text-center font-bold text-emerald-600">0</TableCell>
+                      <TableCell className="text-center font-bold text-slate-500">
+                        {qc.asignados}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className="font-black text-indigo-600 text-lg">{qc.revisados}</span>
+                      </TableCell>
+                      <TableCell className="text-center font-bold text-emerald-600">
+                        {qc.entregadosHoy}
+                      </TableCell>
                       <TableCell className="text-right pr-6">
                         <div className="flex flex-col items-end gap-1">
-                          <div className="w-32 h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div className="w-32 h-2.5 bg-slate-100 rounded-full overflow-hidden border border-slate-50">
                             <div
-                              className={cn("h-full rounded-full transition-all duration-1000",
-                                progress >= 80 ? "bg-emerald-500" : progress >= 50 ? "bg-indigo-500" : "bg-indigo-300"
+                              className={cn("h-full rounded-full transition-all duration-1000 shadow-sm",
+                                progress >= 100 ? "bg-emerald-500" : progress >= 50 ? "bg-indigo-600" : "bg-indigo-400"
                               )}
                               style={{ width: `${progress}%` }}
                             />
                           </div>
-                          <span className="text-xs font-bold text-indigo-600">{progress.toFixed(1)}%</span>
+                          <span className="text-[10px] font-black text-indigo-700 tracking-tighter">{progress.toFixed(1)}%</span>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -382,22 +403,47 @@ export default async function Home() {
           <CardContent className="p-0">
             <div className="divide-y divide-slate-100">
               {recentHistory.map((item) => (
-                <div key={item.id} className="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between group">
-                  <div className="flex items-center gap-4">
+                <div key={item.id} className="p-5 hover:bg-slate-50 transition-all flex items-center justify-between group border-l-4 border-l-transparent hover:border-l-indigo-500">
+                  <div className="flex items-center gap-5">
                     <div className={cn(
-                      "w-2 h-2 rounded-full",
+                      "w-3 h-3 rounded-full shadow-sm shrink-0",
                       item.estado === "Revisado" ? "bg-emerald-500" : "bg-indigo-500"
                     )} />
-                    <div>
-                      <p className="text-sm font-medium text-slate-700">
-                        <span className="font-bold text-slate-900">@{item.user?.username}</span> {item.estado === "Revisado" ? "finalizó" : "actualizó"} <span className="font-mono text-indigo-600">{item.equipo.imei.slice(-6)}</span>
+                    <div className="flex flex-col">
+                      <p className="text-sm font-medium text-slate-700 leading-tight">
+                        <span className="font-black text-slate-900">@{item.user?.username}</span> 
+                        <span className="text-slate-500 px-1.5">{item.estado === "Revisado" ? "finalizó revisión de" : "actualizó estado de"}</span>
+                        <span className="font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md">
+                          {item.equipo.deviceModel ? `${item.equipo.deviceModel.brand} ${item.equipo.deviceModel.modelName} ${item.equipo.deviceModel.storageGb ? `${item.equipo.deviceModel.storageGb}GB` : ''}` : 'Equipo sin modelo'}
+                        </span>
                       </p>
-                      <p className="text-xs text-slate-400 mt-0.5">Reference ID: {item.equipo.id.toString().slice(0, 8)}</p>
+                      <div className="flex items-center gap-3 mt-1.5">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1">
+                          <Smartphone className="w-3 h-3" /> IMEI: {item.equipo.imei.slice(-6)}
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-300">•</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                          ID: {item.equipo.id.toString().slice(-5)}
+                        </span>
+                        {item.observacion && (
+                           <>
+                             <span className="text-[10px] font-bold text-slate-300">•</span>
+                             <span className="text-[10px] font-medium text-amber-600 bg-amber-50 px-1.5 rounded truncate max-w-[200px]">
+                               Obs: {item.observacion}
+                             </span>
+                           </>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  <span className="text-xs font-bold text-slate-400 opacity-60 group-hover:opacity-100">
-                    {item.fecha ? new Date(item.fecha).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
-                  </span>
+                  <div className="flex flex-col items-end shrink-0">
+                    <span className="text-xs font-black text-slate-600 group-hover:text-indigo-600 transition-colors">
+                      {item.fecha ? new Date(item.fecha).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                    </span>
+                    <span className="text-[9px] font-bold text-slate-300 uppercase tracking-tighter mt-0.5">
+                      {item.fecha ? new Date(item.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : ''}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -405,7 +451,7 @@ export default async function Home() {
         </Card>
       </div>
 
-    </div >
+    </div>
   );
 }
 
