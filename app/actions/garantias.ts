@@ -924,13 +924,14 @@ export async function getConduces() {
  * Reported work by technicians (Already fixed items)
  */
 export async function reportarTrabajosRealizados(data: {
-    cliente: string;
+    cliente?: string;
+    observaciones?: string;
     items: {
         imeiSn: string;
         marca?: string;
         modelo?: string;
         problema: string;
-        solucion: string;
+        cliente: string;
     }[]
 }) {
     const session = await getServerSession(authOptions);
@@ -952,7 +953,7 @@ export async function reportarTrabajosRealizados(data: {
                     codigo: codigoLote,
                     createdById: tecnicoId,
                     fechaCreacion: new Date(),
-                    observaciones: `Reporte de trabajo realizado para: ${data.cliente}`
+                    observaciones: data.observaciones || "Reporte de trabajo realizado"
                 }
             });
 
@@ -966,13 +967,13 @@ export async function reportarTrabajosRealizados(data: {
                 const garantia = await tx.garantia.create({
                     data: {
                         codigo: gCodigo,
-                        cliente: data.cliente,
+                        cliente: item.cliente,
                         imeiSn: item.imeiSn,
                         marca: item.marca || null,
                         modelo: item.modelo || null,
                         problema: item.problema,
                         diagnostico: item.problema,
-                        solucionAplicada: item.solucion,
+                        solucionAplicada: "Reparado (Reporte Directo)",
                         estado: 'Terminado - Pendiente de Pago',
                         tecnicoId: tecnicoId,
                         adminId: firstAdmin.id,

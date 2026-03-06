@@ -14,13 +14,13 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 const formSchema = z.object({
-    cliente: z.string().min(2, "Nombre de cliente o tienda requerido"),
+    observaciones: z.string().optional(),
     items: z.array(z.object({
         imeiSn: z.string().min(5, "IMEI/SN requerido"),
         marca: z.string().optional(),
         modelo: z.string().optional(),
-        problema: z.string().min(3, "Describa el problema original"),
-        solucion: z.string().min(3, "Describa qué se reparó"),
+        problema: z.string().min(3, "Describa el problema"),
+        cliente: z.string().min(2, "Nombre de cliente requerido"),
     })).min(1, "Debe agregar al menos un equipo")
 });
 
@@ -31,8 +31,8 @@ export function ReportWorkForm() {
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            cliente: "",
-            items: [{ imeiSn: "", marca: "", modelo: "", problema: "", solucion: "" }]
+            observaciones: "",
+            items: [{ imeiSn: "", marca: "", modelo: "", problema: "", cliente: "" }]
         }
     });
 
@@ -44,14 +44,18 @@ export function ReportWorkForm() {
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setLoading(true);
         try {
-            const res = await reportarTrabajosRealizados(values);
+            const res = await reportarTrabajosRealizados({
+                cliente: "Lote Múltiple",
+                observaciones: values.observaciones,
+                items: values.items
+            });
 
             if (res.success) {
                 toast.success("Trabajo reportado con éxito. Pendiente de aprobación por admin.");
                 router.push("/garantias");
                 router.refresh();
             } else {
-                toast.error(res.error || "Error al reportar trabajo");
+                toast.error((res as any).error || "Error al reportar trabajo");
             }
         } catch (error) {
             toast.error("Error crítico al procesar la solicitud");
@@ -67,14 +71,14 @@ export function ReportWorkForm() {
                 <div className="p-6 bg-slate-50/50 rounded-2xl border border-slate-100">
                     <FormField
                         control={form.control}
-                        name="cliente"
+                        name="observaciones"
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2 flex items-center gap-2">
-                                    <User className="w-3.5 h-3.5" /> Cliente / Persona que entregó
+                                    <User className="w-3.5 h-3.5" /> Notas del Reporte
                                 </FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Nombre del cliente o tienda de origen" {...field} className="rounded-xl border-slate-200 h-12 bg-white" />
+                                    <Input placeholder="Notas generales para el administrador..." {...field} className="rounded-xl border-slate-200 h-12 bg-white" />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -92,7 +96,7 @@ export function ReportWorkForm() {
                             type="button"
                             variant="outline"
                             size="sm"
-                            onClick={() => append({ imeiSn: "", marca: "", modelo: "", problema: "", solucion: "" })}
+                            onClick={() => append({ imeiSn: "", marca: "", modelo: "", problema: "", cliente: "" })}
                             className="rounded-xl border-indigo-200 text-indigo-600 hover:bg-indigo-50 font-bold"
                         >
                             <Plus className="w-4 h-4 mr-1" /> Añadir Otro
@@ -121,6 +125,19 @@ export function ReportWorkForm() {
                                     />
                                     <FormField
                                         control={form.control}
+                                        name={`items.${index}.cliente`}
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel className="text-[10px] font-black uppercase text-slate-400">Cliente / Propietario</FormLabel>
+                                                <FormControl>
+                                                    <Input {...field} className="rounded-xl border-slate-100 h-10 text-sm" placeholder="A quién pertenece?" />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
                                         name={`items.${index}.modelo`}
                                         render={({ field }) => (
                                             <FormItem>
@@ -140,19 +157,6 @@ export function ReportWorkForm() {
                                                 <FormLabel className="text-[10px] font-black uppercase text-slate-400">Problema Original</FormLabel>
                                                 <FormControl>
                                                     <Input {...field} className="rounded-xl border-slate-100 h-10 text-sm" placeholder="Falla inicial" />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name={`items.${index}.solucion`}
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-[10px] font-black uppercase text-slate-400">Solución Aplicada</FormLabel>
-                                                <FormControl>
-                                                    <Input {...field} className="rounded-xl border-slate-100 h-10 text-sm" placeholder="Qué reparaste?" />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
