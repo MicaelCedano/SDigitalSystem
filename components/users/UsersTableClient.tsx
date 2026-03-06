@@ -88,9 +88,16 @@ export default function UsersTableClient({ users }: UsersTableClientProps) {
                                             </div>
                                         )}
                                         <div className="flex flex-col">
-                                            <span className="font-bold text-slate-900 text-sm group-hover/link:text-indigo-600 transition-colors">
-                                                {u.username}
-                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-bold text-slate-900 text-sm group-hover/link:text-indigo-600 transition-colors">
+                                                    {u.username}
+                                                </span>
+                                                {u.isActive === false && (
+                                                    <span className="px-1.5 py-0.5 bg-rose-50 text-rose-600 border border-rose-100 rounded text-[9px] font-black uppercase tracking-tighter">
+                                                        Inactivo
+                                                    </span>
+                                                )}
+                                            </div>
                                             <span className="text-[11px] font-medium text-slate-400">
                                                 {u.name || "Sin nombre completo"}
                                             </span>

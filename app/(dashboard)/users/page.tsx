@@ -47,6 +47,7 @@ export default async function UsersPage() {
             role: true,
             canCreateGarantias: true,
             canManageOrders: true,
+            isActive: true,
             profileImage: true,
             _count: {
                 select: {

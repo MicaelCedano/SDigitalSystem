@@ -92,7 +92,10 @@ export async function getGarantiasStats(tecnicoId?: number) {
 
 export async function getTecnicosGarantias() {
     return await prisma.user.findMany({
-        where: { role: 'tecnico_garantias' },
+        where: { 
+            role: 'tecnico_garantias',
+            isActive: true 
+        },
         select: { id: true, name: true, username: true }
     });
 }
@@ -202,6 +205,11 @@ export async function asignarGarantia(garantiaId: number, tecnicoId: number) {
     if (!session || session.user.role !== 'admin') return { success: false, error: "No autorizado" };
 
     try {
+        const tecnico = await prisma.user.findUnique({ where: { id: tecnicoId } });
+        if (!tecnico || !tecnico.isActive) {
+            return { success: false, error: "Técnico inválido o inactivo" };
+        }
+
         await prisma.garantia.update({
             where: { id: garantiaId },
             data: {

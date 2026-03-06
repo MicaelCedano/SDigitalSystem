@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Loader2, Shield, Lock, Trash2 } from "lucide-react";
 import { updateUserAdmin } from "@/app/actions/user";
@@ -23,7 +23,19 @@ export function EditUserModal({ user, isOpen, onClose }: EditUserModalProps) {
     const [role, setRole] = useState(user?.role || "tecnico");
     const [canCreateGarantias, setCanCreateGarantias] = useState(user?.canCreateGarantias || false);
     const [canManageOrders, setCanManageOrders] = useState(user?.canManageOrders || false);
+    const [isActive, setIsActive] = useState(user?.isActive ?? true);
     const [password, setPassword] = useState("");
+
+    // Update state when user changes
+    useEffect(() => {
+        if (user) {
+            setRole(user.role || "tecnico");
+            setCanCreateGarantias(user.canCreateGarantias || false);
+            setCanManageOrders(user.canManageOrders || false);
+            setIsActive(user.isActive ?? true);
+            setPassword("");
+        }
+    }, [user, isOpen]);
 
     async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -33,6 +45,7 @@ export function EditUserModal({ user, isOpen, onClose }: EditUserModalProps) {
         formData.append("role", role);
         formData.append("canCreateGarantias", canCreateGarantias.toString());
         formData.append("canManageOrders", canManageOrders.toString());
+        formData.append("isActive", isActive.toString());
         if (password) {
             formData.append("password", password);
         }
@@ -104,6 +117,23 @@ export function EditUserModal({ user, isOpen, onClose }: EditUserModalProps) {
                                     </div>
                                 </div>
                             )}
+
+                            <div className="flex items-start space-x-3 p-3 bg-white border border-rose-200 rounded-xl shadow-sm">
+                                <Checkbox
+                                    id="isActive"
+                                    checked={isActive}
+                                    onCheckedChange={(checked) => setIsActive(checked as boolean)}
+                                    className="mt-0.5 data-[state=checked]:bg-rose-500 data-[state=checked]:border-rose-500"
+                                />
+                                <div className="space-y-1 leading-none">
+                                    <label htmlFor="isActive" className="text-[13px] font-bold text-slate-700 cursor-pointer">
+                                        Usuario Activo / Disponible
+                                    </label>
+                                    <p className="text-[11px] text-slate-500">
+                                        Desmarca esto si el usuario está de vacaciones o inactivo temporalmente.
+                                    </p>
+                                </div>
+                            </div>
 
                             <div className="flex items-start space-x-3 p-3 bg-white border border-slate-200 rounded-xl shadow-sm">
                                 <Checkbox

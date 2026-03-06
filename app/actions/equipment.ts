@@ -119,7 +119,10 @@ export async function getQCUsers() {
     if (!session) return [];
 
     return prisma.user.findMany({
-        where: { role: 'control_calidad' },
+        where: { 
+            role: 'control_calidad',
+            isActive: true 
+        },
         select: { id: true, name: true, username: true }
     });
 }
@@ -134,8 +137,8 @@ export async function assignToQualityControl(equipoIds: number[], qcId: number) 
         const adminName = adminUser?.name || adminUser?.username || "Admin";
 
         const qcUser = await prisma.user.findUnique({ where: { id: qcId } });
-        if (!qcUser || qcUser.role !== 'control_calidad') {
-            return { success: false, error: "Usuario de Control de Calidad inválido" };
+        if (!qcUser || qcUser.role !== 'control_calidad' || !qcUser.isActive) {
+            return { success: false, error: "Usuario de Control de Calidad inválido o inactivo" };
         }
 
         const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');

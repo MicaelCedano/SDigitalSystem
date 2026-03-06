@@ -18,6 +18,7 @@ model User {
   canCreateGarantias      Boolean?                       @map("can_create_garantias")
   profileImage            String?                        @map("profile_image") @db.VarChar(200)
   canManageOrders         Boolean?                       @default(false) @map("can_manage_orders")
+  isActive                Boolean                        @default(true) @map("is_active")
   conducesCancelados      ConduceEnvio[]                 @relation("ConduceCancelado")
   conducesGenerados       ConduceEnvio[]                 @relation("ConduceGenerado")
   equipos                 Equipo[]

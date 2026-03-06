@@ -96,7 +96,9 @@ export default function CreateUserDialog() {
                             className="col-span-3 flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             <option value="admin">Administrador</option>
-                            <option value="tecnico">Técnico</option>
+                            <option value="control_calidad">Control de Calidad</option>
+                            <option value="tecnico_garantias">Técnico de Garantías</option>
+                            <option value="tecnico">Técnico Standard</option>
                             <option value="vendedor">Vendedor</option>
                         </select>
                     </div>
