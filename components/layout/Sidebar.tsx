@@ -159,6 +159,7 @@ const Sidebar = ({ initialUser, forceShow = false }: { initialUser?: any, forceS
                     {(isGarantiaTec || isAdmin) && (
                         <div className="space-y-1">
                             {!collapsed && <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mt-4 mb-2 pl-4">Servicio Técnico</div>}
+                            {role === 'tecnico_garantias' && <NavItem href="/wallet" icon={<Wallet size={20} />} label="Mi Wallet" active={pathname === '/wallet'} collapsed={collapsed} user={user} />}
 
                             <div className="pt-2">
                                 <SectionHeader
