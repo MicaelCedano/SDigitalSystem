@@ -10,7 +10,6 @@ import { LoteDetailsModal } from "@/components/admin/LoteDetailsModal";
 import { getTrabajosPendientesAprobacion } from "@/app/actions/garantias";
 import { PendingWorkApproval } from "@/components/garantias/PendingWorkApproval";
 import {
-  Activity,
   DollarSign,
   Package,
   CheckCircle2,
@@ -23,8 +22,10 @@ import {
   Users,
   AlertCircle,
   Briefcase,
-  Smartphone
+  Smartphone,
+  Activity
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -143,14 +144,29 @@ export default async function Home() {
       }
     });
 
-    if (asignados === 0 && entregadosHoy === 0) return null;
+    // Current work: The latest equipment with status "En Revisión"
+    const equipoActual = await prisma.equipo.findFirst({
+      where: {
+        userId: user.id,
+        estado: "En Revisión"
+      },
+      include: {
+        deviceModel: true
+      },
+      orderBy: {
+        id: 'desc'
+      }
+    });
+
+    if (asignados === 0 && entregadosHoy === 0 && !equipoActual) return null;
 
     return {
       ...user,
       asignados,
       revisados: revisadosActivos,
       entregadosHoy,
-      avance: asignados > 0 ? (revisadosActivos / asignados) * 100 : 0
+      avance: asignados > 0 ? (revisadosActivos / asignados) * 100 : 0,
+      equipoActual
     };
   }))).filter(u => u !== null)
     .sort((a: any, b: any) => (b.revisados + b.entregadosHoy) - (a.revisados + a.entregadosHoy))
@@ -242,22 +258,23 @@ export default async function Home() {
               <TableHeader>
                 <TableRow className="bg-slate-50 border-b border-slate-100 hover:bg-slate-50">
                   <TableHead className="text-xs font-bold uppercase tracking-wider text-slate-500 py-4">Control de Calidad</TableHead>
+                  <TableHead className="text-xs font-bold uppercase tracking-wider text-slate-500 py-4">Actividad Live</TableHead>
                   <TableHead className="text-center text-xs font-bold uppercase tracking-wider text-slate-500 py-4">Asignados</TableHead>
                   <TableHead className="text-center text-xs font-bold uppercase tracking-wider text-slate-500 py-4 text-indigo-600">Revisados</TableHead>
-                  <TableHead className="text-center text-xs font-bold uppercase tracking-wider text-slate-500 py-4">Entregados Hoy</TableHead>
-                  <TableHead className="text-right text-xs font-bold uppercase tracking-wider text-slate-500 py-4 pr-6">Avance</TableHead>
+                  <TableHead className="text-center text-xs font-bold uppercase tracking-wider text-slate-500 py-4">Progreso Hoy</TableHead>
+                  <TableHead className="text-right text-xs font-bold uppercase tracking-wider text-slate-500 py-4 pr-6">Avance Lote</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {qcPerformance.map((qc: any, index: number) => {
                   const progress = qc.avance;
                   return (
-                    <TableRow key={qc.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
-                      <TableCell className="py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="relative">
+                    <TableRow key={qc.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-all duration-300">
+                      <TableCell className="py-5">
+                        <div className="flex items-center gap-4">
+                          <div className="relative group/avatar">
                             {qc.profileImage ? (
-                              <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-200 shadow-sm">
+                              <div className="w-12 h-12 rounded-2xl overflow-hidden border-2 border-white shadow-md transition-transform group-hover/avatar:scale-105">
                                 <img
                                   src={getProfileImageUrl(qc.profileImage) || ""}
                                   alt={qc.username}
@@ -265,45 +282,92 @@ export default async function Home() {
                                 />
                               </div>
                             ) : (
-                              <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-sm">
+                              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-500 font-black text-sm shadow-inner">
                                 {qc.username.substring(0, 2).toUpperCase()}
                               </div>
                             )}
                             {index < 3 && (
                               <div className={cn(
-                                "absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold border-2 border-white shadow-sm",
+                                "absolute -bottom-1 -right-1 w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black border-2 border-white shadow-lg",
                                 index === 0 ? "bg-amber-400 text-amber-900" : index === 1 ? "bg-slate-300 text-slate-700" : "bg-orange-400 text-orange-800"
                               )}>
                                 {index + 1}
                               </div>
                             )}
                           </div>
-                          <div>
-                            <p className="font-bold text-slate-700 leading-tight">{qc.name || qc.username}</p>
-                            <p className="text-[10px] text-slate-400 font-medium">@{qc.username}</p>
+                          <div className="flex flex-col gap-0.5">
+                            <p className="font-black text-slate-800 leading-tight flex items-center gap-1.5">
+                              {qc.name || qc.username}
+                              {qc.equipoActual && (
+                                <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" title="Trabajando ahora" />
+                              )}
+                            </p>
+                            <p className="text-[11px] text-slate-400 font-bold tracking-wide uppercase">@{qc.username}</p>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-center font-bold text-slate-500">
-                        {qc.asignados}
+                      
+                      <TableCell className="py-5">
+                        <div className="min-w-[180px]">
+                           {qc.equipoActual ? (
+                             <div className="animate-in fade-in slide-in-from-left-2 duration-500">
+                               <p className="text-[10px] font-black uppercase text-indigo-500 tracking-widest mb-1 flex items-center gap-1">
+                                 <Activity className="w-3 h-3" /> Revisando ahora:
+                               </p>
+                               <div className="bg-indigo-50 border border-indigo-100/50 p-2 rounded-xl shadow-sm">
+                                 <p className="text-xs font-bold text-slate-700 truncate max-w-[160px]">
+                                   {qc.equipoActual.deviceModel?.brand} {qc.equipoActual.deviceModel?.modelName}
+                                 </p>
+                                 <p className="text-[9px] font-bold text-indigo-400 mt-0.5 font-mono">
+                                   IMEI: {qc.equipoActual.imei.slice(-6)}
+                                 </p>
+                               </div>
+                             </div>
+                           ) : (
+                             <div className="flex items-center gap-2 grayscale opacity-40">
+                               <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
+                                 <Clock className="w-4 h-4 text-slate-400" />
+                               </div>
+                               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">En espera</p>
+                             </div>
+                           )}
+                        </div>
                       </TableCell>
-                      <TableCell className="text-center">
-                        <span className="font-black text-indigo-600 text-lg">{qc.revisados}</span>
+
+                      <TableCell className="text-center py-5">
+                        <div className="flex flex-col items-center">
+                          <span className="text-lg font-black text-slate-400 leading-none">{qc.asignados}</span>
+                          <span className="text-[9px] font-black text-slate-300 uppercase mt-1">Lote</span>
+                        </div>
                       </TableCell>
-                      <TableCell className="text-center font-bold text-emerald-600">
-                        {qc.entregadosHoy}
+                      
+                      <TableCell className="text-center py-5">
+                        <div className="flex flex-col items-center">
+                          <span className="text-2xl font-black text-indigo-600 leading-none">{qc.revisados}</span>
+                          <span className="text-[9px] font-black text-indigo-400 uppercase mt-1">Listo</span>
+                        </div>
                       </TableCell>
-                      <TableCell className="text-right pr-6">
-                        <div className="flex flex-col items-end gap-1">
-                          <div className="w-32 h-2.5 bg-slate-100 rounded-full overflow-hidden border border-slate-50">
+
+                      <TableCell className="text-center py-5">
+                        <div className="flex flex-col items-center">
+                          <span className="text-lg font-black text-emerald-600 leading-none">{qc.entregadosHoy}</span>
+                          <span className="text-[9px] font-black text-emerald-500 uppercase mt-1">Hoy</span>
+                        </div>
+                      </TableCell>
+
+                      <TableCell className="text-right pr-6 py-5">
+                        <div className="flex flex-col items-end gap-1.5">
+                          <div className="w-32 h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-50 p-[2px] shadow-inner">
                             <div
                               className={cn("h-full rounded-full transition-all duration-1000 shadow-sm",
-                                progress >= 100 ? "bg-emerald-500" : progress >= 50 ? "bg-indigo-600" : "bg-indigo-400"
+                                progress >= 100 ? "bg-gradient-to-r from-emerald-400 to-emerald-500" : "bg-gradient-to-r from-indigo-500 to-indigo-600"
                               )}
                               style={{ width: `${progress}%` }}
                             />
                           </div>
-                          <span className="text-[10px] font-black text-indigo-700 tracking-tighter">{progress.toFixed(1)}%</span>
+                          <Badge variant="secondary" className="bg-indigo-50 text-indigo-700 font-black text-[10px] py-0 h-5 px-2 border-indigo-100">
+                             {progress.toFixed(1)}%
+                          </Badge>
                         </div>
                       </TableCell>
                     </TableRow>
