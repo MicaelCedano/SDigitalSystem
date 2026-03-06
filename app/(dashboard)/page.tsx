@@ -165,7 +165,7 @@ export default async function Home() {
     const equipoActual = latestHistory?.equipo;
     const isLive = latestHistory?.estado === "Revisando";
 
-    if (asignados === 0 && entregadosHoy === 0 && !equipoActual) return null;
+    if (asignados === 0 && !isLive) return null;
 
     return {
       ...user,
@@ -177,7 +177,11 @@ export default async function Home() {
       isLive
     };
   }))).filter(u => u !== null)
-    .sort((a: any, b: any) => (b.revisados + b.entregadosHoy) - (a.revisados + a.entregadosHoy))
+    .sort((a: any, b: any) => {
+      if (a.isLive && !b.isLive) return -1;
+      if (!a.isLive && b.isLive) return 1;
+      return (b.revisados + b.entregadosHoy) - (a.revisados + a.entregadosHoy);
+    })
     .slice(0, 8);
 
   // Recent History
