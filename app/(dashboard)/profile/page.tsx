@@ -35,7 +35,10 @@ export default async function ProfilePage() {
         }),
         prisma.equipo.count({ where: { userId } }),
         prisma.equipo.count({ where: { userId, estado: "En Revisión" } }),
-        prisma.equipoHistorial.count({ where: { userId, estado: "Revisado" } }),
+        prisma.equipoHistorial.groupBy({
+            by: ['equipoId'],
+            where: { userId, estado: "Revisado" }
+        }),
         prisma.lote.count({ where: { tecnicoId: userId, estado: "Cerrado" } }),
         prisma.userAchievement.findMany({ where: { userId }, select: { achievementId: true } })
     ]);
@@ -49,21 +52,26 @@ export default async function ProfilePage() {
     let totalTecnicos = 0;
 
     if (user.role === 'tecnico' || user.role === 'control_calidad' || user.role === 'tecnico_garantias') {
-        const rankingData = await prisma.equipoHistorial.groupBy({
-            by: ['userId'],
+        const rankingDataRaw = await prisma.equipoHistorial.groupBy({
+            by: ['userId', 'equipoId'],
             where: {
                 estado: "Revisado",
                 user: {
                     role: { in: ['tecnico', 'control_calidad', 'tecnico_garantias'] }
                 }
-            },
-            _count: {
-                id: true
-            },
-            orderBy: {
-                _count: { id: 'desc' }
             }
         });
+
+        const userCounts = rankingDataRaw.reduce((acc, curr) => {
+            if (curr.userId) {
+                acc[curr.userId] = (acc[curr.userId] || 0) + 1;
+            }
+            return acc;
+        }, {} as Record<number, number>);
+
+        const rankingData = Object.entries(userCounts)
+            .map(([uId, count]) => ({ userId: Number(uId), count }))
+            .sort((a, b) => b.count - a.count);
 
         totalTecnicos = rankingData.length;
         const index = rankingData.findIndex(r => r.userId === userId);
@@ -78,7 +86,7 @@ export default async function ProfilePage() {
     const stats = {
         totalEquipos,
         enRevision,
-        revisados,
+        revisados: revisados.length,
         entregados,
         ranking,
         totalTecnicos

@@ -102,34 +102,43 @@ export async function getQCDashboardData() {
             const adminIds = adminUsers.map(u => u.id);
 
             const query = await prisma.equipoHistorial.groupBy({
-                by: ['userId'],
+                by: ['userId', 'equipoId'],
                 where: {
                     estado: 'Revisado',
                     userId: {
                         not: null,
                         notIn: adminIds
-                    }, // Exclude records without a user and administrators
+                    },
                     ...(since ? { fecha: { gte: since } } : {})
-                },
-                _count: { id: true },
-                orderBy: { _count: { id: 'desc' } },
-                take: limit,
+                }
             });
 
-            const userIds = query.map(q => q.userId!).filter(id => id !== null);
+            // Aggregate counts per user from the unique user-equipo pairs
+            const userCounts = query.reduce((acc, curr) => {
+                if (curr.userId) {
+                    acc[curr.userId] = (acc[curr.userId] || 0) + 1;
+                }
+                return acc;
+            }, {} as Record<number, number>);
+
+            // Transform into an array, sort by count, and take the limit
+            const topUsers = Object.entries(userCounts)
+                .map(([userId, count]) => ({ userId: Number(userId), count }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, limit);
+
+            const userIds = topUsers.map(u => u.userId);
             const users = await prisma.user.findMany({
                 where: { id: { in: userIds } },
                 select: { id: true, name: true, username: true, profileImage: true }
             });
 
-            return query.map(q => {
-                const user = users.find(u => u.id === q.userId);
+            return topUsers.map(tu => {
+                const user = users.find(u => u.id === tu.userId);
 
-                // Helper to get image URL similar to lib/utils
                 const getImageUrl = (img: string | null | undefined) => {
                     if (!img) return null;
                     if (img.startsWith('http')) return img;
-                    // Get only the filename if it's a path, and point to /profile_images/
                     const filename = img.split(/[/\\]/).pop();
                     return `/profile_images/${filename}`;
                 };
@@ -140,7 +149,7 @@ export async function getQCDashboardData() {
                         username: user?.username,
                         profileImage: getImageUrl(user?.profileImage)
                     },
-                    count: q._count.id
+                    count: tu.count
                 };
             });
         };

@@ -172,6 +172,7 @@ const Sidebar = ({ initialUser, forceShow = false }: { initialUser?: any, forceS
                                     <div className="mt-2 ml-3 pl-3 border-l border-white/5 space-y-1 animate-in slide-in-from-left-2 duration-300">
                                         <SubNavItem href="/garantias" label="Dashboard" />
                                         <SubNavItem href="/garantias/proveedores" label="Proveedores" />
+                                        <SubNavItem href="/wallet" label="Mi Wallet" />
                                         {isAdmin && <SubNavItem href="/garantias/pagos" label="Pagos Técnicos" />}
                                     </div>
                                 )}

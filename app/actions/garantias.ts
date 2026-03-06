@@ -60,21 +60,33 @@ export async function getGarantiaById(id: number) {
     });
 }
 
-export async function getGarantiasStats() {
-    const total = await prisma.garantia.count();
-    const pendientesAsignacion = await prisma.garantia.count({ where: { estado: 'Pendiente de Asignación' } });
-    const asignadas = await prisma.garantia.count({ where: { estado: 'Asignado' } });
-    const enReparacion = await prisma.garantia.count({ where: { estado: 'En Reparación' } });
-    const reparadas = await prisma.garantia.count({ where: { estado: 'Reparado' } });
-    const entregadas = await prisma.garantia.count({ where: { estado: 'Entregado' } });
+export async function getGarantiasStats(tecnicoId?: number) {
+    const where: any = tecnicoId ? { tecnicoId } : {};
+    
+    const total = await prisma.garantia.count({ where });
+    const pendientesAsignacion = await prisma.garantia.count({ where: tecnicoId ? { ...where, estado: 'Pendiente de Asignación' } : { estado: 'Pendiente de Asignación' } });
+    const asignadas = await prisma.garantia.count({ where: { ...where, estado: 'Asignado' } });
+    const enReparacion = await prisma.garantia.count({ where: { ...where, estado: 'En Reparación' } });
+    const reparadas = await prisma.garantia.count({ where: { ...where, estado: 'Reparado' } });
+    const entregadas = await prisma.garantia.count({ where: { ...where, estado: 'Entregado' } });
+
+    let balance = 0;
+    if (tecnicoId) {
+        const wallet = await prisma.wallet.findFirst({
+            where: { tecnicoId },
+            include: { accounts: { where: { nombre: "Principal" } } }
+        });
+        balance = wallet?.accounts[0]?.saldo || 0;
+    }
 
     return {
         total,
-        pendientesAsignacion,
+        pendientesAsignacion: tecnicoId ? 0 : pendientesAsignacion, // No tiene sentido pendientes de asignación para un técnico específico
         asignadas,
         enReparacion,
         reparadas,
-        entregadas
+        entregadas,
+        balance
     };
 }
 

@@ -97,29 +97,47 @@ export default async function Home() {
     orderBy: { fecha: "desc" }
   }) : []) as any[];
 
-  // QC Performance (Top 5)
-  const qcPerformance = await prisma.user.findMany({
-    where: { role: "control_calidad" },
-    select: {
-      id: true,
-      username: true,
-      name: true,
-      profileImage: true,
-      _count: {
-        select: {
-          equipos: {
-            where: { estado: "Revisado" }
-          }
-        }
-      }
-    },
-    take: 5,
-    orderBy: {
-      equipos: {
-        _count: "desc"
+  // QC Performance (Top 5 based on history to persist after lot approval)
+  const rankingDataRaw = await prisma.equipoHistorial.groupBy({
+    by: ['userId', 'equipoId'],
+    where: {
+      estado: "Revisado",
+      user: {
+        role: "control_calidad"
       }
     }
   });
+
+  const userCounts = rankingDataRaw.reduce((acc, curr) => {
+    if (curr.userId) {
+      acc[curr.userId] = (acc[curr.userId] || 0) + 1;
+    }
+    return acc;
+  }, {} as Record<number, number>);
+
+  const topUsers = Object.entries(userCounts)
+    .map(([uId, count]) => ({ userId: Number(uId), count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  const qcPerformanceFull = await Promise.all(topUsers.map(async (tu) => {
+    const user = await prisma.user.findUnique({
+      where: { id: tu.userId },
+      select: {
+        id: true,
+        username: true,
+        name: true,
+        profileImage: true,
+      }
+    });
+    if (!user) return null;
+    return {
+      ...user,
+      _count: { equipos: tu.count }
+    };
+  }));
+
+  const qcPerformance = qcPerformanceFull.filter((u): u is any => u !== null);
 
   // Recent History
   const recentHistory = await prisma.equipoHistorial.findMany({

@@ -15,7 +15,8 @@ export default async function GarantiasPage({ searchParams }: { searchParams: { 
         redirect("/login");
     }
 
-    const stats = await getGarantiasStats();
+    const isTecnico = session.user.role === 'tecnico_garantias';
+    const stats = await getGarantiasStats(isTecnico ? Number(session.user.id) : undefined);
     const tecnicos = await getTecnicosGarantias();
     const filters = {
         estado: searchParams.estado,

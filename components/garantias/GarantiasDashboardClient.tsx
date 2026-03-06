@@ -142,13 +142,23 @@ export function GarantiasDashboardClient({
                     icon={<Database className="w-6 h-6" />}
                     color="blue"
                 />
-                <StatCard
-                    title="Pendientes"
-                    value={stats.pendientesAsignacion}
-                    subtitle="Por asignar técnico"
-                    icon={<Inbox className="w-6 h-6" />}
-                    color="amber"
-                />
+                {currentUser.role === 'tecnico_garantias' ? (
+                    <StatCard
+                        title="Mi Balance"
+                        value={`RD$ ${stats.balance.toLocaleString()}`}
+                        subtitle="Saldo disponible"
+                        icon={<Wallet className="w-6 h-6" />}
+                        color="emerald"
+                    />
+                ) : (
+                    <StatCard
+                        title="Pendientes"
+                        value={stats.pendientesAsignacion}
+                        subtitle="Por asignar técnico"
+                        icon={<Inbox className="w-6 h-6" />}
+                        color="amber"
+                    />
+                )}
                 <StatCard
                     title="En Taller"
                     value={stats.asignadas + stats.enReparacion}

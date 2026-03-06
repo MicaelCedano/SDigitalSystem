@@ -11,7 +11,7 @@ export const metadata = {
 export default async function WalletPage() {
     const session = await getServerSession(authOptions);
 
-    if (!session || (session.user.role !== "admin" && session.user.role !== "control_calidad")) {
+    if (!session || (session.user.role !== "admin" && session.user.role !== "control_calidad" && session.user.role !== "tecnico_garantias")) {
         redirect("/login");
     }
 
