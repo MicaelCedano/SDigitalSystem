@@ -91,11 +91,11 @@ export async function approveLote(loteId: number) {
                 data: { estado: 'Entregado' }
             });
 
-            // 2. Update equipments to En Inventario (Available for sale/dispatch now that they are reviewed)
+            // 2. Update equipments to Revisado (Keep as reviewed, don't move to inventory automatically)
             await tx.equipo.updateMany({
                 where: { loteId: loteId },
                 data: {
-                    estado: 'En Inventario',
+                    estado: 'Revisado',
                     userId: null // Free from the technician
                 }
             });
@@ -109,9 +109,9 @@ export async function approveLote(loteId: number) {
             const historyEntries = equipmentsInLote.map(eq => ({
                 equipoId: eq.id,
                 fecha: new Date(),
-                estado: 'En Inventario',
+                estado: 'Revisado',
                 userId: Number(session.user.id),
-                observacion: `Aprobación de Lote ${lote.codigo} - Equipo movido a inventario.`,
+                observacion: `Lote ${lote.codigo} aprobado por Administrador.`,
                 loteId: loteId
             }));
 
