@@ -9,14 +9,15 @@ export const metadata = {
     title: "Configurar Tarifa - RMA Señal Digital",
 };
 
-export default async function ConfigurarPagoPage({ params }: { params: { id: string } }) {
+export default async function ConfigurarPagoPage({ params }: { params: Promise<{ id: string }> }) {
     const session = await getServerSession(authOptions);
 
     if (!session || session.user.role !== "admin") {
         redirect("/garantias");
     }
 
-    const tecnicoId = parseInt(params.id);
+    const { id } = await params;
+    const tecnicoId = parseInt(id);
     if (isNaN(tecnicoId)) notFound();
 
     const tecnico = await prisma.user.findUnique({
