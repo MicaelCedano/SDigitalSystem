@@ -19,7 +19,9 @@ Seguimos el sistema de diseño **"Glassy-Solid Hybrid"**.
 ## 📋 Tareas Recientes (2026-03-07)
 - [x] **Rediseño de PendingWorkApproval**: Se optimizó el modal de detalles del técnico con el nuevo sistema de diseño para evitar la visualización "amontonada".
 - [x] **Centralización de Agenda**: Creación de este archivo `AGENTS.md`.
+- [x] **Ajuste de Pagos de Técnicos**: Se implementó la capacidad de ajustar el monto por equipo durante el proceso de aprobación de reportes de trabajo, permitiendo pagos personalizados y automáticos.
 
 ## 📌 Pendientes
 - Revisar consistencia de otros modales del dashboard.
 - Optimizar la carga de tablas grandes.
+- Verificar si se requiere una opción para guardar el monto ajustado como nueva tarifa predeterminada del técnico.

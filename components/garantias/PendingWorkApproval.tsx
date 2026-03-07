@@ -9,6 +9,8 @@ import { aprobarYPayLoteTrabajo } from "@/app/actions/garantias";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { Input } from "@/components/ui/input";
 import {
     Dialog,
     DialogContent,
@@ -28,14 +30,22 @@ import {
 export function PendingWorkApproval({ lotes }: { lotes: any[] }) {
     const [loadingId, setLoadingId] = useState<number | null>(null);
     const [viewLote, setViewLote] = useState<any | null>(null);
+    const [montoPorReparacion, setMontoPorReparacion] = useState<number>(50);
     const router = useRouter();
+
+    useEffect(() => {
+        if (viewLote) {
+            const config = viewLote.createdBy?.configuracionPagos?.[0];
+            setMontoPorReparacion(config?.montoPorReparacion || 50);
+        }
+    }, [viewLote]);
 
     if (!lotes || lotes.length === 0) return null;
 
-    const handleApprove = async (loteId: number) => {
+    const handleApprove = async (loteId: number, customMonto?: number) => {
         setLoadingId(loteId);
         try {
-            const res = await aprobarYPayLoteTrabajo(loteId);
+            const res = await aprobarYPayLoteTrabajo(loteId, customMonto);
             if (res.success) {
                 toast.success("Trabajo aprobado y pagado al técnico.");
                 router.refresh();
@@ -104,7 +114,7 @@ export function PendingWorkApproval({ lotes }: { lotes: any[] }) {
                             <div className="flex gap-3">
                                 <Button 
                                     className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-black h-14 rounded-2xl shadow-lg shadow-emerald-100 hover:scale-105 transition-all duration-300"
-                                    onClick={() => handleApprove(lote.id)}
+                                    onClick={() => handleApprove(lote.id, lote.createdBy?.configuracionPagos?.[0]?.montoPorReparacion || 50)}
                                     disabled={loadingId === lote.id}
                                 >
                                     {loadingId === lote.id ? (
@@ -174,14 +184,50 @@ export function PendingWorkApproval({ lotes }: { lotes: any[] }) {
                                 </div>
                             </div>
 
-                            <div className="relative overflow-hidden p-6 bg-indigo-600 rounded-[2rem] shadow-lg shadow-indigo-100 group">
-                                <div className="absolute -top-4 -right-4 w-16 h-16 bg-white rounded-full opacity-10 group-hover:scale-150 transition-transform duration-500" />
+                            <div className="relative overflow-hidden p-6 bg-slate-900 rounded-[2rem] shadow-lg group">
+                                <div className="absolute -top-4 -right-4 w-16 h-16 bg-white/10 rounded-full opacity-10 group-hover:scale-150 transition-transform duration-500" />
                                 <div className="relative z-10">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <DollarSign className="w-4 h-4 text-indigo-200" />
-                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Pago Total</span>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2">
+                                            <DollarSign className="w-4 h-4 text-emerald-400" />
+                                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Pago Total</span>
+                                        </div>
                                     </div>
-                                    <p className="text-2xl font-black text-white">RD$ {(viewLote?.garantias?.length * 50).toLocaleString()}</p>
+                                    <div className="flex items-baseline gap-2">
+                                        <p className="text-3xl font-black text-white">RD$ {(viewLote?.garantias?.length * montoPorReparacion).toLocaleString()}</p>
+                                        <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Calculado</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Payment Adjustment */}
+                        <div className="p-8 bg-white rounded-[2rem] border-2 border-dashed border-slate-200">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                <div className="space-y-1">
+                                    <h4 className="text-lg font-black text-slate-800 tracking-tight flex items-center gap-2">
+                                        <div className="p-2 bg-amber-100 rounded-lg">
+                                            <DollarSign className="w-5 h-5 text-amber-600" />
+                                        </div>
+                                        Ajustar Tarifa
+                                    </h4>
+                                    <p className="text-xs font-bold text-slate-400">Modifica el monto a pagar por cada equipo de este reporte.</p>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <div className="relative w-48">
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-slate-400 text-sm">RD$</span>
+                                        <Input 
+                                            type="number"
+                                            value={montoPorReparacion}
+                                            onChange={(e) => setMontoPorReparacion(Number(e.target.value))}
+                                            className="h-14 pl-12 pr-4 bg-slate-50 border-none rounded-2xl font-black text-xl text-slate-800 focus-visible:ring-indigo-500/10"
+                                        />
+                                    </div>
+                                    <div className="h-10 w-[1px] bg-slate-200 hidden md:block" />
+                                    <div className="text-right">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total a Acreditar</p>
+                                        <p className="text-xl font-black text-emerald-600">RD$ {(viewLote?.garantias?.length * montoPorReparacion).toLocaleString()}</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -260,7 +306,7 @@ export function PendingWorkApproval({ lotes }: { lotes: any[] }) {
                         <Button 
                             className="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-12 rounded-[2rem] h-14 shadow-xl shadow-emerald-200 hover:scale-105 transition-all duration-300"
                             onClick={() => {
-                                handleApprove(viewLote.id);
+                                handleApprove(viewLote.id, montoPorReparacion);
                                 setViewLote(null);
                             }}
                             disabled={loadingId === viewLote?.id}

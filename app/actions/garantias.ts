@@ -1029,7 +1029,17 @@ export async function getTrabajosPendientesAprobacion() {
             }
         },
         include: {
-            createdBy: { select: { id: true, name: true, username: true } },
+            createdBy: { 
+                select: { 
+                    id: true, 
+                    name: true, 
+                    username: true,
+                    configuracionPagos: {
+                        where: { activo: true },
+                        take: 1
+                    }
+                } 
+            },
             garantias: true,
             _count: { select: { garantias: true } }
         },
@@ -1040,7 +1050,7 @@ export async function getTrabajosPendientesAprobacion() {
 /**
  * Approve a batch of reported work and credit technician wallet.
  */
-export async function aprobarYPayLoteTrabajo(loteId: number) {
+export async function aprobarYPayLoteTrabajo(loteId: number, customMonto?: number) {
     const session = await getServerSession(authOptions);
     if (!session || session.user.role !== 'admin') return { success: false, error: "No autorizado" };
 
@@ -1055,8 +1065,13 @@ export async function aprobarYPayLoteTrabajo(loteId: number) {
             const tecnicoId = lote.createdById;
 
             // Get payment configuration
-            const config = await tx.tecnicoGarantiaPago.findFirst({ where: { tecnicoId } });
-            const montoPorEquipo = config?.montoPorReparacion || 50; 
+            let montoPorEquipo = customMonto;
+            
+            if (montoPorEquipo === undefined) {
+                const config = await tx.tecnicoGarantiaPago.findFirst({ where: { tecnicoId } });
+                montoPorEquipo = config?.montoPorReparacion || 50; 
+            }
+            
             const montoTotal = lote.garantias.length * montoPorEquipo;
 
             // 1. Update guarantees status to 'Entregado'
