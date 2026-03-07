@@ -30,12 +30,7 @@ import {
 export function PendingWorkApproval({ lotes }: { lotes: any[] }) {
     const [loadingId, setLoadingId] = useState<number | null>(null);
     const [viewLote, setViewLote] = useState<any | null>(null);
-    useEffect(() => {
-        if (viewLote) {
-            const config = viewLote.createdBy?.configuracionPagos?.[0];
-            setMontoPorReparacion(config?.montoPorReparacion || 50);
-        }
-    }, [viewLote]);
+    const router = useRouter();
 
     if (!lotes || lotes.length === 0) return null;
 
