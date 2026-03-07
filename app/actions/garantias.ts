@@ -1209,6 +1209,7 @@ export async function aprobarYPayLoteTrabajo(loteId: number, customMonto?: numbe
         revalidatePath("/wallet");
     }
 }
-
-
+export async function getConfiguracionesPago() {
+    return await prisma.tecnicoGarantiaPago.findMany();
+}
 
