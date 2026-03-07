@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import crypto from "crypto";
 
 export async function getWalletData() {
     const session = await getServerSession(authOptions);
@@ -102,7 +103,8 @@ export async function requestWithdrawal(amount: number) {
                     tipo: 'retiro',
                     estado: 'Aprobado',
                     fecha: new Date(),
-                    descripcion: 'Solicitud de retiro'
+                    descripcion: 'Solicitud de retiro',
+                    secureToken: crypto.randomBytes(32).toString('hex')
                 }
             });
 
@@ -195,7 +197,8 @@ export async function manualCredit(targetUserId: number, amount: number) {
                     estado: 'Completado',
                     canjeado: true,
                     fecha: new Date(),
-                    descripcion: 'Acreditación manual por administrador'
+                    descripcion: 'Acreditación manual por administrador',
+                    secureToken: crypto.randomBytes(32).toString('hex')
                 }
             });
 
@@ -251,7 +254,8 @@ export async function adminManualWithdrawal(targetUserId: number, amount: number
                     estado: 'Completado',
                     canjeado: true,
                     fecha: new Date(),
-                    descripcion: concepto
+                    descripcion: concepto,
+                    secureToken: crypto.randomBytes(32).toString('hex')
                 }
             });
 

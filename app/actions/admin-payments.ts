@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import crypto from "crypto";
 
 export async function getAdminPaymentsDashboardData() {
     const session = await getServerSession(authOptions);
@@ -222,7 +223,8 @@ export async function applyPenaltyByImei(imei: string, motivo: string, montoInpu
                     estado: "Completado",
                     canjeado: true,
                     fecha: new Date(),
-                    descripcion: `PENALIDAD: ${motivo} (IMEI: ${imei})`
+                    descripcion: `PENALIDAD: ${motivo} (IMEI: ${imei})`,
+                    secureToken: crypto.randomBytes(32).toString('hex')
                 }
             });
 
@@ -298,7 +300,8 @@ export async function applyExternalPenalty(data: { imei: string, modelo: string,
                     estado: "Completado",
                     canjeado: true,
                     fecha: new Date(),
-                    descripcion: `PENALIDAD EXTERNA: ${data.motivo} (IMEI: ${data.imei})`
+                    descripcion: `PENALIDAD EXTERNA: ${data.motivo} (IMEI: ${data.imei})`,
+                    secureToken: crypto.randomBytes(32).toString('hex')
                 }
             });
 
@@ -412,7 +415,8 @@ export async function revertPenalty(penaltyId: number) {
                     estado: "Completado",
                     canjeado: true,
                     fecha: new Date(),
-                    descripcion: `REVERSA PENALIDAD: ID #${penalty.id} - ${penalty.motivo}`
+                    descripcion: `REVERSA PENALIDAD: ID #${penalty.id} - ${penalty.motivo}`,
+                    secureToken: crypto.randomBytes(32).toString('hex')
                 }
             });
 
@@ -487,7 +491,8 @@ export async function revertExternalPenalty(penaltyId: number) {
                     estado: "Completado",
                     canjeado: true,
                     fecha: new Date(),
-                    descripcion: `REVERSA PENALIDAD EXTERNA: ID #${penalty.id} - ${penalty.motivo}`
+                    descripcion: `REVERSA PENALIDAD EXTERNA: ID #${penalty.id} - ${penalty.motivo}`,
+                    secureToken: crypto.randomBytes(32).toString('hex')
                 }
             });
 

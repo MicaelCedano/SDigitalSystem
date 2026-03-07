@@ -5,13 +5,15 @@ import {
     Wallet, ArrowUpRight, TrendingUp, TrendingDown,
     Calendar, CheckCircle2, AlertTriangle, DollarSign,
     Download, Clock, Info, PiggyBank, ArrowRightLeft, Plus,
-    X, Receipt
+    X, Receipt, Share2, Image as ImageIcon, Printer
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { requestWithdrawal, manualCredit, transferBetweenAccounts, createWalletAccount } from "@/app/actions/wallet";
 import { formatDateTime, cn } from "@/lib/utils";
+import { toJpeg } from 'html-to-image';
+import { useRef } from "react";
 import {
     Dialog,
     DialogContent,
@@ -57,6 +59,47 @@ export function WalletClient({ initialData, currentUser }: WalletProps) {
 
     // Receipt Modal State
     const [selectedReceipt, setSelectedReceipt] = useState<any>(null);
+    const receiptRef = useRef<HTMLDivElement>(null);
+
+    const handleShareImage = async () => {
+        if (!receiptRef.current) return;
+
+        setIsLoading(true);
+        try {
+            const dataUrl = await toJpeg(receiptRef.current, { 
+                quality: 0.95,
+                backgroundColor: '#ffffff',
+                style: {
+                    borderRadius: '0px'
+                }
+            });
+            
+            // Create a blob from dataUrl
+            const blob = await (await fetch(dataUrl)).blob();
+            const fileName = `baucher-${selectedReceipt?.id || 'pago'}.jpg`;
+            const file = new File([blob], fileName, { type: 'image/jpeg' });
+
+            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: 'Baucher de Pago',
+                    text: `Baucher de pago por RD$ ${selectedReceipt.monto.toLocaleString()}`
+                });
+            } else {
+                // Fallback: Download
+                const link = document.createElement('a');
+                link.download = `baucher-${selectedReceipt.id}.jpg`;
+                link.href = dataUrl;
+                link.click();
+                toast.success("Imagen guardada en el dispositivo");
+            }
+        } catch (error) {
+            console.error('Error sharing image:', error);
+            toast.error("Error al generar imagen");
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const handleWithdrawalRequest = async () => {
         const numAmount = parseFloat(amount);
@@ -550,7 +593,7 @@ export function WalletClient({ initialData, currentUser }: WalletProps) {
             {/* 4. Receipt (Baucher) View */}
             <Dialog open={!!selectedReceipt} onOpenChange={() => setSelectedReceipt(null)}>
                 <DialogContent className="sm:max-w-md bg-white rounded-3xl p-0 border-none shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
-                    <div className="p-6 md:p-8 overflow-y-auto relative flex-1 custom-scrollbar">
+                    <div ref={receiptRef} className="p-6 md:p-8 overflow-y-auto relative flex-1 custom-scrollbar bg-white">
                         <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
                             <Receipt className="w-48 h-48 text-indigo-900" />
                         </div>
@@ -599,19 +642,30 @@ export function WalletClient({ initialData, currentUser }: WalletProps) {
                                     </p>
                                 </div>
 
-                                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                                <div className="flex flex-col gap-3 pt-2">
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <Button
+                                            onClick={handleShareImage}
+                                            disabled={isLoading}
+                                            className="h-12 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black shadow-lg shadow-emerald-100 flex items-center gap-2"
+                                        >
+                                            {isLoading ? <span className="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full" /> : <Share2 size={18} />}
+                                            Compartir
+                                        </Button>
+                                        <Button
+                                            onClick={() => window.print()}
+                                            className="h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black shadow-lg shadow-indigo-100 flex items-center gap-2"
+                                        >
+                                            <Printer size={18} />
+                                            Imprimir
+                                        </Button>
+                                    </div>
                                     <Button
                                         variant="outline"
                                         onClick={() => setSelectedReceipt(null)}
-                                        className="flex-1 h-12 rounded-xl border-slate-200 text-slate-600 hover:bg-slate-50 font-bold"
+                                        className="h-12 rounded-xl border-slate-200 text-slate-600 hover:bg-slate-50 font-bold"
                                     >
                                         Cerrar
-                                    </Button>
-                                    <Button
-                                        onClick={() => window.print()}
-                                        className="flex-1 h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black shadow-lg shadow-indigo-100"
-                                    >
-                                        Imprimir Copia
                                     </Button>
                                 </div>
                             </div>
