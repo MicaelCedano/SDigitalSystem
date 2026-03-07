@@ -96,7 +96,23 @@ export async function getTecnicosGarantias() {
             role: 'tecnico_garantias',
             isActive: true 
         },
-        select: { id: true, name: true, username: true }
+        select: { 
+            id: true, 
+            name: true, 
+            username: true,
+            configuracionPagos: {
+                where: { activo: true },
+                take: 1
+            },
+            wallet: {
+                include: {
+                    accounts: {
+                        where: { nombre: "Principal" },
+                        take: 1
+                    }
+                }
+            }
+        }
     });
 }
 

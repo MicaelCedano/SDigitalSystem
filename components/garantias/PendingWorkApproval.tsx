@@ -1,16 +1,16 @@
 
 "use client";
 
-import { useState } from "react";
-import { Check, X, Eye, Loader2, DollarSign, Package, Smartphone, User, FileText } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Check, X, Eye, Loader2, DollarSign, Package, Smartphone, User, FileText, Wallet, CheckCircle2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { aprobarYPayLoteTrabajo } from "@/app/actions/garantias";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import {
     Dialog,
     DialogContent,
@@ -149,63 +149,53 @@ export function PendingWorkApproval({ lotes }: { lotes: any[] }) {
 
             {/* View Details Modal */}
             <Dialog open={!!viewLote} onOpenChange={() => setViewLote(null)}>
-                <DialogContent className="max-w-4xl p-0 overflow-hidden rounded-[2.5rem] border-none shadow-2xl bg-white">
-                    <DialogHeader className="p-8 bg-white border-b border-slate-100 space-y-2">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-indigo-50 rounded-2xl">
-                                <Smartphone className="w-8 h-8 text-indigo-600" />
+                <DialogContent className="max-w-5xl p-0 overflow-hidden rounded-[3rem] border-none shadow-2xl bg-slate-50/50 backdrop-blur-xl">
+                    <DialogHeader className="p-10 bg-white/70 backdrop-blur-md border-b border-slate-200/50 space-y-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-5">
+                                <div className="p-4 bg-indigo-600 rounded-[1.5rem] shadow-xl shadow-indigo-200 rotate-3">
+                                    <Smartphone className="w-8 h-8 text-white" />
+                                </div>
+                                <div>
+                                    <DialogTitle className="text-4xl font-black text-slate-900 tracking-tighter">
+                                        Detalle del Reporte
+                                    </DialogTitle>
+                                    <DialogDescription className="text-indigo-600 font-black uppercase text-[11px] tracking-[0.3em] flex items-center gap-2 mt-1">
+                                        <div className="w-2 h-2 bg-indigo-600 rounded-full animate-pulse" />
+                                        Código: {viewLote?.codigo}
+                                    </DialogDescription>
+                                </div>
                             </div>
-                            <div>
-                                <DialogTitle className="text-3xl font-black text-slate-800 tracking-tighter">
-                                    Detalle del Reporte
-                                </DialogTitle>
-                                <DialogDescription className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em]">
-                                    Código: {viewLote?.codigo}
-                                </DialogDescription>
-                            </div>
+                            <Badge className="bg-amber-100/50 text-amber-600 border-amber-200 h-10 px-6 rounded-full font-black uppercase text-xs tracking-widest backdrop-blur-sm">
+                                Pendiente de Aprobación
+                            </Badge>
                         </div>
                     </DialogHeader>
 
-                    <div className="p-8 bg-slate-50 space-y-8 max-h-[60vh] overflow-y-auto">
-                        {/* Info Summary Cards */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="relative overflow-hidden p-6 bg-white rounded-[2rem] shadow-sm border border-slate-100 group">
-                                <div className="absolute -top-4 -right-4 w-16 h-16 bg-slate-100 rounded-full opacity-20 group-hover:scale-150 transition-transform duration-500" />
-                                <div className="relative z-10">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <User className="w-4 h-4 text-slate-400" />
-                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Técnico</span>
-                                    </div>
-                                    <p className="text-xl font-black text-slate-800">{viewLote?.createdBy?.name || viewLote?.createdBy?.username}</p>
-                                </div>
-                            </div>
-
-                            <div className="relative overflow-hidden p-6 bg-white rounded-[2rem] shadow-sm border border-slate-100 group">
-                                <div className="absolute -top-4 -right-4 w-16 h-16 bg-slate-100 rounded-full opacity-20 group-hover:scale-150 transition-transform duration-500" />
-                                <div className="relative z-10">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <Package className="w-4 h-4 text-slate-400" />
-                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Cantidad</span>
-                                    </div>
-                                    <p className="text-xl font-black text-slate-800">{viewLote?.garantias?.length} Equipos</p>
-                                </div>
-                            </div>
-
-                            <div className="relative overflow-hidden p-6 bg-slate-900 rounded-[2rem] shadow-lg group">
-                                <div className="absolute -top-4 -right-4 w-16 h-16 bg-white/10 rounded-full opacity-10 group-hover:scale-150 transition-transform duration-500" />
-                                <div className="relative z-10">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <div className="flex items-center gap-2">
-                                            <DollarSign className="w-4 h-4 text-emerald-400" />
-                                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Pago Total</span>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-baseline gap-2">
-                                        <p className="text-3xl font-black text-white">RD$ {(viewLote?.garantias?.length * montoPorReparacion).toLocaleString()}</p>
-                                        <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Calculado</span>
-                                    </div>
-                                </div>
-                            </div>
+                    <div className="p-10 space-y-10 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                        {/* Summary Section */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <SummaryCard 
+                                icon={<User className="w-5 h-5" />}
+                                label="Técnico Asignado"
+                                value={viewLote?.createdBy?.name || viewLote?.createdBy?.username}
+                                subValue={`@${viewLote?.createdBy?.username}`}
+                                color="indigo"
+                            />
+                            <SummaryCard 
+                                icon={<Package className="w-5 h-5" />}
+                                label="Total Equipos"
+                                value={`${viewLote?.garantias?.length} Unidades`}
+                                subValue="Equipos reportados"
+                                color="amber"
+                            />
+                            <SummaryCard 
+                                icon={<Wallet className="w-5 h-5" />}
+                                label="Balance Actual"
+                                value={`RD$ ${(viewLote?.createdBy?.wallet?.[0]?.accounts?.[0]?.saldo || 0).toLocaleString()}`}
+                                subValue="Saldo en wallet"
+                                color="emerald"
+                            />
                         </div>
 
                         {/* Payment Adjustment */}
@@ -307,28 +297,33 @@ export function PendingWorkApproval({ lotes }: { lotes: any[] }) {
                             </div>
                         </div>
 
-                        {/* Observations */}
+                        {/* Observations Area */}
                         {viewLote?.observaciones && (
-                            <div className="p-6 bg-amber-50 rounded-[2rem] border border-amber-100">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
-                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600">Observaciones del Técnico</span>
+                            <div className="relative overflow-hidden p-8 bg-amber-50 rounded-[2.5rem] border border-amber-200 group">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-amber-400/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700" />
+                                <div className="relative z-10 space-y-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+                                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-600">Observaciones del Técnico</span>
+                                    </div>
+                                    <p className="text-lg font-bold text-amber-900 italic leading-relaxed">
+                                        "{viewLote.observaciones}"
+                                    </p>
                                 </div>
-                                <p className="text-sm text-amber-800 font-medium italic">"{viewLote.observaciones}"</p>
                             </div>
                         )}
                     </div>
 
-                    <div className="p-8 bg-white border-t border-slate-100 flex justify-end gap-4">
+                    <div className="p-10 bg-white/70 backdrop-blur-md border-t border-slate-200/50 flex justify-end gap-5">
                         <Button 
                             variant="ghost"
-                            className="rounded-[2rem] h-14 px-8 font-black text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                            className="rounded-2xl h-16 px-10 font-black text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 transition-all uppercase text-xs tracking-widest"
                             onClick={() => setViewLote(null)}
                         >
-                            Cerrar
+                            Volver
                         </Button>
                         <Button 
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-12 rounded-[2rem] h-14 shadow-xl shadow-emerald-200 hover:scale-105 transition-all duration-300"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-16 rounded-2xl h-16 shadow-2xl shadow-emerald-200 hover:scale-[1.03] active:scale-95 transition-all duration-300 gap-3"
                             onClick={() => {
                                 handleApprove(viewLote.id, montoPorReparacion, saveAsDefault);
                                 setViewLote(null);
@@ -336,17 +331,42 @@ export function PendingWorkApproval({ lotes }: { lotes: any[] }) {
                             disabled={loadingId === viewLote?.id}
                         >
                             {loadingId === viewLote?.id ? (
-                                <Loader2 className="w-5 h-5 animate-spin" />
+                                <Loader2 className="w-6 h-6 animate-spin" />
                             ) : (
                                 <>
-                                    <Check className="w-5 h-5 mr-3" />
-                                    Aprobar y Pagar Ahora
+                                    <CheckCircle2 className="w-6 h-6" strokeWidth={3} />
+                                    Aprobar Reporte & Pagar
                                 </>
                             )}
                         </Button>
                     </div>
                 </DialogContent>
             </Dialog>
+        </div>
+    );
+}
+
+function SummaryCard({ icon, label, value, subValue, color }: any) {
+    const colors = {
+        indigo: "bg-indigo-600 text-indigo-600",
+        amber: "bg-amber-500 text-amber-500",
+        emerald: "bg-emerald-600 text-emerald-600",
+    };
+
+    return (
+        <div className="bg-white p-6 rounded-[2rem] border border-slate-200/60 shadow-xl shadow-slate-200/10 group hover:scale-[1.02] transition-all duration-500">
+            <div className="flex items-center gap-4 mb-4">
+                <div className={cn("p-3 rounded-2xl bg-opacity-10 shadow-inner", colors[color as keyof typeof colors].split(' ')[0])}>
+                    <div className={cn(colors[color as keyof typeof colors].split(' ')[1])}>{icon}</div>
+                </div>
+                <div>
+                    <p className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">{label}</p>
+                </div>
+            </div>
+            <div className="space-y-1">
+                <p className="text-xl font-black text-slate-900 tracking-tight">{value}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{subValue}</p>
+            </div>
         </div>
     );
 }

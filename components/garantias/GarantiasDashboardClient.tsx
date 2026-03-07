@@ -4,7 +4,7 @@ import { useState } from "react";
 import {
     PlusCircle, Layers, Clock, Truck, Database, Inbox, Wrench, CheckCircle2,
     Search, Filter, UserPlus, Eye, Edit2, Trash2, AlertCircle, ChevronDown,
-    ArrowUpRight, Download, MoreVertical, X, Check, DollarSign, Wallet, Trash
+    ArrowUpRight, Download, MoreVertical, X, Check, DollarSign, Wallet, Trash, Settings
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -25,7 +25,7 @@ import {
 import { formatDateTime, cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { asignarGarantia, updateGarantia } from "@/app/actions/garantias";
+import { asignarGarantia, updateGarantia, eliminarGarantia } from "@/app/actions/garantias";
 import { PendingWorkApproval } from "./PendingWorkApproval";
 
 interface GarantiasDashboardClientProps {
@@ -48,6 +48,24 @@ export function GarantiasDashboardClient({
     const [selectedEstado, setSelectedEstado] = useState<string>("all");
     const [selectedTecnico, setSelectedTecnico] = useState<string>("all");
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleAction = async (actionFn: () => Promise<any>, successMsg: string) => {
+        setIsLoading(true);
+        try {
+            const res = await actionFn();
+            if (res.success) {
+                toast.success(successMsg);
+                router.refresh();
+            } else {
+                toast.error(res.error || "Error al realizar la acción");
+            }
+        } catch (error) {
+            toast.error("Ocurrió un error inesperado");
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     // Filters & Search
     const filteredGarantias = initialGarantias.filter(g => {
@@ -365,17 +383,36 @@ export function GarantiasDashboardClient({
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
                                             <Link href={`/garantias/${g.id}`}>
-                                                <Button variant="ghost" size="icon" className="h-9 w-9 text-blue-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl">
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="icon" 
+                                                    className="h-10 w-10 rounded-2xl bg-white border border-slate-100 shadow-sm text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-100 transition-all"
+                                                >
                                                     <Eye className="w-4 h-4" />
                                                 </Button>
                                             </Link>
-                                            <Button variant="ghost" size="icon" className="h-9 w-9 text-amber-500 hover:bg-amber-50 hover:text-amber-600 rounded-xl">
-                                                <Edit2 className="w-4 h-4" />
-                                            </Button>
+                                            <Link href={`/garantias/${g.id}/editar`}>
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="icon" 
+                                                    className="h-10 w-10 rounded-2xl bg-white border border-slate-100 shadow-sm text-slate-400 hover:text-amber-600 hover:bg-amber-50 hover:border-amber-100 transition-all"
+                                                >
+                                                    <Edit2 className="w-4 h-4" />
+                                                </Button>
+                                            </Link>
                                             {currentUser.role === 'admin' && (
-                                                <Button variant="ghost" size="icon" className="h-9 w-9 text-rose-500 hover:bg-rose-50 hover:text-rose-600 rounded-xl">
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="icon" 
+                                                    onClick={() => {
+                                                        if (confirm('¿Eliminar esta garantía?')) {
+                                                            handleAction(() => eliminarGarantia(g.id), "Garantía eliminada");
+                                                        }
+                                                    }}
+                                                    className="h-10 w-10 rounded-2xl bg-white border border-slate-100 shadow-sm text-slate-400 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-100 transition-all"
+                                                >
                                                     <Trash2 className="w-4 h-4" />
                                                 </Button>
                                             )}
@@ -428,28 +465,59 @@ export function GarantiasDashboardClient({
                         </Button>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 p-6 gap-4">
-                        {tecnicos.map(t => (
-                            <div key={t.id} className="p-5 bg-slate-50 rounded-[2rem] border border-slate-100 group transition-all hover:bg-white hover:shadow-xl hover:shadow-slate-200/50">
-                                <div className="flex items-center gap-3 mb-4">
-                                    <div className="w-10 h-10 rounded-2xl bg-white shadow-sm flex items-center justify-center text-sm font-black text-slate-600">
-                                        {(t.name || t.username)[0].toUpperCase()}
+                        {tecnicos.map(t => {
+                            const saldo = t.wallet?.[0]?.accounts?.[0]?.saldo || 0;
+                            const tarifa = t.configuracionPagos?.[0]?.montoPorReparacion || 50;
+                            
+                            return (
+                                <div key={t.id} className="p-6 bg-slate-50 rounded-[2.5rem] border border-slate-100 group transition-all hover:bg-white hover:shadow-xl hover:shadow-slate-200/50">
+                                    <div className="flex items-center justify-between mb-5">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-11 h-11 rounded-2xl bg-slate-900 shadow-lg flex items-center justify-center text-sm font-black text-white group-hover:rotate-6 transition-transform">
+                                                {(t.name || t.username)[0].toUpperCase()}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="font-black text-slate-800 truncate text-sm tracking-tight">{t.name || t.username}</p>
+                                                <p className="text-[9px] font-black uppercase text-slate-400 tracking-[0.2em]">Técnico Garantías</p>
+                                            </div>
+                                        </div>
+                                        <Link href={`/garantias/config/pago/${t.id}`}>
+                                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                                                <Settings className="w-4 h-4" />
+                                            </Button>
+                                        </Link>
                                     </div>
-                                    <div className="min-w-0">
-                                        <p className="font-bold text-slate-800 truncate text-sm">{t.name || t.username}</p>
-                                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Técnico Garantías</p>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1 bg-white/50 p-3 rounded-2xl border border-slate-100">
+                                            <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Balance</p>
+                                            <div className="text-base font-black text-indigo-600 tracking-tighter">
+                                                RD$ {saldo.toLocaleString()}
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1 bg-white/50 p-3 rounded-2xl border border-slate-100">
+                                            <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Tarifa</p>
+                                            <div className="text-base font-black text-emerald-600 tracking-tighter">
+                                                RD$ {tarifa.toLocaleString()}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-2 gap-2 mt-4">
+                                        <Link href={`/garantias/pagos`} className="w-full">
+                                            <Button variant="outline" className="w-full h-10 border-slate-200 text-slate-600 hover:bg-slate-900 hover:text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all">
+                                                Saldo
+                                            </Button>
+                                        </Link>
+                                        <Link href={`/garantias/config/pago/${t.id}`} className="w-full">
+                                            <Button className="w-full h-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-100 transition-all">
+                                                Tarifa
+                                            </Button>
+                                        </Link>
                                     </div>
                                 </div>
-                                <div className="space-y-1">
-                                    <p className="text-[9px] font-black uppercase text-slate-400 tracking-[0.2em] ml-1">Balance Actual</p>
-                                    <div className="text-2xl font-black text-indigo-600 font-mono tracking-tighter">
-                                        RD$ 0.00
-                                    </div>
-                                </div>
-                                <Button className="w-full mt-4 h-10 bg-white border border-slate-200 text-slate-600 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 rounded-xl font-bold text-xs transition-all">
-                                    Ajustar Saldo
-                                </Button>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
             )}

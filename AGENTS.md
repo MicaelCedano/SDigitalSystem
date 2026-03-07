@@ -20,8 +20,9 @@ Seguimos el sistema de diseño **"Glassy-Solid Hybrid"**.
 - [x] **Rediseño de PendingWorkApproval**: Se optimizó el modal de detalles del técnico con el nuevo sistema de diseño para evitar la visualización "amontonada".
 - [x] **Centralización de Agenda**: Creación de este archivo `AGENTS.md`.
 - [x] **Ajuste de Pagos de Técnicos**: Se implementó la capacidad de ajustar el monto por equipo durante el proceso de aprobación de reportes de trabajo, permitiendo pagos personalizados y automáticos.
+- [x] **Rediseño Premium de Aprobación**: Se rediseñó el modal de aprobación de lotes con una estética premium, incluyendo balance en tiempo real y mejor visualización de equipos.
+- [x] **Gestión Rápida de Tarifas**: Se añadió una sección en el dashboard principal para ver el balance y ajustar la tarifa de cada técnico de forma directa.
 
 ## 📌 Pendientes
 - Revisar consistencia de otros modales del dashboard.
 - Optimizar la carga de tablas grandes.
-- Verificar si se requiere una opción para guardar el monto ajustado como nueva tarifa predeterminada del técnico.
