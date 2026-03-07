@@ -31,6 +31,7 @@ export function PendingWorkApproval({ lotes }: { lotes: any[] }) {
     const [loadingId, setLoadingId] = useState<number | null>(null);
     const [viewLote, setViewLote] = useState<any | null>(null);
     const [montoPorReparacion, setMontoPorReparacion] = useState<number>(50);
+    const [saveAsDefault, setSaveAsDefault] = useState<boolean>(true);
     const router = useRouter();
 
     useEffect(() => {
@@ -42,10 +43,10 @@ export function PendingWorkApproval({ lotes }: { lotes: any[] }) {
 
     if (!lotes || lotes.length === 0) return null;
 
-    const handleApprove = async (loteId: number, customMonto?: number) => {
+    const handleApprove = async (loteId: number, customMonto?: number, saveDefault: boolean = false) => {
         setLoadingId(loteId);
         try {
-            const res = await aprobarYPayLoteTrabajo(loteId, customMonto);
+            const res = await aprobarYPayLoteTrabajo(loteId, customMonto, saveDefault);
             if (res.success) {
                 toast.success("Trabajo aprobado y pagado al técnico.");
                 router.refresh();
@@ -89,6 +90,12 @@ export function PendingWorkApproval({ lotes }: { lotes: any[] }) {
                                     <Badge className="bg-amber-50 text-amber-600 border-amber-100 font-black uppercase text-[10px] tracking-widest px-3 py-1">
                                         Pendiente
                                     </Badge>
+                                    <div className="flex flex-col items-end">
+                                        <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Balance Wallet</span>
+                                        <span className="text-xs font-black text-emerald-600">
+                                            RD$ {(lote.createdBy?.wallet?.[0]?.accounts?.[0]?.saldo || 0).toLocaleString()}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 
@@ -230,6 +237,23 @@ export function PendingWorkApproval({ lotes }: { lotes: any[] }) {
                                     </div>
                                 </div>
                             </div>
+                            
+                            <div className="mt-6 pt-6 border-t border-slate-100 flex items-center gap-3">
+                                <label className="flex items-center gap-3 cursor-pointer group/check">
+                                    <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${saveAsDefault ? 'bg-indigo-600 border-indigo-600 shadow-lg shadow-indigo-100' : 'bg-white border-slate-200'}`}>
+                                        <input 
+                                            type="checkbox" 
+                                            className="hidden" 
+                                            checked={saveAsDefault}
+                                            onChange={(e) => setSaveAsDefault(e.target.checked)}
+                                        />
+                                        {saveAsDefault && <Check className="w-4 h-4 text-white" />}
+                                    </div>
+                                    <span className="text-xs font-bold text-slate-600 group-hover/check:text-indigo-600 transition-colors">
+                                        Establecer como tarifa predeterminada para este técnico
+                                    </span>
+                                </label>
+                            </div>
                         </div>
 
                         {/* Equipments Table */}
@@ -306,7 +330,7 @@ export function PendingWorkApproval({ lotes }: { lotes: any[] }) {
                         <Button 
                             className="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-12 rounded-[2rem] h-14 shadow-xl shadow-emerald-200 hover:scale-105 transition-all duration-300"
                             onClick={() => {
-                                handleApprove(viewLote.id, montoPorReparacion);
+                                handleApprove(viewLote.id, montoPorReparacion, saveAsDefault);
                                 setViewLote(null);
                             }}
                             disabled={loadingId === viewLote?.id}

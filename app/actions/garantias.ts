@@ -1037,6 +1037,14 @@ export async function getTrabajosPendientesAprobacion() {
                     configuracionPagos: {
                         where: { activo: true },
                         take: 1
+                    },
+                    wallet: {
+                        include: {
+                            accounts: {
+                                where: { nombre: "Principal" },
+                                take: 1
+                            }
+                        }
                     }
                 } 
             },
@@ -1050,7 +1058,7 @@ export async function getTrabajosPendientesAprobacion() {
 /**
  * Approve a batch of reported work and credit technician wallet.
  */
-export async function aprobarYPayLoteTrabajo(loteId: number, customMonto?: number) {
+export async function aprobarYPayLoteTrabajo(loteId: number, customMonto?: number, saveAsDefault: boolean = false) {
     const session = await getServerSession(authOptions);
     if (!session || session.user.role !== 'admin') return { success: false, error: "No autorizado" };
 
@@ -1070,6 +1078,29 @@ export async function aprobarYPayLoteTrabajo(loteId: number, customMonto?: numbe
             if (montoPorEquipo === undefined) {
                 const config = await tx.tecnicoGarantiaPago.findFirst({ where: { tecnicoId } });
                 montoPorEquipo = config?.montoPorReparacion || 50; 
+            } else if (saveAsDefault) {
+                // Update or create persistent configuration
+                const currentConfig = await tx.tecnicoGarantiaPago.findFirst({ where: { tecnicoId } });
+                if (currentConfig) {
+                    await tx.tecnicoGarantiaPago.update({
+                        where: { id: currentConfig.id },
+                        data: {
+                            montoPorReparacion: customMonto,
+                            adminId: Number(session.user.id),
+                            fechaConfiguracion: new Date()
+                        }
+                    });
+                } else {
+                    await tx.tecnicoGarantiaPago.create({
+                        data: {
+                            tecnicoId,
+                            montoPorReparacion: customMonto as number,
+                            activo: true,
+                            adminId: Number(session.user.id),
+                            fechaConfiguracion: new Date()
+                        }
+                    });
+                }
             }
             
             const montoTotal = lote.garantias.length * montoPorEquipo;
