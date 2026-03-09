@@ -79,6 +79,18 @@ export function EquipmentHistoryDialog({ equipmentId, open, onOpenChange }: Equi
         h.user?.role?.toLowerCase() !== 'admin'
     );
 
+    // Prioritize the detailed observation from the equipment if the history entry is generic
+    const effectiveObservation = (() => {
+        if (!lastQC) return null;
+        const genericMessages = ["Revisión completada", "Revision completada", "Revisado", "Completado"];
+        const isGeneric = !lastQC.observacion || genericMessages.some(m => lastQC.observacion.includes(m));
+        
+        if (isGeneric && details?.observacion && details.observacion !== "Sin observaciones") {
+            return details.observacion;
+        }
+        return lastQC.observacion;
+    })();
+
     if (!open) return null;
 
     return (
@@ -257,11 +269,11 @@ export function EquipmentHistoryDialog({ equipmentId, open, onOpenChange }: Equi
                                         </div>
 
                                         {/* QC Note */}
-                                        {lastQC?.observacion ? (
+                                        {effectiveObservation ? (
                                             <div className="relative bg-amber-50 rounded-xl p-4 border border-amber-100">
                                                 <Quote className="absolute top-3 left-3 h-4 w-4 text-amber-300 opacity-50" />
                                                 <p className="text-slate-700 text-sm font-medium pl-6 italic leading-relaxed">
-                                                    "{lastQC.observacion}"
+                                                    "{effectiveObservation}"
                                                 </p>
                                             </div>
                                         ) : (
