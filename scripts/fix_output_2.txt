@@ -1,5 +1,0 @@
-Buscando equipo con IMEI: 354070966714722...
-Equipo table updated.
-Found candidate history ID 35619. Current obs: "pantalla picada,bordes con golpes,91%."
-- Historial ID 35619 updated.
-Total history entries updated: 1
