@@ -1,0 +1,24 @@
+Total entries with 'Revisi': 20
+- ID: 24 | IMEI: 352589402625145 | Obs: "Revisi├│n actualizada: Pantalla quemada 
+Red de Altice bloqueada 
+Bordes manchados " | User: 
+- ID: 125 | IMEI: 355157583366777 | Obs: "Revisi├│n actualizada: " | User: null
+- ID: 217 | IMEI: 351123902461693 | Obs: "Revisi├│n actualizada: Bloqueado con la red de altice 
+Tapa rayada " | User: null
+- ID: 280 | IMEI: 357463526148381 | Obs: "Revisi├│n actualizada: Borde con golpes y bater├¡a en mantenimiento " | User: alberto
+- ID: 364 | IMEI: 355035113965971 | Obs: "Revisi├│n actualizada: Tapa manchada, tapa rallada muy leve " | User: 
+- ID: 410 | IMEI: 355680111210159 | Obs: "Revisi├│n actualizada: Varias rallas verdes en la pantalla, leve rallones en la pantalla, taba despegada " | User: 
+- ID: 527 | IMEI: 354618100270538 | Obs: "Revisi├│n actualizada: Pantalla rota y tapa abierta " | User: alberto
+- ID: 623 | IMEI: 354139180272179 | Obs: "Revisi├│n actualizada: La tapa est├í despegada,el pin de carga obstruido,y la pantalla tiene l├¡neas " | User: null
+- ID: 664 | IMEI: 354263093802821 | Obs: "Revisi├│n actualizada: pantalla quemada solo con altice" | User: alberto
+- ID: 702 | IMEI: 353906103439270 | Obs: "Revisi├│n actualizada: Bateria 95%" | User: alberto
+- ID: 706 | IMEI: 352852116079730 | Obs: "Revisi├│n actualizada: Bateria 95%" | User: alberto
+- ID: 716 | IMEI: 356548107907790 | Obs: "Revisi├│n actualizada: " | User: Maxwell Lebron
+- ID: 718 | IMEI: 356548107907790 | Obs: "Revisi├│n actualizada: " | User: Maxwell Lebron
+- ID: 737 | IMEI: 356543104614796 | Obs: "Revisi├│n actualizada: " | User: Maxwell Lebron
+- ID: 763 | IMEI: 353890101407986 | Obs: "Revisi├│n actualizada: bateria 100% " | User: alberto
+- ID: 764 | IMEI: 353890101407986 | Obs: "Revisi├│n actualizada: bateria 100%  Camara  con mancha" | User: alberto
+- ID: 798 | IMEI: 356528189795354 | Obs: "Revisi├│n actualizada: Bateria 98% tapa raya" | User: alberto
+- ID: 827 | IMEI: 356681111864416 | Obs: "Revisi├│n actualizada: puntos en la camara" | User: Maxwell Lebron
+- ID: 915 | IMEI: 359185446190585 | Obs: "Revisi├│n actualizada: Pantalla Rayada, Housing Rayado y Tapa Manchada" | User: Brahian ­ƒÿì
+- ID: 1033 | IMEI: 350917090526840 | Obs: "Revisi├│n actualizada: La tapa esta Rota, la c├ímara esta fea, el housing esta re-feo,la pantalla no sirve, y el Internet no se conecta." | User: Brahian ­ƒÿì

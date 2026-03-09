@@ -262,7 +262,6 @@ export function EquipmentHistoryDialog({ equipmentId, open, onOpenChange }: Equi
                                                 <Quote className="absolute top-3 left-3 h-4 w-4 text-amber-300 opacity-50" />
                                                 <p className="text-slate-700 text-sm font-medium pl-6 italic leading-relaxed">
                                                     "{lastQC.observacion}"
-                                                    <span className="text-[10px] text-slate-300 ml-2">#{lastQC.id}</span>
                                                 </p>
                                             </div>
                                         ) : (

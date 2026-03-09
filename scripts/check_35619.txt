@@ -1,0 +1,21 @@
+History ID 35619: {
+  id: 35619,
+  equipoId: 12404,
+  fecha: 2026-03-06T22:50:33.935Z,
+  estado: 'Revisado',
+  userId: 17,
+  loteId: 422,
+  observacion: 'pantalla picada,bordes con golpes,91%.',
+  user: {
+    id: 17,
+    username: 'joselotorres',
+    name: 'Joselo Torres',
+    email: 'djoselo2009@gmail.com',
+    passwordHash: '$2b$10$MjheMNGFk.QIoPay5joaROiEMo/W/PF2ZpUdWft/M.I5D07ox4k0W',
+    role: 'control_calidad',
+    canCreateGarantias: false,
+    profileImage: 'joselotorres_17.jpeg',
+    canManageOrders: false,
+    isActive: true
+  }
+}

@@ -1,0 +1,3 @@
+Buscando equipo con IMEI: 354070966714722...
+Observacion en tabla Equipo actualizada.
+No se encontraron entradas de historial que coincidan para actualizar.
