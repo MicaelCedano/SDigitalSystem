@@ -168,7 +168,10 @@ export async function applyPenaltyByImei(imei: string, motivo: string, montoInpu
             where: { imei },
             include: {
                 historial: {
-                    where: { estado: "Revisado" },
+                    where: { 
+                        estado: "Revisado",
+                        user: { role: { not: "admin" } }
+                    },
                     orderBy: { fecha: "desc" },
                     include: { user: true }
                 }
@@ -337,7 +340,10 @@ export async function getPenaltyDataByImei(imei: string) {
                 marca: true,
                 modelo: true,
                 historial: {
-                    where: { estado: "Revisado" },
+                    where: { 
+                        estado: "Revisado",
+                        user: { role: { not: "admin" } }
+                    },
                     orderBy: { fecha: "desc" },
                     take: 1,
                     include: {

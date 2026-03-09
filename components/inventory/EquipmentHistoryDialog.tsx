@@ -71,11 +71,12 @@ export function EquipmentHistoryDialog({ equipmentId, open, onOpenChange }: Equi
         }
     }, [open, equipmentId]);
 
-    // Calculate Last QC
+    // Calculate Last QC (Skip admins, as they perform administrative approvals, not technical reviews)
     const lastQC = details?.historial?.find((h: any) =>
-        ['Revisado', 'Control de Calidad', 'Verificado'].includes(h.estado) ||
-        h.user?.role?.toUpperCase().includes('CALIDAD') ||
-        h.user?.role?.toUpperCase().includes('QUALITY')
+        (['Revisado', 'Control de Calidad', 'Verificado'].includes(h.estado) ||
+            h.user?.role?.toUpperCase().includes('CALIDAD') ||
+            h.user?.role?.toUpperCase().includes('QUALITY')) &&
+        h.user?.role?.toLowerCase() !== 'admin'
     );
 
     if (!open) return null;
