@@ -240,14 +240,14 @@ export async function reviewEquipment(equipoId: number, data: {
             }
         });
 
-        // Add history log
+        // Add history log with actual observation if provided
         await prisma.equipoHistorial.create({
             data: {
                 equipoId: equipoId,
                 estado: "Revisado",
                 userId: userId,
                 fecha: new Date(),
-                observacion: "Revisión completada",
+                observacion: data.observacion || "Revisión completada",
                 loteId: equipo.loteId
             }
         });
