@@ -65,7 +65,7 @@ const Sidebar = ({ initialUser, forceShow = false }: { initialUser?: any, forceS
 
     const role = user?.role?.toLowerCase() || '';
     const isAdmin = role === 'admin';
-    const isAlmacen = role === 'almacen' || user?.canManageOrders === true;
+    const isAlmacen = role === 'almacen' || role === 'vendedor' || user?.canManageOrders === true;
     const isQC = role === 'control_calidad' || isAdmin;
     const isGarantiaTec = role === 'tecnico_garantias' || isAdmin;
 

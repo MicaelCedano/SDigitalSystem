@@ -357,7 +357,7 @@ export function OrdersClient({ initialOrders, clientes }: OrdersClientProps) {
                                         </div>
                                     </div>
 
-                                    {selectedOrder.status !== 'ENTREGADO' && selectedOrder.status !== 'CANCELADO' && (
+                                    {session?.user?.id && (session.user.role === 'admin' || session.user.role === 'almacen' || session.user.canManageOrders === true) && selectedOrder.status !== 'ENTREGADO' && selectedOrder.status !== 'CANCELADO' && (
                                         <Button
                                             onClick={() => {
                                                 handleStatusUpdate(selectedOrder.id, selectedOrder.status);
