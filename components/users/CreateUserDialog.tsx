@@ -33,85 +33,110 @@ export default function CreateUserDialog() {
                     <span>Nuevo Usuario</span>
                 </button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] bg-white dark:bg-gray-900 border-none shadow-2xl">
-                <DialogHeader>
-                    <DialogTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">Crear Usuario</DialogTitle>
-                    <DialogDescription>
-                        Ingresa los datos del nuevo usuario. Haz clic en guardar cuando termines.
-                    </DialogDescription>
+            <DialogContent className="sm:max-w-xl bg-white border-none p-0 overflow-hidden rounded-[2.5rem] shadow-2xl">
+                <DialogHeader className="bg-slate-50 p-8 border-b border-slate-100 flex flex-row items-center gap-4 space-y-0">
+                    <div className="p-4 bg-indigo-100 rounded-3xl shrink-0">
+                        <UserPlus className="w-8 h-8 text-indigo-600" />
+                    </div>
+                    <div className="text-left">
+                        <DialogTitle className="text-3xl font-black text-slate-900 tracking-tighter">Crear Usuario</DialogTitle>
+                        <DialogDescription className="text-sm font-medium text-slate-500 mt-1">
+                            Ingresa los datos del nuevo usuario del sistema.
+                        </DialogDescription>
+                    </div>
                 </DialogHeader>
-                <form onSubmit={onSubmit} className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <label htmlFor="username" className="text-right font-medium text-sm">
-                            Usuario
-                        </label>
-                        <input
-                            id="username"
-                            name="username"
-                            className="col-span-3 flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            required
-                        />
+                <form onSubmit={onSubmit} className="flex flex-col">
+                    <div className="p-8 space-y-6">
+                        <div className="space-y-2">
+                            <label htmlFor="username" className="text-[10px] uppercase font-black tracking-[0.2em] text-slate-400">
+                                Usuario
+                            </label>
+                            <input
+                                id="username"
+                                name="username"
+                                className="flex h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 transition-all"
+                                placeholder="ej. jdoe"
+                                required
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label htmlFor="name" className="text-[10px] uppercase font-black tracking-[0.2em] text-slate-400">
+                                Nombre Completo
+                            </label>
+                            <input
+                                id="name"
+                                name="name"
+                                className="flex h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 transition-all"
+                                placeholder="ej. John Doe (Opcional)"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label htmlFor="email" className="text-[10px] uppercase font-black tracking-[0.2em] text-slate-400">
+                                Email (Opcional)
+                            </label>
+                            <input
+                                id="email"
+                                name="email"
+                                type="email"
+                                className="flex h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 transition-all"
+                                placeholder="jdoe@ejemplo.com"
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label htmlFor="password" className="text-[10px] uppercase font-black tracking-[0.2em] text-slate-400">
+                                    Contraseña
+                                </label>
+                                <input
+                                    id="password"
+                                    name="password"
+                                    type="password"
+                                    className="flex h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 transition-all"
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label htmlFor="role" className="text-[10px] uppercase font-black tracking-[0.2em] text-slate-400">
+                                    Rol en el Sistema
+                                </label>
+                                <select
+                                    id="role"
+                                    name="role"
+                                    defaultValue="tecnico"
+                                    className="flex h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 font-medium text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 transition-all cursor-pointer"
+                                >
+                                    <option value="admin">Administrador</option>
+                                    <option value="control_calidad">Ctrl. Calidad</option>
+                                    <option value="tecnico_garantias">Téc. Garantías</option>
+                                    <option value="tecnico">Técnico Std</option>
+                                    <option value="vendedor">Vendedor</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <label htmlFor="name" className="text-right font-medium text-sm">
-                            Nombre
-                        </label>
-                        <input
-                            id="name"
-                            name="name"
-                            className="col-span-3 flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <label htmlFor="email" className="text-right font-medium text-sm">
-                            Email
-                        </label>
-                        <input
-                            id="email"
-                            name="email"
-                            type="email"
-                            className="col-span-3 flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <label htmlFor="password" className="text-right font-medium text-sm">
-                            Contraseña
-                        </label>
-                        <input
-                            id="password"
-                            name="password"
-                            type="password"
-                            className="col-span-3 flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            required
-                        />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <label htmlFor="role" className="text-right font-medium text-sm">
-                            Rol
-                        </label>
-                        <select
-                            id="role"
-                            name="role"
-                            defaultValue="tecnico"
-                            className="col-span-3 flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    <div className="p-8 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+                        <button
+                            type="button"
+                            onClick={() => setOpen(false)}
+                            className="h-14 px-8 rounded-full font-black text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 transition-all"
                         >
-                            <option value="admin">Administrador</option>
-                            <option value="control_calidad">Control de Calidad</option>
-                            <option value="tecnico_garantias">Técnico de Garantías</option>
-                            <option value="tecnico">Técnico Standard</option>
-                            <option value="vendedor">Vendedor</option>
-                        </select>
-                    </div>
-                    <DialogFooter>
+                            CANCELAR
+                        </button>
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
+                            className="inline-flex items-center justify-center h-14 px-8 rounded-full font-black text-white bg-indigo-600 hover:bg-indigo-700 hover:scale-[1.02] transition-all shadow-xl shadow-indigo-200 hover:shadow-2xl hover:shadow-indigo-300 disabled:opacity-50 disabled:hover:scale-100"
                         >
-                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Crear Usuario
+                            {isLoading ? (
+                                <>
+                                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                    CREANDO...
+                                </>
+                            ) : (
+                                "CREAR USUARIO"
+                            )}
                         </button>
-                    </DialogFooter>
+                    </div>
                 </form>
             </DialogContent>
         </Dialog>

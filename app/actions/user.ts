@@ -24,8 +24,8 @@ export async function createUser(formData: FormData) {
         await prisma.user.create({
             data: {
                 username,
-                name,
-                email,
+                name: name || null,
+                email: email && email.trim() !== "" ? email : null,
                 passwordHash: hashedPassword,
                 role: role || "tecnico",
             },
