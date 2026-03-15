@@ -26,6 +26,7 @@ export function MatchImeisClient({ purchase }: { purchase: any }) {
         }
 
         // 2. Map database - Only 'Funcional' logic
+        const todosEquiposMap = new Map(purchase.equipos.map((e: any) => [e.imei, e]));
         const equiposFuncionales = purchase.equipos.filter((e: any) => e.funcionalidad?.toLowerCase() === 'funcional');
         const funcionalesMap = new Map(equiposFuncionales.map((e: any) => [e.imei, e]));
         const funcionalesDbSet = new Set(equiposFuncionales.map((e: any) => e.imei));
@@ -40,10 +41,11 @@ export function MatchImeisClient({ purchase }: { purchase: any }) {
             if (funcionalesDbSet.has(imei)) {
                 matches.push(funcionalesMap.get(imei));
             } else {
+                const enBd: any = todosEquiposMap.get(imei);
                 extraFisicos.push({ 
                     imei, 
-                    motivo: "No es funcional o no registrado", 
-                    estado_actual: "Desconocido" 
+                    motivo: enBd ? `Registrado como ${enBd.funcionalidad?.toLowerCase() || 'sin revisar'}` : "No pertenece a esta compra", 
+                    estado_actual: enBd ? enBd.estado : "Desconocido" 
                 });
             }
         });
