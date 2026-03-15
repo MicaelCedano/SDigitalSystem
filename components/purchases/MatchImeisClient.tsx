@@ -17,7 +17,11 @@ export function MatchImeisClient({ purchase }: { purchase: any }) {
 
     const handleMatch = () => {
         // 1. Clean input
-        const rawImeis = imeisInput.split(/[\s,]+/).map(i => i.trim()).filter(Boolean);
+        const rawImeis = imeisInput
+            .split(/[\s,]+/)
+            .map(i => i.trim())
+            .filter(Boolean)
+            .filter((i: string) => i.toLowerCase() !== 'imei'); // Ignorar la palabra "IMEI" si se copia el encabezado
         const imeisFisicos = Array.from(new Set(rawImeis)); // unique
 
         if (imeisFisicos.length === 0) {
