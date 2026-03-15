@@ -223,7 +223,7 @@ export function InventoryTableClient({
                                         <TableCell className="py-4">
                                             <div className="flex flex-col">
                                                 <span className="font-bold text-slate-900 text-sm">
-                                                    {equipo.deviceModel?.brand} {equipo.deviceModel?.modelName || equipo.modelo}
+                                                    {equipo.deviceModel?.brand || equipo.marca || ""} {equipo.deviceModel?.modelName || equipo.modelo}
                                                 </span>
                                                 <span className="text-[11px] font-mono text-slate-400 mt-0.5 flex items-center gap-1">
                                                     <span className="text-slate-300">#</span> {equipo.imei}

@@ -20,6 +20,15 @@ export async function updateEquipment(id: number, data: any) {
             return { success: false, error: "Equipo no encontrado" };
         }
 
+        // Intentar encontrar un modelo de dispositivo que coincida con los datos ingresados
+        const matchingDeviceModel = await prisma.deviceModel.findFirst({
+            where: {
+                brand: { equals: data.marca, mode: 'insensitive' },
+                modelName: { equals: data.modelo, mode: 'insensitive' },
+                storageGb: Number(data.storageGb)
+            }
+        });
+
         // Update equipment
         const updated = await prisma.equipo.update({
             where: { id },
@@ -32,7 +41,8 @@ export async function updateEquipment(id: number, data: any) {
                 grado: data.grado,
                 funcionalidad: data.funcionalidad,
                 observacion: data.observacion,
-                estado: data.estado
+                estado: data.estado,
+                deviceModelId: matchingDeviceModel ? matchingDeviceModel.id : null
             }
         });
 
