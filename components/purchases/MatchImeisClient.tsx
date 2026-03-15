@@ -25,9 +25,10 @@ export function MatchImeisClient({ purchase }: { purchase: any }) {
             return;
         }
 
-        // 2. Map database 
-        const todosEquiposMap = new Map(purchase.equipos.map((e: any) => [e.imei, e]));
-        const imeisDbSet = new Set(purchase.equipos.map((e: any) => e.imei));
+        // 2. Map database - Only 'Funcional' logic
+        const equiposFuncionales = purchase.equipos.filter((e: any) => e.funcionalidad?.toLowerCase() === 'funcional');
+        const funcionalesMap = new Map(equiposFuncionales.map((e: any) => [e.imei, e]));
+        const funcionalesDbSet = new Set(equiposFuncionales.map((e: any) => e.imei));
 
         // 3. Compare Lists
         const matches: any[] = [];
@@ -36,19 +37,19 @@ export function MatchImeisClient({ purchase }: { purchase: any }) {
 
         // Check physical ones
         imeisFisicos.forEach(imei => {
-            if (imeisDbSet.has(imei)) {
-                matches.push(todosEquiposMap.get(imei));
+            if (funcionalesDbSet.has(imei)) {
+                matches.push(funcionalesMap.get(imei));
             } else {
                 extraFisicos.push({ 
                     imei, 
-                    motivo: "No registrado en esta compra", 
+                    motivo: "No es funcional o no registrado", 
                     estado_actual: "Desconocido" 
                 });
             }
         });
 
-        // Check missing in physical
-        purchase.equipos.forEach((eq: any) => {
+        // Check missing in physical (only from the functional list)
+        equiposFuncionales.forEach((eq: any) => {
             if (!imeisFisicos.includes(eq.imei)) {
                 missingFisicos.push(eq);
             }
@@ -60,7 +61,7 @@ export function MatchImeisClient({ purchase }: { purchase: any }) {
             extraFisicos,
             missingFisicos,
             totalFisicos: imeisFisicos.length,
-            totalDb: purchase.equipos.length
+            totalDb: equiposFuncionales.length // Total of just functional ones
         });
     };
 
@@ -142,7 +143,7 @@ export function MatchImeisClient({ purchase }: { purchase: any }) {
                     </div>
 
                     <div className="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                        <p className="text-slate-500 font-bold ml-4">Total de equipos registrados en esta compra: <strong className="text-indigo-600">{results.totalDb}</strong></p>
+                        <p className="text-slate-500 font-bold ml-4">Total de equipos funcionales en esta compra: <strong className="text-indigo-600">{results.totalDb}</strong></p>
                         <Button variant="outline" onClick={() => setResults(null)} className="rounded-xl border-slate-200">
                             Hacer otra verificación
                         </Button>
@@ -156,7 +157,7 @@ export function MatchImeisClient({ purchase }: { purchase: any }) {
                             <div className="bg-white rounded-3xl shadow-xl border border-rose-50 p-6 overflow-hidden">
                                 <h3 className="text-lg font-black text-slate-800 flex items-center gap-2 mb-4 border-b border-slate-50 pb-4">
                                     <AlertCircle className="w-5 h-5 text-rose-500" />
-                                    No pertenecen a esta compra
+                                    No funcionales o externos
                                     <Badge className="ml-auto bg-rose-100 text-rose-700 hover:bg-rose-100">{results.extraFisicos.length}</Badge>
                                 </h3>
 
@@ -170,7 +171,7 @@ export function MatchImeisClient({ purchase }: { purchase: any }) {
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className="text-slate-400 italic text-sm text-center py-4">Sin equipos sobrantes o de otras compras.</p>
+                                    <p className="text-slate-400 italic text-sm text-center py-4">Sin equipos sobrantes o no funcionales.</p>
                                 )}
                             </div>
 
