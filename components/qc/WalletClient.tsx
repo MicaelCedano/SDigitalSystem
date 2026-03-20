@@ -648,7 +648,7 @@ export function WalletClient({ initialData, currentUser }: WalletProps) {
                         <div className="text-center space-y-2 mb-6 relative z-10 mt-2">
                             <div className="absolute -top-4 left-0 sm:left-[-1rem] text-left">
                                 <div className="bg-slate-50/80 backdrop-blur-sm border border-slate-200/60 rounded-xl px-3 py-2 shadow-sm">
-                                    <p className="text-[8px] font-black uppercase text-slate-400 tracking-widest mb-0.5">Balance Actual</p>
+                                    <p className="text-[8px] font-black uppercase text-slate-400 tracking-widest mb-0.5">Ahorro</p>
                                     <p className="text-xs font-black text-slate-700 font-mono">RD$ {saldoTotal.toLocaleString()}</p>
                                 </div>
                             </div>
