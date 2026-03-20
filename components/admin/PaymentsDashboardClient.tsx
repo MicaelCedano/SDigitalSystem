@@ -48,7 +48,7 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
             setIsLoadingBreakdown(true);
             getReceiptBreakdown(pendingTransactionId).then(res => {
                 if (res.success) {
-                    setReceiptBreakdown(res.ingresos);
+                    setReceiptBreakdown(res.ingresos || []);
                 } else {
                     setReceiptBreakdown([]);
                 }

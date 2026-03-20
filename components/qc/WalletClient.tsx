@@ -67,7 +67,7 @@ export function WalletClient({ initialData, currentUser }: WalletProps) {
             setIsLoadingBreakdown(true);
             getReceiptBreakdown(selectedReceipt.id).then(res => {
                 if (res.success) {
-                    setReceiptBreakdown(res.ingresos);
+                    setReceiptBreakdown(res.ingresos || []);
                 }
                 setIsLoadingBreakdown(false);
             });
