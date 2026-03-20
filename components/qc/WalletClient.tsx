@@ -77,10 +77,8 @@ export function WalletClient({ initialData, currentUser }: WalletProps) {
     }, [selectedReceipt]);
 
 
-    const getConceptDescription = () => {
-        if (!receiptBreakdown || receiptBreakdown.length === 0) {
-            return selectedReceipt?.descripcion || 'Retiro de Efectivo';
-        }
+    const getConceptTableData = () => {
+        if (!selectedReceipt || !receiptBreakdown || receiptBreakdown.length === 0) return [];
 
         const categories: Record<string, { amount: number, units?: number, unitType?: string }> = {
             'Revisión de Equipos': { amount: 0 },
@@ -110,7 +108,6 @@ export function WalletClient({ initialData, currentUser }: WalletProps) {
 
             categories[cat].amount += amount;
 
-            // Extract units (e.g., "(150 equipos)" or "2 viajes")
             const unitMatch = desc.match(/(\d+)\s*(equipos|celulares|unid|viajes|viaje)/i);
             if (unitMatch) {
                 const count = parseInt(unitMatch[1]);
@@ -121,28 +118,37 @@ export function WalletClient({ initialData, currentUser }: WalletProps) {
 
         const priorityOrder = [
             'Revisión de Equipos',
-            'Viajes',
             'Acreditaciones Manuales',
+            'Viajes',
             'Lotes de Reparación',
             'Trabajos y Reparaciones',
             'Otros'
         ];
 
-        const activeEntries = Object.entries(categories)
+        return Object.entries(categories)
             .filter(([_, data]) => data.amount > 0)
-            .sort((a, b) => priorityOrder.indexOf(a[0]) - priorityOrder.indexOf(b[0]));
+            .sort((a, b) => priorityOrder.indexOf(a[0]) - priorityOrder.indexOf(b[0]))
+            .map(([name, data]) => ({ ...data, name }));
+    };
 
-        const descriptionParts = activeEntries.slice(0, 3).map(([name, data]) => {
-            let part = `${data.amount.toLocaleString()} de ${name}`;
-            if (data.units && data.units > 0) {
-                const rate = Math.round(data.amount / data.units);
-                part += ` (${data.units} x ${rate.toLocaleString()})`;
+    const getConceptDescription = () => {
+        if (!receiptBreakdown || receiptBreakdown.length === 0) {
+            return selectedReceipt?.descripcion || 'Retiro de Efectivo';
+        }
+
+        const tableData = getConceptTableData();
+
+        const descriptionParts = tableData.slice(0, 3).map((item) => {
+            let part = `${item.amount.toLocaleString()} de ${item.name}`;
+            if (item.units && item.units > 0) {
+                const rate = Math.round(item.amount / item.units);
+                part += ` (${item.units} x ${rate.toLocaleString()})`;
             }
             return part;
         });
 
         let result = descriptionParts.join(', ');
-        if (activeEntries.length > 3) {
+        if (tableData.length > 3) {
             result += ' etc.';
         }
         
@@ -735,19 +741,37 @@ export function WalletClient({ initialData, currentUser }: WalletProps) {
                                         <div className="animate-spin w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full" />
                                     </div>
                                 ) : receiptBreakdown.length > 0 ? (
-                                    <div className="bg-slate-50 rounded-2xl p-4 sm:p-6 border border-slate-100">
-                                        <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-4">Desglose (Lo que incluye este pago)</h3>
-                                        <div className="space-y-3">
-                                            {receiptBreakdown.map((item: any, i: number) => (
-                                                <div key={item.id} className="flex justify-between items-center text-sm border-b border-slate-200/50 pb-2 last:border-0 last:pb-0">
-                                                    <div className="flex flex-col">
-                                                        <span className="font-bold text-slate-700">{item.descripcion || 'Ingreso'}</span>
-                                                        <span className="text-[10px] text-slate-400 font-medium">{formatDateTime(item.fecha).split(' ')[0]}</span>
-                                                    </div>
-                                                    <span className="font-black text-indigo-600 font-mono text-xs">+RD$ {item.monto.toLocaleString()}</span>
-                                                </div>
-                                            ))}
-                                        </div>
+                                    <div className="bg-slate-50 rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
+                                        <table className="w-full text-[10px] text-left border-collapse">
+                                            <thead>
+                                                <tr className="bg-slate-100/50 border-b border-slate-200 text-slate-500">
+                                                    <th className="py-2.5 px-3 font-black uppercase tracking-widest text-[9px]">Concepto</th>
+                                                    <th className="py-2.5 px-2 font-black uppercase tracking-widest text-[9px] text-center">Cant.</th>
+                                                    <th className="py-2.5 px-3 font-black uppercase tracking-widest text-[9px] text-right">Monto</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                {getConceptTableData().map((item, idx) => (
+                                                    <tr key={idx} className="bg-white/40 hover:bg-white/80 transition-colors">
+                                                        <td className="py-2 px-3 font-bold text-slate-700">{item.name}</td>
+                                                        <td className="py-2 px-2 font-black text-slate-400 text-center font-mono">
+                                                            {item.units || '-'}
+                                                        </td>
+                                                        <td className="py-2 px-3 font-black text-indigo-900 text-right font-mono">
+                                                            RD$ {item.amount.toLocaleString()}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                            <tfoot className="bg-slate-100/30 border-t border-slate-200 font-black">
+                                                <tr>
+                                                    <td colSpan={2} className="py-2.5 px-3 text-slate-500 uppercase tracking-tighter text-[9px]">TOTAL PROCEDENCIA</td>
+                                                    <td className="py-2.5 px-3 text-indigo-700 text-right font-mono text-[11px]">
+                                                        RD$ {getConceptTableData().reduce((acc, curr) => acc + curr.amount, 0).toLocaleString()}
+                                                    </td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
                                     </div>
                                 ) : null}
 
