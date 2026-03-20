@@ -395,41 +395,72 @@ export async function createWalletAccount(name: string, color: string = "blue") 
         revalidatePath("/wallet");
         return { success: true };
     } catch (error: any) {
-        console.error("Error creating account:", error);
-        return { success: false, error: error.message };
+            console.error("Error creating account:", error);
+            return { success: false, error: error.message };
+        }
     }
-}
 
-export async function getReceiptBreakdown(receiptId: number) {
-    try {
-        const receipt = await prisma.walletTransaction.findUnique({ where: { id: receiptId } });
-        if (!receipt || !receipt.fecha) return { success: false, error: "Receipt no encontrado o no tiene fecha" };
+    export async function getReceiptBreakdown(receiptId: number) {
+        try {
+            const receipt = await prisma.walletTransaction.findUnique({ where: { id: receiptId } });
+            if (!receipt || !receipt.fecha) return { success: false, error: "Receipt no encontrado o no tiene fecha" };
 
-        const receiptDate = receipt.fecha as Date;
+            const receiptDate = receipt.fecha as Date;
 
-        const previousReceipt = await prisma.walletTransaction.findFirst({
-            where: {
-                tecnicoId: receipt.tecnicoId,
-                tipo: receipt.tipo,
-                fecha: { lt: receiptDate }
-            },
-            orderBy: { fecha: "desc" }
-        });
-
-        const ingresos = await prisma.walletTransaction.findMany({
-            where: {
-                tecnicoId: receipt.tecnicoId,
-                tipo: { in: ["ingreso", "Ingreso", "Ingreso Manual"] },
-                fecha: {
-                    lte: receiptDate,
-                    ...(previousReceipt?.fecha && { gt: previousReceipt.fecha as Date })
+            const priorWithdrawals = await prisma.walletTransaction.aggregate({
+                _sum: {
+                    monto: true
+                },
+                where: {
+                    tecnicoId: receipt.tecnicoId,
+                    tipo: { in: ["retiro", "Retiro"] },
+                    estado: { not: "Anulado" },
+                    fecha: { lt: receiptDate }
                 }
-            },
-            orderBy: { fecha: "asc" }
-        });
+            });
 
-        return { success: true, ingresos };
-    } catch (error: any) {
-        return { success: false, error: error.message };
+            let totalWithdrawnPrior = priorWithdrawals._sum.monto || 0;
+
+            const allIngresos = await prisma.walletTransaction.findMany({
+                where: {
+                    tecnicoId: receipt.tecnicoId,
+                    tipo: { in: ["ingreso", "Ingreso", "Ingreso Manual"] },
+                    estado: { not: "Anulado" },
+                    fecha: { lte: receiptDate }
+                },
+                orderBy: { fecha: "asc" }
+            });
+
+            const breakdown = [];
+            let remainingToFulfillCurrent = receipt.monto;
+
+            for (const ingreso of allIngresos) {
+                if (remainingToFulfillCurrent <= 0) break;
+
+                let availableFromIngreso = ingreso.monto;
+
+                if (totalWithdrawnPrior > 0) {
+                    if (totalWithdrawnPrior >= availableFromIngreso) {
+                        totalWithdrawnPrior -= availableFromIngreso;
+                        continue;
+                    } else {
+                        availableFromIngreso -= totalWithdrawnPrior;
+                        totalWithdrawnPrior = 0;
+                    }
+                }
+
+                if (availableFromIngreso > 0) {
+                    const amountUsedForThisReceipt = Math.min(availableFromIngreso, remainingToFulfillCurrent);
+                    breakdown.push({
+                        ...ingreso,
+                        monto: amountUsedForThisReceipt
+                    });
+                    remainingToFulfillCurrent -= amountUsedForThisReceipt;
+                }
+            }
+
+            return { success: true, ingresos: breakdown };
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
     }
-}
