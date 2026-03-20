@@ -76,6 +76,38 @@ export function WalletClient({ initialData, currentUser }: WalletProps) {
         }
     }, [selectedReceipt]);
 
+    const handleCloseBaucher = () => {
+        setShowReceiptModal(false);
+        setTimeout(() => setSelectedReceipt(null), 300);
+    };
+
+    const getConceptDescription = () => {
+        if (!receiptBreakdown || receiptBreakdown.length === 0) {
+            return selectedReceipt?.descripcion || 'Retiro de Efectivo';
+        }
+
+        const categories: Record<string, number> = {};
+        receiptBreakdown.forEach((item: any) => {
+            let desc = item.descripcion || 'Servicios';
+            if (desc.toLowerCase().startsWith('trabajo:')) {
+                desc = desc.substring(8).trim();
+            }
+            if (!categories[desc]) categories[desc] = 0;
+            categories[desc] += item.monto;
+        });
+
+        const sortedEntries = Object.entries(categories).sort((a, b) => b[1] - a[1]);
+        const topItems = sortedEntries.slice(0, 2);
+        const descriptionParts = topItems.map(([desc, amount]) => `${amount.toLocaleString()} de ${desc}`);
+        
+        let result = descriptionParts.join(', ');
+        if (sortedEntries.length > 2) {
+            result += ' etc.';
+        }
+        
+        return result;
+    };
+
     const handleShareImage = async () => {
         if (!receiptRef.current) return;
 
@@ -648,7 +680,7 @@ export function WalletClient({ initialData, currentUser }: WalletProps) {
                                         </div>
                                         <div className="flex justify-between text-sm">
                                             <span className="font-bold text-slate-500">Concepto</span>
-                                            <span className="font-black text-slate-800 text-right max-w-[200px] truncate">{selectedReceipt.descripcion || 'Retiro de Efectivo'}</span>
+                                            <span className="font-black text-slate-800 text-right max-w-[200px] truncate" title={getConceptDescription()}>{getConceptDescription()}</span>
                                         </div>
                                         <div className="flex justify-between text-sm">
                                             <span className="font-bold text-slate-500">Estado</span>
