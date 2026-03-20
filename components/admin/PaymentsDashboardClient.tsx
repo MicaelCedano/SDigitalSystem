@@ -999,14 +999,10 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
                                              <span className="font-bold text-slate-500">Técnico</span>
                                              <span className="font-black text-slate-800">{selectedRetiro.tecnico?.name || selectedRetiro.tecnico?.username}</span>
                                          </div>
-                                         <div className="flex justify-between text-sm py-1">
-                                             <span className="font-bold text-slate-500 min-w-[80px]">Concepto</span>
-                                             <span className="font-black text-slate-800 text-right leading-tight max-w-[220px]" title={getConceptDescription()}>{getConceptDescription()}</span>
-                                         </div>
                                      </div>
-                                </div>
-                            </div>
-                        )}
+                                 </div>
+                             </div>
+                         )}
 
                         <div className="flex flex-col w-full gap-3 mt-8 relative z-10">
                             <Button
