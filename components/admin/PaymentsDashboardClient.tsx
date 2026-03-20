@@ -21,7 +21,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { markAsRedeemed, applyPenaltyByImei, applyExternalPenalty, getPenaltyDataByImei, revertPenalty, revertExternalPenalty } from "@/app/actions/admin-payments";
+import { markAsRedeemed, cancelWithdrawal, applyPenaltyByImei, applyExternalPenalty, getPenaltyDataByImei, revertPenalty, revertExternalPenalty } from "@/app/actions/admin-payments";
 import { manualCredit, adminManualWithdrawal } from "@/app/actions/wallet";
 
 export function PaymentsDashboardClient({ data }: { data: any }) {
@@ -82,6 +82,24 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
             }
         } catch (error) {
             toast.error("Error al procesar el pago");
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const handleCancelWithdrawal = async (id: number) => {
+        if (!confirm("¿Estás seguro de que deseas anular esta solicitud y devolver el dinero al balance?")) return;
+        setIsProcessing(true);
+        try {
+            const res = await cancelWithdrawal(id);
+            if (res.success) {
+                toast.success("Solicitud anulada y dinero devuelto al balance");
+                router.refresh();
+            } else {
+                toast.error((res as any).error || "Error al anular");
+            }
+        } catch (error) {
+            toast.error("Ocurrió un error en la anulación");
         } finally {
             setIsProcessing(false);
         }
@@ -303,13 +321,23 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
                                                     <p className="text-2xl font-black text-slate-900 leading-none">RD$ {retiro.monto.toLocaleString()}</p>
                                                     <p className="text-[9px] text-indigo-400 font-bold mt-1 uppercase">Token: {retiro.secureToken?.substring(0, 8)}...</p>
                                                 </div>
-                                                <Button
-                                                    onClick={() => handleMarkAsPaid(retiro.id)}
-                                                    disabled={isProcessing}
-                                                    className="h-12 px-6 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black flex items-center gap-2 shadow-lg shadow-emerald-200/50"
-                                                >
-                                                    <CheckCircle2 size={18} /> Marcar como Pagado
-                                                </Button>
+                                                <div className="flex gap-3">
+                                                    <Button
+                                                        onClick={() => handleCancelWithdrawal(retiro.id)}
+                                                        disabled={isProcessing}
+                                                        variant="ghost"
+                                                        className="h-12 px-4 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl font-black flex items-center gap-2 border border-rose-100"
+                                                    >
+                                                        <X size={18} /> Anular
+                                                    </Button>
+                                                    <Button
+                                                        onClick={() => handleMarkAsPaid(retiro.id)}
+                                                        disabled={isProcessing}
+                                                        className="h-12 px-6 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black flex items-center gap-2 shadow-lg shadow-emerald-200/50"
+                                                    >
+                                                        <CheckCircle2 size={18} /> Marcar como Pagado
+                                                    </Button>
+                                                </div>>
                                             </div>
                                         </CardContent>
                                     </Card>

@@ -158,6 +158,58 @@ export async function markAsRedeemed(transactionId: number) {
     }
 }
 
+export async function cancelWithdrawal(transactionId: number) {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== "admin") return { success: false, error: "No autorizado" };
+
+    try {
+        return await prisma.$transaction(async (tx) => {
+            const transaction = await tx.walletTransaction.findUnique({
+                where: { id: transactionId }
+            });
+
+            if (!transaction) return { success: false, error: "Transacción no encontrada" };
+            if (transaction.canjeado) return { success: false, error: "Esta solicitud ya fue canjeada o procesada" };
+
+            // 1. Obtener Wallet
+            let wallet = await tx.wallet.findFirst({
+                where: { tecnicoId: transaction.tecnicoId },
+                include: { accounts: { where: { nombre: "Principal" } } }
+            });
+
+            if (!wallet || !wallet.accounts[0]) {
+                return { success: false, error: "No se encontró el wallet del técnico" };
+            }
+
+            const principalAcc = wallet.accounts[0];
+
+            // 2. Reversar saldo
+            await tx.walletAccount.update({
+                where: { id: principalAcc.id },
+                data: { saldo: { increment: transaction.monto } }
+            });
+
+            await tx.wallet.update({
+                where: { id: wallet.id },
+                data: { saldo: { increment: transaction.monto } }
+            });
+
+            // 3. Eliminar la transacción
+            await tx.walletTransaction.delete({
+                where: { id: transactionId }
+            });
+
+            return { success: true };
+        });
+    } catch (error: any) {
+        console.error("Error cancelling withdrawal:", error);
+        return { success: false, error: error.message };
+    } finally {
+        revalidatePath("/admin/pagos");
+        revalidatePath("/wallet");
+    }
+}
+
 export async function applyPenaltyByImei(imei: string, motivo: string, montoInput: number = 500) {
     const monto = Math.abs(montoInput);
     const session = await getServerSession(authOptions);
