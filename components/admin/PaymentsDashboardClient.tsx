@@ -319,7 +319,8 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
                                             <div className="text-right flex items-center gap-6">
                                                 <div>
                                                     <p className="text-2xl font-black text-slate-900 leading-none">RD$ {retiro.monto.toLocaleString()}</p>
-                                                    <p className="text-[9px] text-indigo-400 font-bold mt-1 uppercase">Token: {retiro.secureToken?.substring(0, 8)}...</p>
+                                                    <p className="text-[10px] text-slate-500 font-bold mt-1 uppercase">Balance actual: <span className="text-indigo-600 font-black">RD$ {retiro.tecnico.wallet?.[0]?.saldo?.toLocaleString() || 0}</span></p>
+                                                    <p className="text-[9px] text-indigo-400 font-bold uppercase mt-1">Token: {retiro.secureToken?.substring(0, 8)}...</p>
                                                 </div>
                                                 <div className="flex gap-3">
                                                     <Button

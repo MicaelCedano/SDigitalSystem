@@ -58,7 +58,7 @@ export async function getAdminPaymentsDashboardData() {
                 }
             },
             include: {
-                tecnico: { select: { id: true, name: true, username: true } }
+                tecnico: { select: { id: true, name: true, username: true, wallet: { select: { saldo: true } } } }
             },
             orderBy: { fecha: "desc" }
         });
