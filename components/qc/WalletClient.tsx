@@ -82,22 +82,53 @@ export function WalletClient({ initialData, currentUser }: WalletProps) {
             return selectedReceipt?.descripcion || 'Retiro de Efectivo';
         }
 
-        const categories: Record<string, number> = {};
+        const categories: Record<string, number> = {
+            'Revisión de Lotes (Equipos)': 0,
+            'Lotes de Reparación': 0,
+            'Acreditaciones Manuales': 0,
+            'Trabajos y Reparaciones': 0,
+            'Otros Ingresos': 0
+        };
+
         receiptBreakdown.forEach((item: any) => {
-            let desc = item.descripcion || 'Servicios';
-            if (desc.toLowerCase().startsWith('trabajo:')) {
-                desc = desc.substring(8).trim();
+            const desc = (item.descripcion || '').toLowerCase();
+            const amount = item.monto || 0;
+
+            if (desc.includes('pago por lote qc')) {
+                categories['Revisión de Lotes (Equipos)'] += amount;
+            } else if (desc.includes('pago por lote de trabajo')) {
+                categories['Lotes de Reparación'] += amount;
+            } else if (desc.includes('trabajo:') || desc.includes('reparaci') || desc.includes('cambio')) {
+                categories['Trabajos y Reparaciones'] += amount;
+            } else if (desc.includes('acreditación manual') || desc.includes('acreditacion manual')) {
+                categories['Acreditaciones Manuales'] += amount;
+            } else {
+                categories['Otros Ingresos'] += amount;
             }
-            if (!categories[desc]) categories[desc] = 0;
-            categories[desc] += item.monto;
         });
 
-        const sortedEntries = Object.entries(categories).sort((a, b) => b[1] - a[1]);
-        const topItems = sortedEntries.slice(0, 2);
+        const activeCategories = Object.entries(categories).filter(([_, amount]) => amount > 0);
+
+        const rank: Record<string, number> = {
+            'Revisión de Lotes (Equipos)': 1,
+            'Lotes de Reparación': 2,
+            'Acreditaciones Manuales': 3,
+            'Trabajos y Reparaciones': 4,
+            'Otros Ingresos': 5
+        };
+
+        activeCategories.sort((a, b) => {
+             const rankA = rank[a[0]] || 99;
+             const rankB = rank[b[0]] || 99;
+             if (rankA !== rankB) return rankA - rankB;
+             return b[1] - a[1];
+        });
+
+        const topItems = activeCategories.slice(0, 3);
         const descriptionParts = topItems.map(([desc, amount]) => `${amount.toLocaleString()} de ${desc}`);
         
         let result = descriptionParts.join(', ');
-        if (sortedEntries.length > 2) {
+        if (activeCategories.length > 3) {
             result += ' etc.';
         }
         
