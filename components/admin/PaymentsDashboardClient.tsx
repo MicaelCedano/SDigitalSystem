@@ -337,7 +337,7 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
                                                     >
                                                         <CheckCircle2 size={18} /> Marcar como Pagado
                                                     </Button>
-                                                </div>>
+                                                </div>
                                             </div>
                                         </CardContent>
                                     </Card>
