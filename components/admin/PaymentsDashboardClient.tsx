@@ -75,53 +75,67 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
             return selectedRetiro.descripcion || 'Retiro de Efectivo';
         }
 
-        const categories: Record<string, number> = {
-            'Revisión de Lotes (Equipos)': 0,
-            'Lotes de Reparación': 0,
-            'Acreditaciones Manuales': 0,
-            'Trabajos y Reparaciones': 0,
-            'Otros Ingresos': 0
+        const categories: Record<string, { amount: number, units?: number, unitType?: string }> = {
+            'Revisión de Equipos': { amount: 0 },
+            'Viajes': { amount: 0 },
+            'Lotes de Reparación': { amount: 0 },
+            'Acreditaciones Manuales': { amount: 0 },
+            'Trabajos y Reparaciones': { amount: 0 },
+            'Otros': { amount: 0 }
         };
 
         receiptBreakdown.forEach((item: any) => {
             const desc = (item.descripcion || '').toLowerCase();
             const amount = item.monto || 0;
+            let cat = 'Otros';
 
-            if (desc.includes('pago por lote qc')) {
-                categories['Revisión de Lotes (Equipos)'] += amount;
+            if (desc.includes('pago por lote qc') || desc.includes('revisión') || desc.includes('chequeo')) {
+                cat = 'Revisión de Equipos';
+            } else if (desc.includes('viaje') || desc.includes('viático')) {
+                cat = 'Viajes';
             } else if (desc.includes('pago por lote de trabajo')) {
-                categories['Lotes de Reparación'] += amount;
-            } else if (desc.includes('trabajo:') || desc.includes('reparaci') || desc.includes('cambio')) {
-                categories['Trabajos y Reparaciones'] += amount;
+                cat = 'Lotes de Reparación';
             } else if (desc.includes('acreditación manual') || desc.includes('acreditacion manual')) {
-                categories['Acreditaciones Manuales'] += amount;
-            } else {
-                categories['Otros Ingresos'] += amount;
+                cat = 'Acreditaciones Manuales';
+            } else if (desc.includes('trabajo:') || desc.includes('reparaci') || desc.includes('cambio')) {
+                cat = 'Trabajos y Reparaciones';
+            }
+
+            categories[cat].amount += amount;
+
+            // Extract units (e.g., "(150 equipos)" or "2 viajes")
+            const unitMatch = desc.match(/(\d+)\s*(equipos|celulares|unid|viajes|viaje)/i);
+            if (unitMatch) {
+                const count = parseInt(unitMatch[1]);
+                categories[cat].units = (categories[cat].units || 0) + count;
+                categories[cat].unitType = unitMatch[2].toLowerCase();
             }
         });
 
-        const activeCategories = Object.entries(categories).filter(([_, amount]) => amount > 0);
+        const priorityOrder = [
+            'Revisión de Equipos',
+            'Viajes',
+            'Acreditaciones Manuales',
+            'Lotes de Reparación',
+            'Trabajos y Reparaciones',
+            'Otros'
+        ];
 
-        const rank: Record<string, number> = {
-            'Revisión de Lotes (Equipos)': 1,
-            'Lotes de Reparación': 2,
-            'Acreditaciones Manuales': 3,
-            'Trabajos y Reparaciones': 4,
-            'Otros Ingresos': 5
-        };
+        const activeEntries = Object.entries(categories)
+            .filter(([_, data]) => data.amount > 0)
+            .sort((a, b) => priorityOrder.indexOf(a[0]) - priorityOrder.indexOf(b[0]));
 
-        activeCategories.sort((a, b) => {
-             const rankA = rank[a[0]] || 99;
-             const rankB = rank[b[0]] || 99;
-             if (rankA !== rankB) return rankA - rankB;
-             return b[1] - a[1];
+        const descriptionParts = activeEntries.slice(0, 3).map(([name, data]) => {
+            let part = `${data.amount.toLocaleString()} de ${name}`;
+            if (data.units && data.units > 0) {
+                const rate = Math.round(data.amount / data.units);
+                part += ` (${data.units} x ${rate.toLocaleString()})`;
+            }
+            return part;
         });
 
-        const topItems = activeCategories.slice(0, 3);
-        const descriptionParts = topItems.map(([desc, amount]) => `${amount.toLocaleString()} de ${desc}`);
-        
         let result = descriptionParts.join(', ');
-        if (activeCategories.length > 3) {
+        if (activeEntries.length > 3) {
             result += ' etc.';
         }
         
