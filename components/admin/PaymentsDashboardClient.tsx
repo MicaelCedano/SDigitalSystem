@@ -5,7 +5,7 @@ import {
     DollarSign, Users, TrendingUp, Search, PlusCircle,
     ArrowLeft, Settings, FileText, ChevronRight, AlertCircle,
     Printer, CreditCard, X, User as UserIcon, CheckCircle2,
-    Clock, RefreshCw, Send, ExternalLink, Bell
+    Clock, RefreshCw, Send, ExternalLink, Bell, Receipt
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +33,7 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
     const [showCreditModal, setShowCreditModal] = useState(false);
     const [showWithdrawModal, setShowWithdrawModal] = useState(false);
     const [selectedTecnico, setSelectedTecnico] = useState<any>(null);
+    const [selectedRetiro, setSelectedRetiro] = useState<any>(null);
 
     // Form states
     const [monto, setMonto] = useState("");
@@ -59,6 +60,43 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
         }
     }, [showPayConfirmModal, pendingTransactionId]);
 
+    const formatDateTime = (date: any) => {
+        if (!date) return '';
+        const d = new Date(date);
+        return d.toLocaleDateString('es-DO', {
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit', hour12: true
+        });
+    };
+
+    const getConceptDescription = () => {
+        if (!selectedRetiro) return 'Retiro de Efectivo';
+        if (!receiptBreakdown || receiptBreakdown.length === 0) {
+            return selectedRetiro.descripcion || 'Retiro de Efectivo';
+        }
+
+        const categories: Record<string, number> = {};
+        receiptBreakdown.forEach((item: any) => {
+            let desc = item.descripcion || 'Servicios';
+            if (desc.toLowerCase().startsWith('trabajo:')) {
+                desc = desc.substring(8).trim();
+            }
+            if (!categories[desc]) categories[desc] = 0;
+            categories[desc] += item.monto;
+        });
+
+        const sortedEntries = Object.entries(categories).sort((a, b) => b[1] - a[1]);
+        const topItems = sortedEntries.slice(0, 2);
+        const descriptionParts = topItems.map(([desc, amount]) => `${amount.toLocaleString()} de ${desc}`);
+        
+        let result = descriptionParts.join(', ');
+        if (sortedEntries.length > 2) {
+            result += ' etc.';
+        }
+        
+        return result;
+    };
+
     // Penalty states
     const [imeiSearch, setImeiSearch] = useState("");
     const [penaltyData, setPenaltyData] = useState<any>(null);
@@ -80,8 +118,9 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
         (t.name || t.username).toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const handleMarkAsPaid = async (transactionId: number) => {
-        setPendingTransactionId(transactionId);
+    const handleMarkAsPaid = async (retiro: any) => {
+        setPendingTransactionId(retiro.id);
+        setSelectedRetiro(retiro);
         setShowPayConfirmModal(true);
     };
 
@@ -351,7 +390,7 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
                                                         <X size={18} /> Anular
                                                     </Button>
                                                     <Button
-                                                        onClick={() => handleMarkAsPaid(retiro.id)}
+                                                        onClick={() => handleMarkAsPaid(retiro)}
                                                         disabled={isProcessing}
                                                         className="h-12 px-6 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black flex items-center gap-2 shadow-lg shadow-emerald-200/50"
                                                     >
@@ -826,68 +865,86 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
             </Dialog>
 
             <Dialog open={showPayConfirmModal} onOpenChange={setShowPayConfirmModal}>
-                <DialogContent className="rounded-[2.5rem] bg-white border-none shadow-2xl p-0 overflow-hidden max-w-md">
-                    <div className="bg-emerald-600 h-32 flex items-center justify-center relative outline-none">
-                        <div className="bg-white p-5 rounded-[2rem] shadow-2xl z-10">
-                            <CheckCircle2 size={48} className="text-emerald-600 animate-bounce" />
+                <DialogContent className="rounded-[2.5rem] bg-white border-none shadow-2xl p-0 overflow-hidden max-w-md max-h-[90vh] flex flex-col">
+                    <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-8 relative bg-white group">
+                        <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
+                            <Receipt className="w-48 h-48 text-indigo-900" />
                         </div>
-                        {/* Decorative circles */}
-                        <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10" />
-                        <div className="absolute bottom-0 left-0 w-16 h-16 bg-white/10 rounded-full -ml-8 -mb-8" />
-                    </div>
-                    <div className="p-10 pt-8 flex flex-col items-center text-center">
-                        <DialogHeader>
-                            <DialogTitle className="text-4xl font-black text-slate-900 tracking-tight">
-                                ¿Confirmar Pago?
-                            </DialogTitle>
-                            <DialogDescription className="text-lg font-bold text-slate-600 mt-4 px-2 leading-relaxed">
-                                Estás a punto de marcar este baucher como <span className="text-emerald-600 underline underline-offset-4 decoration-2">PAGADO</span>. Asegúrate de haber entregado el efectivo personalmente.
-                            </DialogDescription>
-                        </DialogHeader>
-
-                        <div className="w-full bg-slate-50 rounded-3xl p-5 mt-8 border border-slate-100 flex flex-col gap-3">
-                            <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Estado Final</span>
-                                <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none rounded-lg text-[9px] font-bold uppercase">Completado</Badge>
-                            </div>
-                            <p className="text-xs font-bold text-slate-500 text-left">Esta acción es irreversible. El balance del técnico <span className="text-indigo-600">ya fue descontado</span> al momento de generar este baucher.</p>
+                        <div className="text-center space-y-2 mb-6 relative z-10 mt-2">
+                             <div className="absolute -top-4 left-0 sm:left-[-1rem] text-left">
+                                 <div className="bg-slate-50/80 backdrop-blur-sm border border-slate-200/60 rounded-xl px-3 py-2 shadow-sm">
+                                     <p className="text-[8px] font-black uppercase text-slate-400 tracking-widest mb-0.5">Ahorro Actual</p>
+                                     <p className="text-xs font-black text-slate-700 font-mono">RD$ {selectedRetiro?.tecnico?.wallet?.[0]?.saldo?.toLocaleString() || 0}</p>
+                                 </div>
+                             </div>
+                             <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                 <CheckCircle2 className="w-8 h-8" />
+                             </div>
+                             <h2 className="text-2xl font-black text-slate-800">Baucher de Pago</h2>
+                             <p className="text-sm font-bold text-slate-400">Previsualización (Retiro)</p>
                         </div>
 
-                        {isLoadingBreakdown ? (
-                            <div className="flex justify-center py-4 mt-4 w-full">
-                                <RefreshCw className="w-6 h-6 text-indigo-600 animate-spin" />
-                            </div>
-                        ) : receiptBreakdown.length > 0 ? (
-                            <div className="w-full bg-indigo-50/50 rounded-3xl p-5 mt-4 border border-indigo-100/50 flex flex-col gap-3 text-left max-h-[200px] overflow-y-auto custom-scrollbar">
-                                <h3 className="text-[10px] font-black uppercase text-indigo-400 tracking-wider sticky top-0 bg-indigo-50/50 pb-2 backdrop-blur-sm">Desglose (Origen de los fondos)</h3>
-                                <div className="space-y-2">
-                                    {receiptBreakdown.map((item: any) => (
-                                        <div key={item.id} className="flex justify-between items-center text-xs border-b border-indigo-200/30 pb-2 last:border-0 last:pb-0">
-                                            <div className="flex flex-col">
-                                                <span className="font-bold text-slate-700 truncate max-w-[180px]">{item.descripcion || 'Ingreso'}</span>
-                                            </div>
-                                            <span className="font-black text-indigo-600 font-mono">+RD$ {item.monto.toLocaleString()}</span>
-                                        </div>
-                                    ))}
+                        {selectedRetiro && (
+                            <div className="space-y-6 relative z-10">
+                                <div className="bg-slate-50 rounded-2xl p-4 sm:p-6 border border-slate-100">
+                                     <div className="space-y-4">
+                                         <div className="flex justify-between items-center border-b border-slate-200 pb-4">
+                                             <span className="text-xs font-black uppercase text-slate-400 tracking-wider">Monto Depositado</span>
+                                             <span className="text-xl sm:text-2xl font-black text-indigo-600 font-mono">
+                                                 RD$ {selectedRetiro.monto.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                             </span>
+                                         </div>
+                                         <div className="flex justify-between text-sm">
+                                             <span className="font-bold text-slate-500">Fecha</span>
+                                             <span className="font-black text-slate-800">{formatDateTime(selectedRetiro.fecha)}</span>
+                                         </div>
+                                         <div className="flex justify-between text-sm">
+                                             <span className="font-bold text-slate-500">Técnico</span>
+                                             <span className="font-black text-slate-800">{selectedRetiro.tecnico?.name || selectedRetiro.tecnico?.username}</span>
+                                         </div>
+                                         <div className="flex justify-between text-sm py-1">
+                                             <span className="font-bold text-slate-500 min-w-[80px]">Concepto</span>
+                                             <span className="font-black text-slate-800 text-right leading-tight max-w-[220px]" title={getConceptDescription()}>{getConceptDescription()}</span>
+                                         </div>
+                                     </div>
                                 </div>
+                                {isLoadingBreakdown ? (
+                                    <div className="flex justify-center py-4 mt-4 w-full">
+                                        <RefreshCw className="w-6 h-6 text-indigo-600 animate-spin" />
+                                    </div>
+                                ) : receiptBreakdown.length > 0 ? (
+                                    <div className="bg-slate-50 rounded-2xl p-4 sm:p-6 border border-slate-100 mt-4 max-h-[160px] overflow-y-auto custom-scrollbar">
+                                        <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-4">Desglose (Origen de los fondos)</h3>
+                                        <div className="space-y-3">
+                                            {receiptBreakdown.map((item: any) => (
+                                                <div key={item.id} className="flex justify-between items-center text-sm border-b border-slate-200/50 pb-2 last:border-0 last:pb-0">
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold text-slate-700 truncate max-w-[120px]">{item.descripcion || 'Ingreso'}</span>
+                                                        <span className="text-[10px] text-slate-400 font-medium">{formatDateTime(item.fecha).split(' ')[0]}</span>
+                                                    </div>
+                                                    <span className="font-black text-indigo-600 font-mono">+RD$ {item.monto.toLocaleString()}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : null}
                             </div>
-                        ) : null}
-
-                        <div className="flex flex-col w-full gap-3 mt-8">
+                        )}
+                        <div className="flex flex-col w-full gap-3 mt-8 relative z-10">
                             <Button
                                 onClick={confirmRedeem}
                                 disabled={isProcessing}
                                 className="h-14 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black text-lg shadow-xl shadow-emerald-100 transition-all active:scale-95"
                             >
                                 {isProcessing ? <RefreshCw className="animate-spin mr-2" /> : <CheckCircle2 className="mr-2" />}
-                                Confirmar y Canjear
+                                Confirmar Pago
                             </Button>
                             <Button
                                 variant="ghost"
                                 onClick={() => setShowPayConfirmModal(false)}
                                 className="h-14 rounded-2xl font-bold text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all"
                             >
-                                Volver atrás
+                                Cancelar
                             </Button>
                         </div>
                     </div>
