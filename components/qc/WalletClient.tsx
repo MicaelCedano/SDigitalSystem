@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
     Wallet, ArrowUpRight, TrendingUp, TrendingDown,
     Calendar, CheckCircle2, AlertTriangle, DollarSign,
@@ -10,10 +10,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { requestWithdrawal, manualCredit, transferBetweenAccounts, createWalletAccount } from "@/app/actions/wallet";
+import { requestWithdrawal, manualCredit, transferBetweenAccounts, createWalletAccount, getReceiptBreakdown } from "@/app/actions/wallet";
 import { formatDateTime, cn } from "@/lib/utils";
 import { toJpeg } from 'html-to-image';
-import { useRef } from "react";
 import {
     Dialog,
     DialogContent,
@@ -59,7 +58,23 @@ export function WalletClient({ initialData, currentUser }: WalletProps) {
 
     // Receipt Modal State
     const [selectedReceipt, setSelectedReceipt] = useState<any>(null);
+    const [receiptBreakdown, setReceiptBreakdown] = useState<any[]>([]);
+    const [isLoadingBreakdown, setIsLoadingBreakdown] = useState(false);
     const receiptRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (selectedReceipt) {
+            setIsLoadingBreakdown(true);
+            getReceiptBreakdown(selectedReceipt.id).then(res => {
+                if (res.success) {
+                    setReceiptBreakdown(res.ingresos);
+                }
+                setIsLoadingBreakdown(false);
+            });
+        } else {
+            setReceiptBreakdown([]);
+        }
+    }, [selectedReceipt]);
 
     const handleShareImage = async () => {
         if (!receiptRef.current) return;
@@ -598,7 +613,14 @@ export function WalletClient({ initialData, currentUser }: WalletProps) {
                             <Receipt className="w-48 h-48 text-indigo-900" />
                         </div>
 
-                        <div className="text-center space-y-2 mb-6 relative z-10">
+                        <div className="text-center space-y-2 mb-6 relative z-10 mt-2">
+                            <div className="absolute -top-4 left-0 sm:left-[-1rem] text-left">
+                                <div className="bg-slate-50/80 backdrop-blur-sm border border-slate-200/60 rounded-xl px-3 py-2 shadow-sm">
+                                    <p className="text-[8px] font-black uppercase text-slate-400 tracking-widest mb-0.5">Balance Actual</p>
+                                    <p className="text-xs font-black text-slate-700 font-mono">RD$ {saldoTotal.toLocaleString()}</p>
+                                </div>
+                            </div>
+                            
                             <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <CheckCircle2 className="w-8 h-8" />
                             </div>
@@ -634,6 +656,27 @@ export function WalletClient({ initialData, currentUser }: WalletProps) {
                                         </div>
                                     </div>
                                 </div>
+
+                                {isLoadingBreakdown ? (
+                                    <div className="flex justify-center py-4">
+                                        <div className="animate-spin w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full" />
+                                    </div>
+                                ) : receiptBreakdown.length > 0 ? (
+                                    <div className="bg-slate-50 rounded-2xl p-4 sm:p-6 border border-slate-100">
+                                        <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-4">Desglose (Lo que incluye este pago)</h3>
+                                        <div className="space-y-3">
+                                            {receiptBreakdown.map((item: any, i: number) => (
+                                                <div key={item.id} className="flex justify-between items-center text-sm border-b border-slate-200/50 pb-2 last:border-0 last:pb-0">
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold text-slate-700">{item.descripcion || 'Ingreso'}</span>
+                                                        <span className="text-[10px] text-slate-400 font-medium">{formatDateTime(item.fecha).split(' ')[0]}</span>
+                                                    </div>
+                                                    <span className="font-black text-indigo-600 font-mono text-xs">+RD$ {item.monto.toLocaleString()}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : null}
 
                                 <div className="text-center">
                                     <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Token de Seguridad Unívoco</p>

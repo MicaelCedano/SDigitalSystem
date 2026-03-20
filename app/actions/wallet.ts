@@ -399,3 +399,35 @@ export async function createWalletAccount(name: string, color: string = "blue") 
         return { success: false, error: error.message };
     }
 }
+
+export async function getReceiptBreakdown(receiptId: number) {
+    try {
+        const receipt = await prisma.walletTransaction.findUnique({ where: { id: receiptId } });
+        if (!receipt) return { success: false, error: "Receipt no encontrado" };
+
+        const previousReceipt = await prisma.walletTransaction.findFirst({
+            where: {
+                tecnicoId: receipt.tecnicoId,
+                tipo: receipt.tipo,
+                fecha: { lt: receipt.fecha }
+            },
+            orderBy: { fecha: "desc" }
+        });
+
+        const ingresos = await prisma.walletTransaction.findMany({
+            where: {
+                tecnicoId: receipt.tecnicoId,
+                tipo: { in: ["ingreso", "Ingreso", "Ingreso Manual"] },
+                fecha: {
+                    lte: receipt.fecha,
+                    ...(previousReceipt?.fecha && { gt: previousReceipt.fecha })
+                }
+            },
+            orderBy: { fecha: "asc" }
+        });
+
+        return { success: true, ingresos };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}

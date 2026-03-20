@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     DollarSign, Users, TrendingUp, Search, PlusCircle,
     ArrowLeft, Settings, FileText, ChevronRight, AlertCircle,
@@ -22,7 +22,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { markAsRedeemed, cancelWithdrawal, applyPenaltyByImei, applyExternalPenalty, getPenaltyDataByImei, revertPenalty, revertExternalPenalty } from "@/app/actions/admin-payments";
-import { manualCredit, adminManualWithdrawal } from "@/app/actions/wallet";
+import { manualCredit, adminManualWithdrawal, getReceiptBreakdown } from "@/app/actions/wallet";
 
 export function PaymentsDashboardClient({ data }: { data: any }) {
     const router = useRouter();
@@ -39,6 +39,25 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
     const [concepto, setConcepto] = useState("");
     const [showPayConfirmModal, setShowPayConfirmModal] = useState(false);
     const [pendingTransactionId, setPendingTransactionId] = useState<number | null>(null);
+
+    const [receiptBreakdown, setReceiptBreakdown] = useState<any[]>([]);
+    const [isLoadingBreakdown, setIsLoadingBreakdown] = useState(false);
+
+    useEffect(() => {
+        if (showPayConfirmModal && pendingTransactionId) {
+            setIsLoadingBreakdown(true);
+            getReceiptBreakdown(pendingTransactionId).then(res => {
+                if (res.success) {
+                    setReceiptBreakdown(res.ingresos);
+                } else {
+                    setReceiptBreakdown([]);
+                }
+                setIsLoadingBreakdown(false);
+            });
+        } else {
+            setReceiptBreakdown([]);
+        }
+    }, [showPayConfirmModal, pendingTransactionId]);
 
     // Penalty states
     const [imeiSearch, setImeiSearch] = useState("");
@@ -833,6 +852,26 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
                             </div>
                             <p className="text-xs font-bold text-slate-500 text-left">Esta acción es irreversible. El balance del técnico <span className="text-indigo-600">ya fue descontado</span> al momento de generar este baucher.</p>
                         </div>
+
+                        {isLoadingBreakdown ? (
+                            <div className="flex justify-center py-4 mt-4 w-full">
+                                <RefreshCw className="w-6 h-6 text-indigo-600 animate-spin" />
+                            </div>
+                        ) : receiptBreakdown.length > 0 ? (
+                            <div className="w-full bg-indigo-50/50 rounded-3xl p-5 mt-4 border border-indigo-100/50 flex flex-col gap-3 text-left max-h-[200px] overflow-y-auto custom-scrollbar">
+                                <h3 className="text-[10px] font-black uppercase text-indigo-400 tracking-wider sticky top-0 bg-indigo-50/50 pb-2 backdrop-blur-sm">Desglose (Origen de los fondos)</h3>
+                                <div className="space-y-2">
+                                    {receiptBreakdown.map((item: any) => (
+                                        <div key={item.id} className="flex justify-between items-center text-xs border-b border-indigo-200/30 pb-2 last:border-0 last:pb-0">
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-slate-700 truncate max-w-[180px]">{item.descripcion || 'Ingreso'}</span>
+                                            </div>
+                                            <span className="font-black text-indigo-600 font-mono">+RD$ {item.monto.toLocaleString()}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : null}
 
                         <div className="flex flex-col w-full gap-3 mt-8">
                             <Button
