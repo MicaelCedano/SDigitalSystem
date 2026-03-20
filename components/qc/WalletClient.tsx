@@ -76,10 +76,6 @@ export function WalletClient({ initialData, currentUser }: WalletProps) {
         }
     }, [selectedReceipt]);
 
-    const handleCloseBaucher = () => {
-        setShowReceiptModal(false);
-        setTimeout(() => setSelectedReceipt(null), 300);
-    };
 
     const getConceptDescription = () => {
         if (!receiptBreakdown || receiptBreakdown.length === 0) {
