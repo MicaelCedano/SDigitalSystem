@@ -403,13 +403,15 @@ export async function createWalletAccount(name: string, color: string = "blue") 
 export async function getReceiptBreakdown(receiptId: number) {
     try {
         const receipt = await prisma.walletTransaction.findUnique({ where: { id: receiptId } });
-        if (!receipt) return { success: false, error: "Receipt no encontrado" };
+        if (!receipt || !receipt.fecha) return { success: false, error: "Receipt no encontrado o no tiene fecha" };
+
+        const receiptDate = receipt.fecha as Date;
 
         const previousReceipt = await prisma.walletTransaction.findFirst({
             where: {
                 tecnicoId: receipt.tecnicoId,
                 tipo: receipt.tipo,
-                fecha: { lt: receipt.fecha }
+                fecha: { lt: receiptDate }
             },
             orderBy: { fecha: "desc" }
         });
@@ -419,8 +421,8 @@ export async function getReceiptBreakdown(receiptId: number) {
                 tecnicoId: receipt.tecnicoId,
                 tipo: { in: ["ingreso", "Ingreso", "Ingreso Manual"] },
                 fecha: {
-                    lte: receipt.fecha,
-                    ...(previousReceipt?.fecha && { gt: previousReceipt.fecha })
+                    lte: receiptDate,
+                    ...(previousReceipt?.fecha && { gt: previousReceipt.fecha as Date })
                 }
             },
             orderBy: { fecha: "asc" }
