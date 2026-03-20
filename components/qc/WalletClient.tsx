@@ -674,9 +674,9 @@ export function WalletClient({ initialData, currentUser }: WalletProps) {
                                             <span className="font-bold text-slate-500">Técnico</span>
                                             <span className="font-black text-slate-800">{currentUser.name || currentUser.username}</span>
                                         </div>
-                                        <div className="flex justify-between text-sm">
-                                            <span className="font-bold text-slate-500">Concepto</span>
-                                            <span className="font-black text-slate-800 text-right max-w-[200px] truncate" title={getConceptDescription()}>{getConceptDescription()}</span>
+                                        <div className="flex justify-between text-sm py-1">
+                                            <span className="font-bold text-slate-500 min-w-[80px]">Concepto</span>
+                                            <span className="font-black text-slate-800 text-right leading-tight max-w-[220px]" title={getConceptDescription()}>{getConceptDescription()}</span>
                                         </div>
                                         <div className="flex justify-between text-sm">
                                             <span className="font-bold text-slate-500">Estado</span>
