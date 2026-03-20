@@ -930,13 +930,59 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
                              </div>
                              <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
                                  <CheckCircle2 className="w-8 h-8" />
-                             </div>
-                             <h2 className="text-2xl font-black text-slate-800">Baucher de Pago</h2>
-                             <p className="text-sm font-bold text-slate-400">Previsualización (Retiro)</p>
+                            </div>
+                            <h2 className="text-2xl font-black text-slate-800">Baucher de Pago</h2>
+                            <p className="text-sm font-bold text-slate-400">Previsualización (Retiro)</p>
                         </div>
 
                         {selectedRetiro && (
-                            <div className="space-y-6 relative z-10">
+                            <div className="space-y-6 relative z-10 mt-6">
+                                {isLoadingBreakdown ? (
+                                    <div className="flex justify-center py-4 mt-4 w-full">
+                                        <RefreshCw className="w-6 h-6 text-indigo-600 animate-spin" />
+                                    </div>
+                                ) : receiptBreakdown.length > 0 ? (
+                                    <div className="bg-slate-50 rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
+                                        <table className="w-full text-[10px] text-left border-collapse">
+                                            <thead>
+                                                <tr className="bg-slate-100/50 border-b border-slate-200 text-slate-500">
+                                                    <th className="py-2.5 px-3 font-black uppercase tracking-widest text-[9px]">Concepto</th>
+                                                    <th className="py-2.5 px-2 font-black uppercase tracking-widest text-[9px] text-center">Cant.</th>
+                                                    <th className="py-2.5 px-2 font-black uppercase tracking-widest text-[9px] text-center">Precio</th>
+                                                    <th className="py-2.5 px-3 font-black uppercase tracking-widest text-[9px] text-right">Monto</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                {getConceptTableData().map((item, idx) => {
+                                                    const rate = (item.units && item.units > 0) ? Math.round(item.amount / item.units) : null;
+                                                    return (
+                                                        <tr key={idx} className="bg-white/40 hover:bg-white/80 transition-colors">
+                                                            <td className="py-2.5 px-3 font-bold text-slate-700">{item.name}</td>
+                                                            <td className="py-2.5 px-2 font-black text-slate-400 text-center font-mono">
+                                                                {item.units || '-'}
+                                                            </td>
+                                                            <td className="py-2.5 px-2 font-black text-slate-400 text-center font-mono">
+                                                                {rate ? `RD$ ${rate.toLocaleString()}` : '-'}
+                                                            </td>
+                                                            <td className="py-2.5 px-3 font-black text-indigo-900 text-right font-mono">
+                                                                RD$ {item.amount.toLocaleString()}
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                            <tfoot className="bg-slate-100/30 border-t border-slate-200 font-black">
+                                                <tr>
+                                                    <td colSpan={3} className="py-2.5 px-3 text-slate-500 uppercase tracking-tighter text-[9px]">TOTAL PROCEDENCIA</td>
+                                                    <td className="py-2.5 px-3 text-indigo-700 text-right font-mono text-[11px]">
+                                                        RD$ {getConceptTableData().reduce((acc, curr) => acc + curr.amount, 0).toLocaleString()}
+                                                    </td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                ) : null}
+
                                 <div className="bg-slate-50 rounded-2xl p-4 sm:p-6 border border-slate-100">
                                      <div className="space-y-4">
                                          <div className="flex justify-between items-center border-b border-slate-200 pb-4">
@@ -959,46 +1005,9 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
                                          </div>
                                      </div>
                                 </div>
-                                {isLoadingBreakdown ? (
-                                    <div className="flex justify-center py-4 mt-4 w-full">
-                                        <RefreshCw className="w-6 h-6 text-indigo-600 animate-spin" />
-                                    </div>
-                                ) : receiptBreakdown.length > 0 ? (
-                                    <div className="bg-slate-50 rounded-2xl border border-slate-100 overflow-hidden shadow-sm mt-4">
-                                        <table className="w-full text-[10px] text-left border-collapse">
-                                            <thead>
-                                                <tr className="bg-slate-100/50 border-b border-slate-200 text-slate-500">
-                                                    <th className="py-2.5 px-3 font-black uppercase tracking-widest text-[9px]">Concepto</th>
-                                                    <th className="py-2.5 px-2 font-black uppercase tracking-widest text-[9px] text-center">Cant.</th>
-                                                    <th className="py-2.5 px-3 font-black uppercase tracking-widest text-[9px] text-right">Monto</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-100">
-                                                {getConceptTableData().map((item, idx) => (
-                                                    <tr key={idx} className="bg-white/40 hover:bg-white/80 transition-colors">
-                                                        <td className="py-2 px-3 font-bold text-slate-700">{item.name}</td>
-                                                        <td className="py-2 px-2 font-black text-slate-400 text-center font-mono">
-                                                            {item.units || '-'}
-                                                        </td>
-                                                        <td className="py-2 px-3 font-black text-indigo-900 text-right font-mono">
-                                                            RD$ {item.amount.toLocaleString()}
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                            <tfoot className="bg-slate-100/30 border-t border-slate-200 font-black">
-                                                <tr>
-                                                    <td colSpan={2} className="py-2.5 px-3 text-slate-500 uppercase tracking-tighter text-[9px]">TOTAL PROCEDENCIA</td>
-                                                    <td className="py-2.5 px-3 text-indigo-700 text-right font-mono text-[11px]">
-                                                        RD$ {getConceptTableData().reduce((acc, curr) => acc + curr.amount, 0).toLocaleString()}
-                                                    </td>
-                                                </tr>
-                                            </tfoot>
-                                        </table>
-                                    </div>
-                                ) : null}
                             </div>
                         )}
+
                         <div className="flex flex-col w-full gap-3 mt-8 relative z-10">
                             <Button
                                 onClick={confirmRedeem}
