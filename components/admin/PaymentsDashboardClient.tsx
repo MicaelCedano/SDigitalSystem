@@ -219,11 +219,13 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
         if (!amountToCredit || amountToCredit <= 0) return toast.error("Monto inválido");
         setIsProcessing(true);
         try {
-            const res = await manualCredit(selectedTecnico.id, amountToCredit, directDesc);
+            const finalDesc = directDesc || concepto || 'Acreditación manual por administrador';
+            const res = await manualCredit(selectedTecnico.id, amountToCredit, finalDesc);
             if (res.success) {
                 toast.success(directDesc ? `${directDesc} acreditado con éxito` : "Acreditación manual realizada con éxito");
                 setShowCreditModal(false);
                 setMonto("");
+                setConcepto("");
                 router.refresh();
             } else toast.error((res as any).error);
         } catch (error) {
@@ -879,15 +881,26 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-xs font-black uppercase tracking-widest text-slate-500">Monto Personalizado (RD$)</label>
-                            <Input
-                                type="number"
-                                value={monto}
-                                onChange={(e) => setMonto(e.target.value)}
-                                placeholder="0.00"
-                                className="h-12 rounded-xl border-slate-200 font-bold text-lg focus:ring-emerald-500"
-                            />
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-xs font-black uppercase tracking-widest text-slate-500">Monto Personalizado (RD$)</label>
+                                <Input
+                                    type="number"
+                                    value={monto}
+                                    onChange={(e) => setMonto(e.target.value)}
+                                    placeholder="0.00"
+                                    className="h-12 rounded-xl border-slate-200 font-bold text-lg focus:ring-emerald-500"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-black uppercase tracking-widest text-slate-500">Asunto / Concepto</label>
+                                <Input
+                                    value={concepto}
+                                    onChange={(e) => setConcepto(e.target.value)}
+                                    placeholder="Ej: Bono extra, Ajuste, etc."
+                                    className="h-12 rounded-xl border-slate-200 font-bold focus:ring-emerald-500"
+                                />
+                            </div>
                         </div>
                     </div>
                     <DialogFooter>
