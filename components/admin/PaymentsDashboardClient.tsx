@@ -893,7 +893,7 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
                     <DialogFooter>
                         <Button variant="ghost" onClick={() => setShowCreditModal(false)} className="rounded-xl font-bold">Cancelar</Button>
                         <Button
-                            onClick={handleAccreditation}
+                            onClick={() => handleAccreditation()}
                             disabled={isProcessing}
                             className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold px-8 h-12 shadow-lg shadow-emerald-200"
                         >
