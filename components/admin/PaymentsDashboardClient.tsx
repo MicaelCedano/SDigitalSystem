@@ -214,13 +214,14 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
         }
     };
 
-    const handleAccreditation = async () => {
-        if (!monto || parseFloat(monto) <= 0) return toast.error("Monto inválido");
+    const handleAccreditation = async (directMonto?: number, directDesc?: string) => {
+        const amountToCredit = directMonto || parseFloat(monto);
+        if (!amountToCredit || amountToCredit <= 0) return toast.error("Monto inválido");
         setIsProcessing(true);
         try {
-            const res = await manualCredit(selectedTecnico.id, parseFloat(monto));
+            const res = await manualCredit(selectedTecnico.id, amountToCredit, directDesc);
             if (res.success) {
-                toast.success("Acreditación manual realizada con éxito");
+                toast.success(directDesc ? `${directDesc} acreditado con éxito` : "Acreditación manual realizada con éxito");
                 setShowCreditModal(false);
                 setMonto("");
                 router.refresh();
@@ -847,9 +848,39 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
                             Ingresa el monto que deseas sumar al balance de <span className="text-indigo-600">{(selectedTecnico?.name || selectedTecnico?.username)}</span>.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="py-4 space-y-4">
+                    <div className="py-4 space-y-6">
+                        <div className="grid grid-cols-2 gap-3">
+                            <Button
+                                onClick={() => handleAccreditation(300, "Armado de Bicicleta")}
+                                disabled={isProcessing}
+                                variant="outline"
+                                className="h-16 rounded-2xl border-indigo-100 bg-indigo-50/50 hover:bg-indigo-100 flex flex-col items-center justify-center gap-1 group transition-all"
+                            >
+                                <span className="text-[10px] font-black uppercase text-indigo-400 group-hover:text-indigo-600 transition-colors">Bicicleta</span>
+                                <span className="text-lg font-black text-indigo-600">RD$ 300</span>
+                            </Button>
+                            <Button
+                                onClick={() => handleAccreditation(2000, "Pago de Viaje")}
+                                disabled={isProcessing}
+                                variant="outline"
+                                className="h-16 rounded-2xl border-emerald-100 bg-emerald-50/50 hover:bg-emerald-100 flex flex-col items-center justify-center gap-1 group transition-all"
+                            >
+                                <span className="text-[10px] font-black uppercase text-emerald-400 group-hover:text-emerald-600 transition-colors">Viaje</span>
+                                <span className="text-lg font-black text-emerald-600">RD$ 2,000</span>
+                            </Button>
+                        </div>
+
+                        <div className="relative">
+                            <div className="absolute inset-0 flex items-center">
+                                <span className="w-full border-t border-slate-100"></span>
+                            </div>
+                            <div className="relative flex justify-center text-[10px] uppercase font-black text-slate-300">
+                                <span className="bg-white px-3 tracking-widest">O Monto Manual</span>
+                            </div>
+                        </div>
+
                         <div className="space-y-2">
-                            <label className="text-xs font-black uppercase tracking-widest text-slate-500">Monto (RD$)</label>
+                            <label className="text-xs font-black uppercase tracking-widest text-slate-500">Monto Personalizado (RD$)</label>
                             <Input
                                 type="number"
                                 value={monto}

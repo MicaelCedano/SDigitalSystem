@@ -155,7 +155,7 @@ export async function requestWithdrawal(amount: number) {
     }
 }
 
-export async function manualCredit(targetUserId: number, amount: number) {
+export async function manualCredit(targetUserId: number, amount: number, descripcion: string = 'Acreditación manual por administrador') {
     const session = await getServerSession(authOptions);
     if (!session || session.user.role !== "admin") return { success: false, error: "No autorizado" };
 
@@ -197,7 +197,7 @@ export async function manualCredit(targetUserId: number, amount: number) {
                     estado: 'Completado',
                     canjeado: true,
                     fecha: new Date(),
-                    descripcion: 'Acreditación manual por administrador',
+                    descripcion: descripcion,
                     secureToken: crypto.randomBytes(32).toString('hex')
                 }
             });
