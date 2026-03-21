@@ -38,6 +38,7 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
     // Form states
     const [monto, setMonto] = useState("");
     const [concepto, setConcepto] = useState("");
+    const [cantidadBici, setCantidadBici] = useState(1);
     const [showPayConfirmModal, setShowPayConfirmModal] = useState(false);
     const [pendingTransactionId, setPendingTransactionId] = useState<number | null>(null);
 
@@ -226,6 +227,7 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
                 setShowCreditModal(false);
                 setMonto("");
                 setConcepto("");
+                setCantidadBici(1);
                 router.refresh();
             } else toast.error((res as any).error);
         } catch (error) {
@@ -851,16 +853,28 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-4 space-y-6">
-                        <div className="grid grid-cols-2 gap-3">
-                            <Button
-                                onClick={() => handleAccreditation(300, "Armado de Bicicleta")}
-                                disabled={isProcessing}
-                                variant="outline"
-                                className="h-16 rounded-2xl border-indigo-100 bg-indigo-50/50 hover:bg-indigo-100 flex flex-col items-center justify-center gap-1 group transition-all"
-                            >
-                                <span className="text-[10px] font-black uppercase text-indigo-400 group-hover:text-indigo-600 transition-colors">Bicicleta</span>
-                                <span className="text-lg font-black text-indigo-600">RD$ 300</span>
-                            </Button>
+                        <div className="grid grid-cols-2 gap-3 items-end">
+                            <div className="flex gap-2">
+                                <div className="w-1/3">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block">Cant.</label>
+                                    <Input
+                                        type="number"
+                                        min="1"
+                                        value={cantidadBici}
+                                        onChange={(e) => setCantidadBici(parseInt(e.target.value) || 1)}
+                                        className="h-16 rounded-2xl border-indigo-100 bg-indigo-50/50 text-center font-black text-indigo-600 focus:ring-indigo-500"
+                                    />
+                                </div>
+                                <Button
+                                    onClick={() => handleAccreditation(300 * cantidadBici, `Armado de ${cantidadBici} Bicicleta${cantidadBici > 1 ? 's' : ''}`)}
+                                    disabled={isProcessing}
+                                    variant="outline"
+                                    className="h-16 flex-1 rounded-2xl border-indigo-100 bg-indigo-50/50 hover:bg-indigo-100 flex flex-col items-center justify-center gap-1 group transition-all"
+                                >
+                                    <span className="text-[10px] font-black uppercase text-indigo-400 group-hover:text-indigo-600 transition-colors">Bicicleta</span>
+                                    <span className="text-lg font-black text-indigo-600">RD$ {300 * cantidadBici}</span>
+                                </Button>
+                            </div>
                             <Button
                                 onClick={() => handleAccreditation(2000, "Pago de Viaje")}
                                 disabled={isProcessing}
