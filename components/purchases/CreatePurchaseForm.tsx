@@ -106,14 +106,35 @@ const PurchaseItemRow = memo(({
     deviceModels: CreatePurchaseFormProps['deviceModels'];
     setValue: UseFormReturn<FormValues>['setValue'];
 }) => {
-    // Watch only this specific item
+    // Watch only this specific item for UI display (model, quantity)
+    // We EXCLUDE imeis from the watch to avoid re-renders while typing
     const item = useWatch({
         control,
-        name: `items.${index}`
+        name: `items.${index}`,
     });
 
-    const imeiInput = item?.imeis || "";
-    const lines = imeiInput.split('\n').filter((l: string) => l.trim()).length;
+    const [localImeis, setLocalImeis] = useState(item?.imeis || "");
+    const debounceTimerRef = useRef<any>(null);
+
+    // Initial sync
+    React.useEffect(() => {
+        if (item?.imeis !== localImeis && !debounceTimerRef.current) {
+            setLocalImeis(item?.imeis || "");
+        }
+    }, [item?.imeis]);
+
+    const handleImeiChange = (val: string) => {
+        setLocalImeis(val);
+
+        // Debounce the update to the form state
+        if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = setTimeout(() => {
+            setValue(`items.${index}.imeis`, val, { shouldValidate: true });
+            debounceTimerRef.current = null;
+        }, 400); // 400ms delay for maximum fluidity
+    };
+
+    const lines = localImeis.split('\n').filter((l: string) => l.trim()).length;
     const declaredQty = Number(item?.quantity) || 0;
     const isMismatch = lines > 0 && lines !== declaredQty;
     const isNewModel = item?.modelId === 0;
@@ -143,7 +164,7 @@ const PurchaseItemRow = memo(({
                     <FormField
                         control={control}
                         name={`items.${index}.modelId`}
-                    render={({ field: selectField }: { field: any }) => (
+                        render={({ field: selectField }: { field: any }) => (
                             <FormItem>
                                 <Popover>
                                     <PopoverTrigger asChild>
@@ -221,38 +242,32 @@ const PurchaseItemRow = memo(({
                 />
             </TableCell>
             <TableCell>
-                <FormField
-                    control={control}
-                    name={`items.${index}.imeis`}
-                    render={({ field: imeiField }: { field: any }) => (
-                        <FormItem className="relative">
-                            <FormControl>
-                                <Textarea
-                                    placeholder="Pega o escribe IMEIs..."
-                                    className={cn(
-                                        "min-h-[60px] max-h-[120px] py-3 rounded-xl bg-slate-50/50 border-slate-100 font-mono text-[11px] focus:bg-white focus:border-indigo-200 transition-all resize-none shadow-inner",
-                                        isMismatch && "border-amber-200 bg-amber-50/30"
-                                    )}
-                                    {...imeiField}
-                                />
-                            </FormControl>
-                            <div className="absolute right-3 bottom-3 flex items-center gap-2 pointer-events-none">
-                                {isMismatch && (
-                                    <Badge className="bg-amber-100 text-amber-700 border-none text-[9px] font-bold animate-pulse">
-                                        DIFERENCIA
-                                    </Badge>
-                                )}
-                                <Badge variant="secondary" className={cn(
-                                    "bg-white/80 border-slate-100 text-[10px] font-bold",
-                                    isMismatch ? "text-amber-600" : "text-slate-400"
-                                )}>
-                                    {lines} IMEIs
-                                </Badge>
-                            </div>
-                            <FormMessage className="text-[10px] font-bold text-rose-500" />
-                        </FormItem>
-                    )}
-                />
+                <FormItem className="relative">
+                    <FormControl>
+                        <Textarea
+                            placeholder="Pega o escribe IMEIs..."
+                            className={cn(
+                                "min-h-[60px] max-h-[120px] py-3 rounded-xl bg-slate-50/50 border-slate-100 font-mono text-[11px] focus:bg-white focus:border-indigo-200 transition-all resize-none shadow-inner",
+                                isMismatch && "border-amber-200 bg-amber-50/30"
+                            )}
+                            value={localImeis}
+                            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleImeiChange(e.target.value)}
+                        />
+                    </FormControl>
+                    <div className="absolute right-3 bottom-3 flex items-center gap-2 pointer-events-none">
+                        {isMismatch && (
+                            <Badge className="bg-amber-100 text-amber-700 border-none text-[9px] font-bold animate-pulse">
+                                DIFERENCIA
+                            </Badge>
+                        )}
+                        <Badge variant="secondary" className={cn(
+                            "bg-white/80 border-slate-100 text-[10px] font-bold",
+                            isMismatch ? "text-amber-600" : "text-slate-400"
+                        )}>
+                            {lines} IMEIs
+                        </Badge>
+                    </div>
+                </FormItem>
             </TableCell>
             <TableCell className="text-center">
                 <Button
