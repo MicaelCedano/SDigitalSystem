@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import React, { useState, useRef, memo } from "react";
+import { useForm, useFieldArray, useWatch, Control, UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
@@ -81,6 +81,196 @@ interface CreatePurchaseFormProps {
     suppliers: { id: number; name: string }[];
     deviceModels: { id: number; brand: string; modelName: string; storageGb: number; color: string | null }[];
 }
+
+// 1. Optimized Counter Component
+const TotalEquiposCounter = ({ control }: { control: Control<FormValues> }) => {
+    const items = useWatch({
+        control,
+        name: "items"
+    });
+    const total = items?.reduce((acc: number, item: any) => acc + (Number(item?.quantity) || 0), 0) || 0;
+    return <>{total}</>;
+};
+
+// 2. Optimized Row Component
+const PurchaseItemRow = memo(({
+    index,
+    control,
+    remove,
+    deviceModels,
+    setValue
+}: {
+    index: number;
+    control: Control<FormValues>;
+    remove: (index: number) => void;
+    deviceModels: CreatePurchaseFormProps['deviceModels'];
+    setValue: UseFormReturn<FormValues>['setValue'];
+}) => {
+    // Watch only this specific item
+    const item = useWatch({
+        control,
+        name: `items.${index}`
+    });
+
+    const imeiInput = item?.imeis || "";
+    const lines = imeiInput.split('\n').filter((l: string) => l.trim()).length;
+    const declaredQty = Number(item?.quantity) || 0;
+    const isMismatch = lines > 0 && lines !== declaredQty;
+    const isNewModel = item?.modelId === 0;
+
+    return (
+        <TableRow
+            className={cn(
+                "group border-slate-50 transition-colors",
+                isNewModel ? "bg-indigo-50/30 hover:bg-indigo-50/50" : "hover:bg-slate-50/40"
+            )}
+        >
+            <TableCell className="text-center">
+                <span className="text-xs font-bold text-slate-300 group-hover:text-indigo-400 transition-colors">{index + 1}</span>
+            </TableCell>
+            <TableCell>
+                {isNewModel ? (
+                    <div className="flex items-center gap-3 px-3 py-2 border border-indigo-100 bg-white rounded-xl shadow-sm">
+                        <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                                <span className="font-bold text-slate-800 text-sm italic">{item?.brand} {item?.modelName}</span>
+                                <Badge className="bg-indigo-600 text-white border-none text-[8px] font-black h-4 px-1">NUEVO</Badge>
+                            </div>
+                            <span className="text-[10px] uppercase tracking-widest text-indigo-400 font-bold">{item?.storageGb}GB {item?.color && `• ${item?.color}`}</span>
+                        </div>
+                    </div>
+                ) : (
+                    <FormField
+                        control={control}
+                        name={`items.${index}.modelId`}
+                    render={({ field: selectField }: { field: any }) => (
+                            <FormItem>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <FormControl>
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                className={cn(
+                                                    "w-full h-12 justify-between font-bold rounded-xl bg-transparent border-slate-100 hover:border-indigo-200 text-slate-700 text-sm transition-all",
+                                                    !selectField.value && "text-slate-400 font-medium"
+                                                )}
+                                            >
+                                                <span className="truncate max-w-[240px]">
+                                                    {selectField.value
+                                                        ? (() => {
+                                                            const m = deviceModels.find((model) => model.id === selectField.value);
+                                                            return m ? `${m.brand} ${m.modelName} ${m.storageGb}GB${m.color ? ` - ${m.color}` : ''}` : "Modelo..."
+                                                        })()
+                                                        : "Buscar modelo..."}
+                                                </span>
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-40 text-indigo-500" />
+                                            </Button>
+                                        </FormControl>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[400px] p-0 rounded-2xl border-none shadow-2xl shadow-indigo-100/50" align="start">
+                                        <Command>
+                                            <div className="p-2 border-b border-slate-50">
+                                                <CommandInput placeholder="Filtrar por marca o modelo..." className="h-10 border-none bg-slate-50 rounded-lg" />
+                                            </div>
+                                            <CommandList className="max-h-[300px]">
+                                                <CommandEmpty className="p-4 text-xs italic text-slate-400">No se encontró el modelo.</CommandEmpty>
+                                                <CommandGroup>
+                                                    {deviceModels.map((model) => (
+                                                        <CommandItem
+                                                            key={model.id}
+                                                            value={`${model.brand} ${model.modelName} ${model.storageGb} ${model.color || ''}`}
+                                                            onSelect={() => setValue(`items.${index}.modelId`, model.id)}
+                                                            className="rounded-lg mb-1 h-11 px-3 aria-selected:bg-indigo-50 aria-selected:text-indigo-700"
+                                                        >
+                                                            <Check className={cn("mr-2 h-4 w-4 text-indigo-500", model.id === selectField.value ? "opacity-100" : "opacity-0")} />
+                                                            <div className="flex flex-col">
+                                                                <span className="font-bold text-sm">{model.brand} {model.modelName}</span>
+                                                                <span className="text-[10px] uppercase tracking-widest text-slate-400 font-medium">{model.storageGb}GB {model.color && `• ${model.color}`}</span>
+                                                            </div>
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                                <FormMessage className="text-[10px] font-bold text-rose-500" />
+                            </FormItem>
+                        )}
+                    />
+                )}
+            </TableCell>
+            <TableCell>
+                <FormField
+                    control={control}
+                    name={`items.${index}.quantity`}
+                    render={({ field: qtyField }: { field: any }) => (
+                        <FormItem>
+                            <FormControl>
+                                <Input
+                                    type="number"
+                                    min={1}
+                                    {...qtyField}
+                                    className="h-12 w-24 mx-auto rounded-xl bg-slate-50/50 border-slate-100 font-bold text-slate-700 text-center focus:bg-white focus:border-indigo-200 transition-all"
+                                />
+                            </FormControl>
+                            <FormMessage className="text-[10px] font-bold text-rose-500" />
+                        </FormItem>
+                    )}
+                />
+            </TableCell>
+            <TableCell>
+                <FormField
+                    control={control}
+                    name={`items.${index}.imeis`}
+                    render={({ field: imeiField }: { field: any }) => (
+                        <FormItem className="relative">
+                            <FormControl>
+                                <Textarea
+                                    placeholder="Pega o escribe IMEIs..."
+                                    className={cn(
+                                        "min-h-[60px] max-h-[120px] py-3 rounded-xl bg-slate-50/50 border-slate-100 font-mono text-[11px] focus:bg-white focus:border-indigo-200 transition-all resize-none shadow-inner",
+                                        isMismatch && "border-amber-200 bg-amber-50/30"
+                                    )}
+                                    {...imeiField}
+                                />
+                            </FormControl>
+                            <div className="absolute right-3 bottom-3 flex items-center gap-2 pointer-events-none">
+                                {isMismatch && (
+                                    <Badge className="bg-amber-100 text-amber-700 border-none text-[9px] font-bold animate-pulse">
+                                        DIFERENCIA
+                                    </Badge>
+                                )}
+                                <Badge variant="secondary" className={cn(
+                                    "bg-white/80 border-slate-100 text-[10px] font-bold",
+                                    isMismatch ? "text-amber-600" : "text-slate-400"
+                                )}>
+                                    {lines} IMEIs
+                                </Badge>
+                            </div>
+                            <FormMessage className="text-[10px] font-bold text-rose-500" />
+                        </FormItem>
+                    )}
+                />
+            </TableCell>
+            <TableCell className="text-center">
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => remove(index)}
+                    className="h-10 w-10 rounded-xl text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all opacity-0 group-hover:opacity-100"
+                >
+                    <Trash2 className="h-5 w-5" />
+                </Button>
+            </TableCell>
+        </TableRow>
+    );
+});
+
+PurchaseItemRow.displayName = "PurchaseItemRow";
+
 
 export function CreatePurchaseForm({ suppliers, deviceModels }: CreatePurchaseFormProps) {
     const router = useRouter();
@@ -323,7 +513,7 @@ export function CreatePurchaseForm({ suppliers, deviceModels }: CreatePurchaseFo
                                     <div className="flex items-center gap-1.5 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100/50">
                                         <span className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider">Total Equipos:</span>
                                         <span className="text-xs font-black text-indigo-700">
-                                            {form.watch("items")?.reduce((acc, item) => acc + (Number(item.quantity) || 0), 0) || 0}
+                                            <TotalEquiposCounter control={form.control} />
                                         </span>
                                     </div>
                                 </div>
@@ -367,168 +557,16 @@ export function CreatePurchaseForm({ suppliers, deviceModels }: CreatePurchaseFo
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {fields.map((field, index) => {
-                                    const imeiInput = form.watch(`items.${index}.imeis`) || "";
-                                    const lines = imeiInput.split('\n').filter(l => l.trim()).length;
-                                    const declaredQty = form.watch(`items.${index}.quantity`);
-                                    const isMismatch = lines > 0 && lines !== declaredQty;
-                                    const isNewModel = form.watch(`items.${index}.modelId`) === 0;
-                                    const modelBrand = form.watch(`items.${index}.brand`);
-                                    const modelName = form.watch(`items.${index}.modelName`);
-                                    const modelStorage = form.watch(`items.${index}.storageGb`);
-                                    const modelColor = form.watch(`items.${index}.color`);
-
-                                    return (
-                                        <TableRow
-                                            key={field.id}
-                                            className={cn(
-                                                "group border-slate-50 transition-colors",
-                                                isNewModel ? "bg-indigo-50/30 hover:bg-indigo-50/50" : "hover:bg-slate-50/40"
-                                            )}
-                                        >
-                                            <TableCell className="text-center">
-                                                <span className="text-xs font-bold text-slate-300 group-hover:text-indigo-400 transition-colors">{index + 1}</span>
-                                            </TableCell>
-                                            <TableCell>
-                                                {isNewModel ? (
-                                                    <div className="flex items-center gap-3 px-3 py-2 border border-indigo-100 bg-white rounded-xl shadow-sm">
-                                                        <div className="flex flex-col">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="font-bold text-slate-800 text-sm italic">{modelBrand} {modelName}</span>
-                                                                <Badge className="bg-indigo-600 text-white border-none text-[8px] font-black h-4 px-1">NUEVO</Badge>
-                                                            </div>
-                                                            <span className="text-[10px] uppercase tracking-widest text-indigo-400 font-bold">{modelStorage}GB {modelColor && `• ${modelColor}`}</span>
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    <FormField
-                                                        control={form.control}
-                                                        name={`items.${index}.modelId`}
-                                                        render={({ field: selectField }) => (
-                                                            <FormItem>
-                                                                <Popover>
-                                                                    <PopoverTrigger asChild>
-                                                                        <FormControl>
-                                                                            <Button
-                                                                                variant="outline"
-                                                                                role="combobox"
-                                                                                className={cn(
-                                                                                    "w-full h-12 justify-between font-bold rounded-xl bg-transparent border-slate-100 hover:border-indigo-200 text-slate-700 text-sm transition-all",
-                                                                                    !selectField.value && "text-slate-400 font-medium"
-                                                                                )}
-                                                                            >
-                                                                                <span className="truncate max-w-[240px]">
-                                                                                    {selectField.value
-                                                                                        ? (() => {
-                                                                                            const m = deviceModels.find((model) => model.id === selectField.value);
-                                                                                            return m ? `${m.brand} ${m.modelName} ${m.storageGb}GB${m.color ? ` - ${m.color}` : ''}` : "Modelo..."
-                                                                                        })()
-                                                                                        : "Buscar modelo..."}
-                                                                                </span>
-                                                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-40 text-indigo-500" />
-                                                                            </Button>
-                                                                        </FormControl>
-                                                                    </PopoverTrigger>
-                                                                    <PopoverContent className="w-[400px] p-0 rounded-2xl border-none shadow-2xl shadow-indigo-100/50" align="start">
-                                                                        <Command>
-                                                                            <div className="p-2 border-b border-slate-50">
-                                                                                <CommandInput placeholder="Filtrar por marca o modelo..." className="h-10 border-none bg-slate-50 rounded-lg" />
-                                                                            </div>
-                                                                            <CommandList className="max-h-[300px]">
-                                                                                <CommandEmpty className="p-4 text-xs italic text-slate-400">No se encontró el modelo.</CommandEmpty>
-                                                                                <CommandGroup>
-                                                                                    {deviceModels.map((model) => (
-                                                                                        <CommandItem
-                                                                                            key={model.id}
-                                                                                            value={`${model.brand} ${model.modelName} ${model.storageGb} ${model.color || ''}`}
-                                                                                            onSelect={() => form.setValue(`items.${index}.modelId`, model.id)}
-                                                                                            className="rounded-lg mb-1 h-11 px-3 aria-selected:bg-indigo-50 aria-selected:text-indigo-700"
-                                                                                        >
-                                                                                            <Check className={cn("mr-2 h-4 w-4 text-indigo-500", model.id === selectField.value ? "opacity-100" : "opacity-0")} />
-                                                                                            <div className="flex flex-col">
-                                                                                                <span className="font-bold text-sm">{model.brand} {model.modelName}</span>
-                                                                                                <span className="text-[10px] uppercase tracking-widest text-slate-400 font-medium">{model.storageGb}GB {model.color && `• ${model.color}`}</span>
-                                                                                            </div>
-                                                                                        </CommandItem>
-                                                                                    ))}
-                                                                                </CommandGroup>
-                                                                            </CommandList>
-                                                                        </Command>
-                                                                    </PopoverContent>
-                                                                </Popover>
-                                                                <FormMessage className="text-[10px] font-bold text-rose-500" />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                )}
-                                            </TableCell>
-                                            <TableCell>
-                                                <FormField
-                                                    control={form.control}
-                                                    name={`items.${index}.quantity`}
-                                                    render={({ field: qtyField }) => (
-                                                        <FormItem>
-                                                            <FormControl>
-                                                                <Input
-                                                                    type="number"
-                                                                    min={1}
-                                                                    {...qtyField}
-                                                                    className="h-12 w-24 mx-auto rounded-xl bg-slate-50/50 border-slate-100 font-bold text-slate-700 text-center focus:bg-white focus:border-indigo-200 transition-all"
-                                                                />
-                                                            </FormControl>
-                                                            <FormMessage className="text-[10px] font-bold text-rose-500" />
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                            </TableCell>
-                                            <TableCell>
-                                                <FormField
-                                                    control={form.control}
-                                                    name={`items.${index}.imeis`}
-                                                    render={({ field: imeiField }) => (
-                                                        <FormItem className="relative">
-                                                            <FormControl>
-                                                                <Textarea
-                                                                    placeholder="Pega o escribe IMEIs..."
-                                                                    className={cn(
-                                                                        "min-h-[60px] max-h-[120px] py-3 rounded-xl bg-slate-50/50 border-slate-100 font-mono text-[11px] focus:bg-white focus:border-indigo-200 transition-all resize-none shadow-inner",
-                                                                        isMismatch && "border-amber-200 bg-amber-50/30"
-                                                                    )}
-                                                                    {...imeiField}
-                                                                />
-                                                            </FormControl>
-                                                            <div className="absolute right-3 bottom-3 flex items-center gap-2">
-                                                                {isMismatch && (
-                                                                    <Badge className="bg-amber-100 text-amber-700 border-none text-[9px] font-bold animate-pulse">
-                                                                        DIFERENCIA
-                                                                    </Badge>
-                                                                )}
-                                                                <Badge variant="secondary" className={cn(
-                                                                    "bg-white/80 border-slate-100 text-[10px] font-bold",
-                                                                    isMismatch ? "text-amber-600" : "text-slate-400"
-                                                                )}>
-                                                                    {lines} IMEIs
-                                                                </Badge>
-                                                            </div>
-                                                            <FormMessage className="text-[10px] font-bold text-rose-500" />
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => remove(index)}
-                                                    className="h-10 w-10 rounded-xl text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all opacity-0 group-hover:opacity-100"
-                                                >
-                                                    <Trash2 className="h-5 w-5" />
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    );
-                                })}
+                                {fields.map((field, index) => (
+                                    <PurchaseItemRow
+                                        key={field.id}
+                                        index={index}
+                                        control={form.control}
+                                        remove={remove}
+                                        deviceModels={deviceModels}
+                                        setValue={form.setValue}
+                                    />
+                                ))}
                             </TableBody>
                         </Table>
                     </div>
