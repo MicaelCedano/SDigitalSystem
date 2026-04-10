@@ -117,6 +117,67 @@ export function PenaltiesViewClient({ data }: { data: any }) {
                 </Card>
             </div>
 
+            {/* Technician Effectiveness Stats */}
+            {data.technicianStats && data.technicianStats.length > 0 && (
+                <Card className="rounded-[2.5rem] border-none shadow-xl bg-white overflow-hidden">
+                    <CardContent className="p-8">
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+                                <UserIcon className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-black tracking-tight text-slate-800">Efectividad por Técnico</h3>
+                                <p className="text-slate-500 font-medium text-sm">Porcentaje de rechazo sobre total de equipos revisados</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                            {data.technicianStats.map((stat: any) => (
+                                <div key={stat.id} className="relative overflow-hidden p-5 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 hover:shadow-md transition-all group">
+                                    <div className="flex justify-between items-start mb-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-10 w-10 rounded-full bg-white shadow-sm flex items-center justify-center text-indigo-600 font-black text-sm border border-slate-100">
+                                                {stat.name.substring(0, 2).toUpperCase()}
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-slate-700 leading-tight">{stat.name}</p>
+                                                <p className="text-[10px] uppercase font-black tracking-widest text-slate-400">Técnico</p>
+                                            </div>
+                                        </div>
+                                        <Badge variant="outline" className={cn(
+                                            "border-none font-black",
+                                            stat.percentage > 10 ? "bg-rose-100 text-rose-700" :
+                                            stat.percentage > 5 ? "bg-amber-100 text-amber-700" :
+                                            "bg-emerald-100 text-emerald-700"
+                                        )}>
+                                            {stat.percentage}%
+                                        </Badge>
+                                    </div>
+                                    <div className="flex justify-between items-end">
+                                        <div>
+                                            <p className="text-[10px] text-slate-400 font-black tracking-[0.2em] uppercase mb-1">Revisados</p>
+                                            <p className="text-xl font-black text-slate-800 tracking-tighter">{stat.totalReviewed}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-[10px] text-slate-400 font-black tracking-[0.2em] uppercase mb-1">Penalidades</p>
+                                            <p className="text-xl font-black text-rose-600 tracking-tighter">{stat.totalPenalties}</p>
+                                        </div>
+                                    </div>
+                                    <div className="absolute bottom-0 left-0 h-1 bg-slate-200 w-full opacity-50">
+                                        <div className={cn(
+                                            "h-full transition-all duration-1000",
+                                            stat.percentage > 10 ? "bg-rose-500" :
+                                            stat.percentage > 5 ? "bg-amber-500" :
+                                            "bg-emerald-500"
+                                        )} style={{ width: `${Math.min(stat.percentage, 100)}%` }} />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
             {/* List */}
             <div className="space-y-4">
                 {filteredPenalties.map((p: any) => (

@@ -587,9 +587,44 @@ export async function getAllPenalties() {
             })
         ]);
 
+        const usersWithStats = await prisma.user.findMany({
+            where: {
+                role: { in: ["tecnico", "tecnico_garantias", "control_calidad"] }
+            },
+            select: {
+                id: true,
+                name: true,
+                username: true,
+                _count: {
+                    select: {
+                        equipoHistorial: {
+                            where: { estado: "Revisado" }
+                        },
+                        penalidades: true
+                    }
+                }
+            }
+        });
+
+        const technicianStats = usersWithStats.map(u => {
+            const externalCount = externalPenalties.filter(ep => ep.culpable === u.name || ep.culpable === u.username).length;
+            const totalPenalties = u._count.penalidades + externalCount;
+            const totalReviewed = u._count.equipoHistorial;
+            const percentage = totalReviewed > 0 ? ((totalPenalties / totalReviewed) * 100).toFixed(2) : "0.00";
+            
+            return {
+                id: u.id,
+                name: u.name || u.username,
+                totalReviewed,
+                totalPenalties,
+                percentage: parseFloat(percentage)
+            };
+        }).filter(t => t.totalReviewed > 0 || t.totalPenalties > 0).sort((a, b) => parseFloat(b.percentage as any) - parseFloat(a.percentage as any));
+
         return {
             penalties: penalties.map(p => ({ ...p, type: 'internal' })),
-            externalPenalties: externalPenalties.map(p => ({ ...p, type: 'external' }))
+            externalPenalties: externalPenalties.map(p => ({ ...p, type: 'external' })),
+            technicianStats
         };
     } catch (error) {
         console.error("Error fetching all penalties:", error);
