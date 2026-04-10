@@ -13,7 +13,23 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import Link from "next/link";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from "recharts";
 import { cn } from "@/lib/utils";
+
+// Custom Tooltip for Recharts
+const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+        return (
+            <div className="bg-white p-4 rounded-2xl shadow-xl border border-slate-100 flex flex-col gap-1">
+                <p className="font-black text-slate-800">{label}</p>
+                <p className="text-sm font-bold text-indigo-600">Rechazo: {payload[0].value}%</p>
+                <p className="text-xs text-slate-500 font-medium">Revisados: {payload[0].payload.totalReviewed}</p>
+                <p className="text-xs text-rose-500 font-medium">Penalidades: {payload[0].payload.totalPenalties}</p>
+            </div>
+        );
+    }
+    return null;
+};
 
 export function PenaltiesViewClient({ data }: { data: any }) {
     const router = useRouter();
@@ -120,59 +136,119 @@ export function PenaltiesViewClient({ data }: { data: any }) {
             {/* Technician Effectiveness Stats */}
             {data.technicianStats && data.technicianStats.length > 0 && (
                 <Card className="rounded-[2.5rem] border-none shadow-xl bg-white overflow-hidden">
-                    <CardContent className="p-8">
-                        <div className="flex items-center gap-4 mb-6">
-                            <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
-                                <UserIcon className="w-6 h-6" />
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-black tracking-tight text-slate-800">Efectividad por Técnico</h3>
-                                <p className="text-slate-500 font-medium text-sm">Porcentaje de rechazo sobre total de equipos revisados</p>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                            {data.technicianStats.map((stat: any) => (
-                                <div key={stat.id} className="relative overflow-hidden p-5 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 hover:shadow-md transition-all group">
-                                    <div className="flex justify-between items-start mb-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="h-10 w-10 rounded-full bg-white shadow-sm flex items-center justify-center text-indigo-600 font-black text-sm border border-slate-100">
-                                                {stat.name.substring(0, 2).toUpperCase()}
-                                            </div>
-                                            <div>
-                                                <p className="font-bold text-slate-700 leading-tight">{stat.name}</p>
-                                                <p className="text-[10px] uppercase font-black tracking-widest text-slate-400">Técnico</p>
-                                            </div>
-                                        </div>
-                                        <Badge variant="outline" className={cn(
-                                            "border-none font-black",
-                                            stat.percentage > 10 ? "bg-rose-100 text-rose-700" :
-                                            stat.percentage > 5 ? "bg-amber-100 text-amber-700" :
-                                            "bg-emerald-100 text-emerald-700"
-                                        )}>
-                                            {stat.percentage}%
-                                        </Badge>
+                    <CardContent className="p-8 lg:p-10">
+                        <div className="flex flex-col lg:flex-row gap-10">
+                            {/* Left Side: Stats Cards */}
+                            <div className="w-full lg:w-5/12 flex flex-col">
+                                <div className="flex items-center gap-4 mb-8">
+                                    <div className="p-4 bg-indigo-50 text-indigo-600 rounded-2xl">
+                                        <UserIcon className="w-8 h-8" />
                                     </div>
-                                    <div className="flex justify-between items-end">
-                                        <div>
-                                            <p className="text-[10px] text-slate-400 font-black tracking-[0.2em] uppercase mb-1">Revisados</p>
-                                            <p className="text-xl font-black text-slate-800 tracking-tighter">{stat.totalReviewed}</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-[10px] text-slate-400 font-black tracking-[0.2em] uppercase mb-1">Penalidades</p>
-                                            <p className="text-xl font-black text-rose-600 tracking-tighter">{stat.totalPenalties}</p>
-                                        </div>
-                                    </div>
-                                    <div className="absolute bottom-0 left-0 h-1 bg-slate-200 w-full opacity-50">
-                                        <div className={cn(
-                                            "h-full transition-all duration-1000",
-                                            stat.percentage > 10 ? "bg-rose-500" :
-                                            stat.percentage > 5 ? "bg-amber-500" :
-                                            "bg-emerald-500"
-                                        )} style={{ width: `${Math.min(stat.percentage, 100)}%` }} />
+                                    <div>
+                                        <h3 className="text-2xl font-black tracking-tight text-slate-800">Efectividad por Técnico</h3>
+                                        <p className="text-slate-500 font-medium text-sm mt-1">Porcentaje de rechazo sobre total de equipos referidos y revisados</p>
                                     </div>
                                 </div>
-                            ))}
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4 overflow-y-auto max-h-[500px] pr-2 custom-scrollbar">
+                                    {data.technicianStats.map((stat: any) => (
+                                        <div key={stat.id} className="relative overflow-hidden p-5 rounded-3xl border border-slate-100 bg-slate-50/70 hover:bg-white hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <div className="flex items-center gap-4">
+                                                    {stat.profileImage ? (
+                                                        <img src={stat.profileImage} alt={stat.name} className="h-14 w-14 rounded-2xl object-cover shadow-md border-2 border-white" />
+                                                    ) : (
+                                                        <div className="h-14 w-14 rounded-2xl bg-indigo-100 shadow-inner flex items-center justify-center text-indigo-700 font-black text-xl border-2 border-white">
+                                                            {stat.name.substring(0, 2).toUpperCase()}
+                                                        </div>
+                                                    )}
+                                                    <div>
+                                                        <p className="font-black text-lg text-slate-800 leading-tight group-hover:text-indigo-600 transition-colors">{stat.name}</p>
+                                                        <p className="text-[10px] uppercase font-black tracking-widest text-slate-400 mt-1">Técnico</p>
+                                                    </div>
+                                                </div>
+                                                <Badge variant="outline" className={cn(
+                                                    "border-none font-black px-3 py-1 text-sm shadow-sm",
+                                                    stat.percentage > 10 ? "bg-rose-100 text-rose-700" :
+                                                    stat.percentage > 5 ? "bg-amber-100 text-amber-700" :
+                                                    "bg-emerald-100 text-emerald-700"
+                                                )}>
+                                                    {stat.percentage}%
+                                                </Badge>
+                                            </div>
+                                            <div className="flex justify-between items-end bg-white p-3 rounded-2xl border border-slate-50">
+                                                <div>
+                                                    <p className="text-[10px] text-slate-400 font-black tracking-[0.2em] uppercase mb-1">Revisados</p>
+                                                    <p className="text-2xl font-black text-slate-800 tracking-tighter">{stat.totalReviewed}</p>
+                                                </div>
+                                                <div className="w-[1px] h-8 bg-slate-100 mx-4"></div>
+                                                <div className="text-right">
+                                                    <p className="text-[10px] text-slate-400 font-black tracking-[0.2em] uppercase mb-1">Penalidades</p>
+                                                    <p className="text-2xl font-black text-rose-600 tracking-tighter">{stat.totalPenalties}</p>
+                                                </div>
+                                            </div>
+                                            <div className="absolute bottom-0 left-0 h-1.5 bg-slate-200 w-full opacity-70">
+                                                <div className={cn(
+                                                    "h-full transition-all duration-1000 rounded-r-full",
+                                                    stat.percentage > 10 ? "bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.5)]" :
+                                                    stat.percentage > 5 ? "bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]" :
+                                                    "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"
+                                                )} style={{ width: `${Math.min(stat.percentage, 100)}%` }} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Right Side: Graph */}
+                            <div className="w-full lg:w-7/12 bg-slate-50/50 rounded-3xl border border-slate-100 flex flex-col items-center justify-center p-8 relative overflow-hidden group">
+                                <div className="absolute -mt-20 -mr-20 w-64 h-64 rounded-full bg-indigo-600 opacity-[0.03] group-hover:scale-125 transition-transform duration-700 top-0 right-0 pointer-events-none" />
+                                <h4 className="text-lg font-black tracking-tight text-slate-700 mb-8 w-full text-center uppercase tracking-[0.1em]">
+                                    Gráfica de Rechazo (%)
+                               </h4>
+                                <div className="w-full h-[400px]">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart 
+                                            data={data.technicianStats} 
+                                            margin={{ top: 20, right: 30, left: 0, bottom: 50 }}
+                                        >
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                            <XAxis 
+                                                dataKey="name" 
+                                                axisLine={false} 
+                                                tickLine={false} 
+                                                tick={{ fill: '#64748b', fontSize: 12, fontWeight: 700 }}
+                                                angle={-45}
+                                                textAnchor="end"
+                                                dy={10}
+                                            />
+                                            <YAxis 
+                                                axisLine={false} 
+                                                tickLine={false} 
+                                                tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 600 }}
+                                                tickFormatter={(value) => `${value}%`}
+                                            />
+                                            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
+                                            <Bar 
+                                                dataKey="percentage" 
+                                                radius={[8, 8, 8, 8]}
+                                                maxBarSize={60}
+                                            >
+                                                {data.technicianStats.map((entry: any, index: number) => (
+                                                    <Cell 
+                                                        key={`cell-${index}`} 
+                                                        fill={
+                                                            entry.percentage > 10 ? '#f43f5e' : 
+                                                            entry.percentage > 5 ? '#f59e0b' : 
+                                                            '#10b981'
+                                                        } 
+                                                    />
+                                                ))}
+                                            </Bar>
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>

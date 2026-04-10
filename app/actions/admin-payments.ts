@@ -595,6 +595,7 @@ export async function getAllPenalties() {
                 id: true,
                 name: true,
                 username: true,
+                profileImage: true,
                 _count: {
                     select: {
                         equipoHistorial: {
@@ -615,6 +616,7 @@ export async function getAllPenalties() {
             return {
                 id: u.id,
                 name: u.name || u.username,
+                profileImage: u.profileImage,
                 totalReviewed,
                 totalPenalties,
                 percentage: parseFloat(percentage)
