@@ -600,16 +600,37 @@ export async function getAllPenalties() {
                     select: {
                         equipoHistorial: {
                             where: { estado: "Revisado" }
-                        },
-                        penalidades: true
+                        }
                     }
                 }
             }
         });
 
+        const walletPenaltiesAgg = await prisma.walletTransaction.groupBy({
+            by: ['tecnicoId'],
+            where: {
+                tipo: { equals: "retiro", mode: "insensitive" },
+                descripcion: { contains: "penalidad", mode: "insensitive" }
+            },
+            _count: { id: true }
+        });
+
+        const walletReversionsAgg = await prisma.walletTransaction.groupBy({
+            by: ['tecnicoId'],
+            where: {
+                tipo: { equals: "ingreso", mode: "insensitive" },
+                descripcion: { contains: "penalidad", mode: "insensitive" }
+            },
+            _count: { id: true }
+        });
+
+        const walletPenaltiesMap = new Map(walletPenaltiesAgg.map(wp => [wp.tecnicoId, wp._count.id]));
+        const walletReversionsMap = new Map(walletReversionsAgg.map(wr => [wr.tecnicoId, wr._count.id]));
+
         const technicianStats = usersWithStats.map(u => {
-            const externalCount = externalPenalties.filter(ep => ep.culpable === u.name || ep.culpable === u.username).length;
-            const totalPenalties = u._count.penalidades + externalCount;
+            const applied = walletPenaltiesMap.get(u.id) || 0;
+            const reverted = walletReversionsMap.get(u.id) || 0;
+            const totalPenalties = Math.max(0, applied - reverted);
             const totalReviewed = u._count.equipoHistorial;
             const percentage = totalReviewed > 0 ? ((totalPenalties / totalReviewed) * 100).toFixed(2) : "0.00";
             
