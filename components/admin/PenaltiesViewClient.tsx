@@ -200,53 +200,88 @@ export function PenaltiesViewClient({ data }: { data: any }) {
                                 </div>
                             </div>
 
-                            {/* Right Side: Graph */}
-                            <div className="w-full lg:w-7/12 bg-slate-50/50 rounded-3xl border border-slate-100 flex flex-col items-center justify-center p-8 relative overflow-hidden group">
-                                <div className="absolute -mt-20 -mr-20 w-64 h-64 rounded-full bg-indigo-600 opacity-[0.03] group-hover:scale-125 transition-transform duration-700 top-0 right-0 pointer-events-none" />
-                                <h4 className="text-lg font-black tracking-tight text-slate-700 mb-8 w-full text-center uppercase tracking-[0.1em]">
-                                    Gráfica de Rechazo (%)
-                               </h4>
-                                <div className="w-full h-[400px]">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart 
-                                            data={data.technicianStats} 
-                                            margin={{ top: 20, right: 30, left: 0, bottom: 50 }}
-                                        >
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                                            <XAxis 
-                                                dataKey="name" 
-                                                axisLine={false} 
-                                                tickLine={false} 
-                                                tick={{ fill: '#64748b', fontSize: 12, fontWeight: 700 }}
-                                                angle={-45}
-                                                textAnchor="end"
-                                                dy={10}
-                                            />
-                                            <YAxis 
-                                                axisLine={false} 
-                                                tickLine={false} 
-                                                tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 600 }}
-                                                tickFormatter={(value) => `${value}%`}
-                                            />
-                                            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
-                                            <Bar 
-                                                dataKey="percentage" 
-                                                radius={[8, 8, 8, 8]}
-                                                maxBarSize={60}
+                            {/* Right Side: Graph & Top */}
+                            <div className="w-full lg:w-7/12 flex flex-col gap-6">
+                                {/* Graph */}
+                                <div className="bg-slate-50/50 rounded-3xl border border-slate-100 flex flex-col items-center justify-center p-8 relative overflow-hidden group w-full">
+                                    <div className="absolute -mt-20 -mr-20 w-64 h-64 rounded-full bg-indigo-600 opacity-[0.03] group-hover:scale-125 transition-transform duration-700 top-0 right-0 pointer-events-none" />
+                                    <h4 className="text-lg font-black tracking-tight text-slate-700 mb-8 w-full text-center uppercase tracking-[0.1em]">
+                                        Gráfica de Rechazo (%)
+                                    </h4>
+                                    <div className="w-full h-[300px]">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart 
+                                                data={data.technicianStats} 
+                                                margin={{ top: 20, right: 30, left: 0, bottom: 50 }}
                                             >
-                                                {data.technicianStats.map((entry: any, index: number) => (
-                                                    <Cell 
-                                                        key={`cell-${index}`} 
-                                                        fill={
-                                                            entry.percentage > 10 ? '#f43f5e' : 
-                                                            entry.percentage > 5 ? '#f59e0b' : 
-                                                            '#10b981'
-                                                        } 
-                                                    />
-                                                ))}
-                                            </Bar>
-                                        </BarChart>
-                                    </ResponsiveContainer>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                                <XAxis 
+                                                    dataKey="name" 
+                                                    axisLine={false} 
+                                                    tickLine={false} 
+                                                    tick={{ fill: '#64748b', fontSize: 12, fontWeight: 700 }}
+                                                    angle={-45}
+                                                    textAnchor="end"
+                                                    dy={10}
+                                                />
+                                                <YAxis 
+                                                    axisLine={false} 
+                                                    tickLine={false} 
+                                                    tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 600 }}
+                                                    tickFormatter={(value) => `${value}%`}
+                                                />
+                                                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
+                                                <Bar 
+                                                    dataKey="percentage" 
+                                                    radius={[8, 8, 8, 8]}
+                                                    maxBarSize={60}
+                                                >
+                                                    {data.technicianStats.map((entry: any, index: number) => (
+                                                        <Cell 
+                                                            key={`cell-${index}`} 
+                                                            fill={
+                                                                entry.percentage > 10 ? '#f43f5e' : 
+                                                                entry.percentage > 5 ? '#f59e0b' : 
+                                                                '#10b981'
+                                                            } 
+                                                        />
+                                                    ))}
+                                                </Bar>
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
+
+                                {/* Top Penalties */}
+                                <div className="bg-rose-50/50 rounded-3xl border border-rose-100 p-6 flex flex-col w-full relative overflow-hidden">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="p-2 bg-rose-100 text-rose-600 rounded-lg">
+                                            <ShieldAlert className="w-5 h-5" />
+                                        </div>
+                                        <h4 className="text-base font-black tracking-tight text-slate-800 uppercase tracking-widest">
+                                            Top Más Penalizados
+                                        </h4>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        {[...data.technicianStats].sort((a, b) => b.totalPenalties - a.totalPenalties).slice(0, 3).map((stat: any, index: number) => (
+                                            <div key={`top-${stat.id}`} className="bg-white p-4 rounded-2xl flex items-center gap-4 shadow-sm border border-rose-50">
+                                                <div className="text-3xl font-black text-rose-200">
+                                                    #{index + 1}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-bold text-slate-700 truncate">{stat.name}</p>
+                                                    <p className="text-xs font-black text-rose-600">{stat.totalPenalties} Penalidades</p>
+                                                </div>
+                                                {stat.profileImage ? (
+                                                    <img src={stat.profileImage} alt={stat.name} className="h-10 w-10 rounded-full object-cover shadow-sm border border-rose-100" />
+                                                ) : (
+                                                    <div className="h-10 w-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-700 font-black text-xs border border-rose-200">
+                                                        {stat.name.substring(0, 2).toUpperCase()}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         </div>
