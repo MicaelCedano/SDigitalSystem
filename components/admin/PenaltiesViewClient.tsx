@@ -34,6 +34,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export function PenaltiesViewClient({ data }: { data: any }) {
     const router = useRouter();
     const [searchTerm, setSearchTerm] = useState("");
+    const [selectedTechnician, setSelectedTechnician] = useState<string | null>(null);
 
     const allPenalties = [
         ...data.penalties,
@@ -42,6 +43,11 @@ export function PenaltiesViewClient({ data }: { data: any }) {
 
     const filteredPenalties = allPenalties.filter((p: any) => {
         const tecnicoName = (p.tecnico?.name || p.tecnico?.username || p.culpable || "").toLowerCase();
+        
+        if (selectedTechnician && !tecnicoName.includes(selectedTechnician.toLowerCase())) {
+            return false;
+        }
+
         const imei = (p.equipo?.imei || p.imei || "").toLowerCase();
         const motivo = (p.motivo || "").toLowerCase();
         const search = searchTerm.toLowerCase();
@@ -150,9 +156,18 @@ export function PenaltiesViewClient({ data }: { data: any }) {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4 overflow-y-auto max-h-[500px] pr-2 custom-scrollbar">
+                                <div className="flex flex-col gap-4 overflow-y-auto max-h-[500px] pr-2 custom-scrollbar">
                                     {data.technicianStats.map((stat: any) => (
-                                        <div key={stat.id} className="relative overflow-hidden p-5 rounded-3xl border border-slate-100 bg-slate-50/70 hover:bg-white hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+                                        <div 
+                                            key={stat.id} 
+                                            onClick={() => setSelectedTechnician(selectedTechnician === stat.name ? null : stat.name)}
+                                            className={cn(
+                                                "relative overflow-hidden p-5 rounded-3xl border transition-all duration-300 group shrink-0 w-full cursor-pointer",
+                                                selectedTechnician === stat.name 
+                                                    ? "bg-white border-indigo-500 shadow-lg ring-2 ring-indigo-500/20 scale-[1.02]" 
+                                                    : "border-slate-100 bg-slate-50/70 hover:bg-white hover:shadow-xl hover:-translate-y-1"
+                                            )}
+                                        >
                                             <div className="flex justify-between items-start mb-4">
                                                 <div className="flex items-center gap-4">
                                                     {stat.profileImage ? (
@@ -182,7 +197,7 @@ export function PenaltiesViewClient({ data }: { data: any }) {
                                                     <p className="text-2xl font-black text-slate-800 tracking-tighter">{stat.totalReviewed}</p>
                                                 </div>
                                                 <div className="w-[1px] h-8 bg-slate-100 mx-4"></div>
-                                                <div className="text-right">
+                                                <div className="text-center w-24">
                                                     <p className="text-[10px] text-slate-400 font-black tracking-[0.2em] uppercase mb-1">Penalidades</p>
                                                     <p className="text-2xl font-black text-rose-600 tracking-tighter">{stat.totalPenalties}</p>
                                                 </div>
