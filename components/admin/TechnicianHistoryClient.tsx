@@ -11,6 +11,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface TechnicianHistoryClientProps {
     data: any;
@@ -39,36 +41,86 @@ export function TechnicianHistoryClient({ data }: TechnicianHistoryClientProps) 
     };
 
     const handleExport = () => {
-        const headers = ["Fecha", "Hora", "Tipo", "Concepto", "Lote ID", "Monto", "Estado"];
-        const rows = filteredTransactions.map((t: any) => {
+        const doc = new jsPDF();
+        
+        doc.setFontSize(22);
+        doc.setTextColor(30, 41, 59); // slate-800
+        doc.text(`Historial de Pagos`, 14, 22);
+        
+        doc.setFontSize(14);
+        doc.setTextColor(79, 70, 229); // indigo-600
+        doc.text(`${tecnico.name || tecnico.username}`, 14, 30);
+        
+        doc.setFontSize(10);
+        doc.setTextColor(100, 116, 139); // slate-500
+        doc.text(`Fecha de reporte: ${new Date().toLocaleDateString()}`, 14, 38);
+        doc.text(`Balance Total: RD$ ${wallet?.saldo?.toLocaleString() || '0'}`, 14, 43);
+
+        const tableColumn = ["Fecha", "Hora", "Tipo", "Concepto / Detalle", "Monto (RD$)", "Estado"];
+        const tableRows: any[] = [];
+
+        filteredTransactions.forEach((t: any) => {
             const fecha = new Date(t.fecha).toLocaleDateString();
             const hora = new Date(t.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const desc = (t.descripcion || 'Sin descripción').replace(/,/g, ' -').replace(/"/g, '""');
             const isIngreso = t.tipo.toLowerCase().includes('ingreso');
-            const montoStr = `${isIngreso ? '+' : '-'}RD$ ${t.monto}`;
+            const montoStr = `${isIngreso ? '+' : '-'}RD$ ${t.monto.toLocaleString()}`;
             
-            return [
+            tableRows.push([
                 fecha,
                 hora,
                 t.tipo,
-                `"${desc}"`,
-                t.loteId || '',
-                `"${montoStr}"`,
+                t.descripcion || 'Sin descripción',
+                montoStr,
                 t.estado
-            ].join(',');
+            ]);
         });
-        
-        const csvContent = "data:text/csv;charset=utf-8,\uFEFF" 
-            + headers.join(',') + "\n" 
-            + rows.join('\n');
-            
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `historial_pagos_${tecnico.username}_${new Date().toISOString().split('T')[0]}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+
+        autoTable(doc, {
+            startY: 50,
+            head: [tableColumn],
+            body: tableRows,
+            theme: 'grid',
+            headStyles: { 
+                fillColor: [79, 70, 229],
+                textColor: [255, 255, 255],
+                fontStyle: 'bold',
+                fontSize: 10
+            },
+            alternateRowStyles: {
+                fillColor: [248, 250, 252]
+            },
+            styles: {
+                fontSize: 9,
+                cellPadding: 4,
+            },
+            didParseCell: function(data) {
+                if (data.section === 'body') {
+                    const isIngreso = data.row.raw[2].toString().toLowerCase().includes('ingreso');
+                    const estado = data.row.raw[5];
+
+                    if (data.column.index === 4) { // Monto
+                        data.cell.styles.textColor = isIngreso ? [5, 150, 105] : [225, 29, 72];
+                        data.cell.styles.fontStyle = 'bold';
+                    }
+                    if (data.column.index === 2) { // Tipo
+                        data.cell.styles.textColor = isIngreso ? [5, 150, 105] : [225, 29, 72];
+                        data.cell.styles.fontStyle = 'bold';
+                    }
+                    if (data.column.index === 5) { // Estado
+                        if (estado === 'Completado' || estado === 'Aprobado') {
+                            data.cell.styles.textColor = [5, 150, 105];
+                        } else if (estado === 'Rechazado' || estado === 'Cancelado') {
+                            data.cell.styles.textColor = [225, 29, 72];
+                        } else {
+                            data.cell.styles.textColor = [217, 119, 6];
+                        }
+                        data.cell.styles.fontStyle = 'bold';
+                    }
+                }
+            }
+        });
+
+        doc.save(`Pagos_${tecnico.username}_${new Date().toISOString().split('T')[0]}.pdf`);
     };
 
     return (
