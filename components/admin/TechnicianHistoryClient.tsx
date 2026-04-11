@@ -48,7 +48,11 @@ export function TechnicianHistoryClient({ data }: TechnicianHistoryClientProps) 
         let subtitleText = `Fecha de reporte: ${new Date().toLocaleDateString()}`;
         
         if (type === 'last_withdrawal') {
-            const lastRetiro = allTransactions.find((t: any) => t.tipo.toLowerCase().includes('retiro') && (t.estado === 'Aprobado' || t.estado === 'Completado'));
+            const lastRetiro = allTransactions.find((t: any) => 
+                t.tipo.toLowerCase().includes('retiro') && 
+                !(t.descripcion || '').toLowerCase().includes('penalidad') &&
+                (t.estado === 'Aprobado' || t.estado === 'Completado')
+            );
             if (lastRetiro) {
                 const lastRetiroTime = new Date(lastRetiro.fecha).getTime();
                 exportTransactions = filteredTransactions.filter((t: any) => new Date(t.fecha).getTime() >= lastRetiroTime);
