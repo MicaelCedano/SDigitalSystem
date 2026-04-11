@@ -13,6 +13,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface TechnicianHistoryClientProps {
     data: any;
@@ -40,8 +41,20 @@ export function TechnicianHistoryClient({ data }: TechnicianHistoryClientProps) 
         });
     };
 
-    const handleExport = () => {
+    const handleExport = (type: 'all' | 'last_withdrawal') => {
         const doc = new jsPDF();
+        
+        let exportTransactions = filteredTransactions;
+        let subtitleText = `Fecha de reporte: ${new Date().toLocaleDateString()}`;
+        
+        if (type === 'last_withdrawal') {
+            const lastRetiro = allTransactions.find((t: any) => t.tipo.toLowerCase().includes('retiro') && (t.estado === 'Aprobado' || t.estado === 'Completado'));
+            if (lastRetiro) {
+                const lastRetiroTime = new Date(lastRetiro.fecha).getTime();
+                exportTransactions = filteredTransactions.filter((t: any) => new Date(t.fecha).getTime() >= lastRetiroTime);
+                subtitleText += ` (Desde ${new Date(lastRetiro.fecha).toLocaleDateString()})`;
+            }
+        }
         
         doc.setFontSize(22);
         doc.setTextColor(30, 41, 59); // slate-800
@@ -53,13 +66,13 @@ export function TechnicianHistoryClient({ data }: TechnicianHistoryClientProps) 
         
         doc.setFontSize(10);
         doc.setTextColor(100, 116, 139); // slate-500
-        doc.text(`Fecha de reporte: ${new Date().toLocaleDateString()}`, 14, 38);
+        doc.text(subtitleText, 14, 38);
         doc.text(`Balance Total: RD$ ${wallet?.saldo?.toLocaleString() || '0'}`, 14, 43);
 
         const tableColumn = ["Fecha", "Hora", "Tipo", "Concepto / Detalle", "Monto (RD$)", "Estado"];
         const tableRows: any[] = [];
 
-        filteredTransactions.forEach((t: any) => {
+        exportTransactions.forEach((t: any) => {
             const fecha = new Date(t.fecha).toLocaleDateString();
             const hora = new Date(t.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const isIngreso = t.tipo.toLowerCase().includes('ingreso');
@@ -143,9 +156,21 @@ export function TechnicianHistoryClient({ data }: TechnicianHistoryClientProps) 
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <Button onClick={handleExport} variant="outline" className="rounded-2xl font-black text-xs uppercase tracking-widest bg-white border-slate-100 hover:bg-slate-50 transition-colors">
-                        <Download className="w-4 h-4 mr-2" /> Exportar
-                    </Button>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="rounded-2xl font-black text-xs uppercase tracking-widest bg-white border-slate-100 hover:bg-slate-50 transition-colors">
+                                <Download className="w-4 h-4 mr-2" /> Exportar
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-64 rounded-2xl border-slate-100 shadow-xl p-2">
+                            <DropdownMenuItem onClick={() => handleExport('all')} className="font-bold text-slate-700 cursor-pointer rounded-xl p-3 focus:bg-slate-50">
+                                Todo el Historial
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleExport('last_withdrawal')} className="font-bold text-indigo-700 cursor-pointer rounded-xl p-3 focus:bg-indigo-50 focus:text-indigo-800">
+                                Periodo Actual (Desde último retiro)
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                     <Badge className="bg-indigo-50 text-indigo-700 border-indigo-100 px-4 py-2 rounded-xl font-black text-[10px] uppercase">
                         ID: {tecnico.id}
                     </Badge>
