@@ -95,8 +95,9 @@ export function TechnicianHistoryClient({ data }: TechnicianHistoryClientProps) 
             },
             didParseCell: function(data) {
                 if (data.section === 'body') {
-                    const isIngreso = data.row.raw[2].toString().toLowerCase().includes('ingreso');
-                    const estado = data.row.raw[5];
+                    const rawRow = data.row.raw as any[];
+                    const isIngreso = rawRow[2] ? rawRow[2].toString().toLowerCase().includes('ingreso') : false;
+                    const estado = rawRow[5];
 
                     if (data.column.index === 4) { // Monto
                         data.cell.styles.textColor = isIngreso ? [5, 150, 105] : [225, 29, 72];
