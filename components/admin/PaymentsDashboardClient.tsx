@@ -875,15 +875,26 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
                                     <span className="text-lg font-black text-indigo-600">RD$ {300 * cantidadBici}</span>
                                 </Button>
                             </div>
-                            <Button
-                                onClick={() => handleAccreditation(2000, "Pago de Viaje")}
-                                disabled={isProcessing}
-                                variant="outline"
-                                className="h-16 rounded-2xl border-emerald-100 bg-emerald-50/50 hover:bg-emerald-100 flex flex-col items-center justify-center gap-1 group transition-all"
-                            >
-                                <span className="text-[10px] font-black uppercase text-emerald-400 group-hover:text-emerald-600 transition-colors">Viaje</span>
-                                <span className="text-lg font-black text-emerald-600">RD$ 2,000</span>
-                            </Button>
+                            <div className="flex gap-2">
+                                <Button
+                                    onClick={() => handleAccreditation(2000, "Pago de Viaje")}
+                                    disabled={isProcessing}
+                                    variant="outline"
+                                    className="h-16 flex-1 rounded-2xl border-emerald-100 bg-emerald-50/50 hover:bg-emerald-100 flex flex-col items-center justify-center gap-1 group transition-all px-1"
+                                >
+                                    <span className="text-[10px] font-black uppercase text-emerald-400 group-hover:text-emerald-600 transition-colors">Viaje</span>
+                                    <span className="text-sm font-black text-emerald-600">RD$ 2K</span>
+                                </Button>
+                                <Button
+                                    onClick={() => handleAccreditation(3000, "Pago de Viaje")}
+                                    disabled={isProcessing}
+                                    variant="outline"
+                                    className="h-16 flex-1 rounded-2xl border-emerald-100 bg-emerald-50/50 hover:bg-emerald-100 flex flex-col items-center justify-center gap-1 group transition-all px-1"
+                                >
+                                    <span className="text-[10px] font-black uppercase text-emerald-400 group-hover:text-emerald-600 transition-colors">Viaje</span>
+                                    <span className="text-sm font-black text-emerald-600">RD$ 3K</span>
+                                </Button>
+                            </div>
                         </div>
 
                         <div className="relative">

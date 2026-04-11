@@ -38,6 +38,39 @@ export function TechnicianHistoryClient({ data }: TechnicianHistoryClientProps) 
         });
     };
 
+    const handleExport = () => {
+        const headers = ["Fecha", "Hora", "Tipo", "Concepto", "Lote ID", "Monto", "Estado"];
+        const rows = filteredTransactions.map((t: any) => {
+            const fecha = new Date(t.fecha).toLocaleDateString();
+            const hora = new Date(t.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const desc = (t.descripcion || 'Sin descripción').replace(/,/g, ' -').replace(/"/g, '""');
+            const isIngreso = t.tipo.toLowerCase().includes('ingreso');
+            const montoStr = `${isIngreso ? '+' : '-'}RD$ ${t.monto}`;
+            
+            return [
+                fecha,
+                hora,
+                t.tipo,
+                `"${desc}"`,
+                t.loteId || '',
+                `"${montoStr}"`,
+                t.estado
+            ].join(',');
+        });
+        
+        const csvContent = "data:text/csv;charset=utf-8,\uFEFF" 
+            + headers.join(',') + "\n" 
+            + rows.join('\n');
+            
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `historial_pagos_${tecnico.username}_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     return (
         <div className="space-y-8 animate-in fade-in duration-700 pb-20">
             {/* Header / Navigation */}
@@ -57,7 +90,7 @@ export function TechnicianHistoryClient({ data }: TechnicianHistoryClientProps) 
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <Button variant="outline" className="rounded-2xl font-black text-xs uppercase tracking-widest bg-white border-slate-100">
+                    <Button onClick={handleExport} variant="outline" className="rounded-2xl font-black text-xs uppercase tracking-widest bg-white border-slate-100 hover:bg-slate-50 transition-colors">
                         <Download className="w-4 h-4 mr-2" /> Exportar
                     </Button>
                     <Badge className="bg-indigo-50 text-indigo-700 border-indigo-100 px-4 py-2 rounded-xl font-black text-[10px] uppercase">
