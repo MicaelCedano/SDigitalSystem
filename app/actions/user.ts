@@ -20,6 +20,15 @@ export async function createUser(formData: FormData) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Seleccionar un avatar genérico al azar
+    const defaultAvatars = [
+        "default_avatar_1.png",
+        "default_avatar_2.png",
+        "default_avatar_3.png",
+        "default_avatar_4.png"
+    ];
+    const randomAvatar = defaultAvatars[Math.floor(Math.random() * defaultAvatars.length)];
+
     try {
         await prisma.user.create({
             data: {
@@ -28,6 +37,7 @@ export async function createUser(formData: FormData) {
                 email: email && email.trim() !== "" ? email : null,
                 passwordHash: hashedPassword,
                 role: role || "tecnico",
+                profileImage: randomAvatar,
             },
         });
         revalidatePath("/users");
