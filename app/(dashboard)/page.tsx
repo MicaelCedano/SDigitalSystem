@@ -167,7 +167,17 @@ export default async function Home() {
     });
 
     const equipoActual = latestHistory?.equipo;
-    const isLive = latestHistory?.estado === "Revisando";
+    
+    // Validación para actividad en tiempo real:
+    // 1. El último estado debe ser "Revisando"
+    // 2. El equipo aún debe estar asignado a este usuario
+    // 3. El estado del equipo debe seguir siendo "En Revisión" (no "Revisado" o "Entregado")
+    // 4. Para evitar sesiones huérfanas de días anteriores, verificamos que no hayan pasado más de 8 horas.
+    const isLive = latestHistory?.estado === "Revisando" && 
+                   equipoActual?.userId === user.id &&
+                   equipoActual?.estado === "En Revisión" &&
+                   latestHistory?.fecha &&
+                   ((new Date().getTime() - new Date(latestHistory.fecha).getTime()) < 1000 * 60 * 60 * 8);
 
     if (asignados === 0 && !isLive) return null;
 
