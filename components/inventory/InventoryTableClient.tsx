@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -53,8 +53,13 @@ export function InventoryTableClient({
     const [isAssigning, setIsAssigning] = useState(false);
 
     // Sync search input with URL query prop
+    const lastPushedQuery = useRef(query);
+
     useEffect(() => {
-        setSearchTerm(query);
+        if (query !== lastPushedQuery.current) {
+            setSearchTerm(query);
+            lastPushedQuery.current = query;
+        }
     }, [query]);
 
     const [isSearching, startTransition] = useTransition();
@@ -66,18 +71,22 @@ export function InventoryTableClient({
 
         const timer = setTimeout(() => {
             startTransition(() => {
-                // If it's a completely new term, reset to page 1
-                router.push(`?q=${searchTerm.trim()}&page=1`);
+                const newQuery = searchTerm.trim();
+                lastPushedQuery.current = newQuery;
+                router.push(`?q=${newQuery}&page=1`);
             });
-        }, 300); // 300ms debounce for fast but un-spammy typing
+        }, 400); // 400ms debounce for smoother typing
 
         return () => clearTimeout(timer);
-    }, [searchTerm, query, router]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchTerm]); 
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         startTransition(() => {
-            router.push(`?q=${searchTerm.trim()}&page=1`);
+            const newQuery = searchTerm.trim();
+            lastPushedQuery.current = newQuery;
+            router.push(`?q=${newQuery}&page=1`);
         });
     };
 
