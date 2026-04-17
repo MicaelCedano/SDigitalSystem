@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef } from "react";
 import {
     Users, Smartphone, Loader2, AlertCircle,
-    CheckCircle2, XCircle, Clock, Send, Copy
+    CheckCircle2, XCircle, Clock, Send, Copy, ClipboardList
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
