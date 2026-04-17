@@ -12,6 +12,7 @@ import {
 import { getQCUsers } from "@/app/actions/equipment";
 import Link from "next/link";
 import ManualAssignmentClient from "@/components/qc/ManualAssignmentClient";
+import prisma from "@/lib/prisma";
 
 export default async function ManualAssignPage() {
     const session = await getServerSession(authOptions);
