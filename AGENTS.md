@@ -22,6 +22,8 @@ Seguimos el sistema de diseño **"Glassy-Solid Hybrid"**.
 - [x] **Ajuste de Pagos de Técnicos**: Se implementó la capacidad de ajustar el monto por equipo durante el proceso de aprobación de reportes de trabajo, permitiendo pagos personalizados y automáticos.
 - [x] **Rediseño Premium de Aprobación**: Se rediseñó el modal de aprobación de lotes con una estética premium, incluyendo balance en tiempo real y mejor visualización de equipos.
 - [x] **Gestión Rápida de Tarifas**: Se añadió una sección en el dashboard principal para ver el balance y ajustar la tarifa de cada técnico de forma directa.
+- [x] **Simplificación de Aprobación**: Se eliminó la opción de "Forzar Aprobación" para lotes abiertos. Ahora solo se permite "Aceptar" cuando el lote está en estado "Pendiente" (terminado).
+- [x] **Limpieza de Dashboard**: Se movieron los botones de acción de lotes (Aceptar, Devolver, Cancelar) del dashboard principal al modal de "Ver Detalles" para evitar saturación visual.
 
 ## 📌 Pendientes
 - Revisar consistencia de otros modales del dashboard.

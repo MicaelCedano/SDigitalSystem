@@ -21,6 +21,8 @@ import {
 
 import { useState, useMemo } from "react";
 
+import { LoteActionButtons } from "./LoteActionButtons";
+
 interface LoteDetailsModalProps {
     lote: any;
 }
@@ -125,6 +127,16 @@ export function LoteDetailsModal({ lote }: LoteDetailsModalProps) {
                                 ))}
                             </TableBody>
                         </Table>
+                    <div className="mt-8 pt-6 border-t border-slate-100">
+                        <div className="flex flex-col gap-1 mb-4">
+                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Acciones Administrativas</h4>
+                            <p className="text-[11px] text-slate-400 px-1">Gestiona el estado y aprobación de este lote.</p>
+                        </div>
+                        <LoteActionButtons 
+                            loteId={lote.id} 
+                            loteCodigo={lote.codigo} 
+                            estado={lote.estado} 
+                        />
                     </div>
                 </div>
             </DialogContent>

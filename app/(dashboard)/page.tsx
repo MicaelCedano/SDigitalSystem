@@ -472,8 +472,6 @@ export default async function Home() {
                             <LoteDetailsModal lote={lote} />
                           </div>
                         </div>
-
-                        <LoteActionButtons loteId={lote.id} loteCodigo={lote.codigo} estado={lote.estado} />
                       </div>
                     </CardContent>
                   </Card>

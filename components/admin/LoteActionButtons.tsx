@@ -78,19 +78,21 @@ export function LoteActionButtons({ loteId, loteCodigo, estado }: LoteActionButt
     return (
         <div className="flex flex-col gap-2 mt-4">
             <div className="flex items-center gap-2">
-                <Button
-                    onClick={handleApprove}
-                    disabled={loading !== null}
-                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-9 rounded-xl shadow-sm"
-                >
-                    {loading === "approve" ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                        <>
-                            <Check className="mr-2 h-4 w-4" /> {isAbierto ? 'Forzar Aprobación' : 'Aceptar'}
-                        </>
-                    )}
-                </Button>
+                {!isAbierto && (
+                    <Button
+                        onClick={handleApprove}
+                        disabled={loading !== null}
+                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-9 rounded-xl shadow-sm"
+                    >
+                        {loading === "approve" ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                            <>
+                                <Check className="mr-2 h-4 w-4" /> Aceptar
+                            </>
+                        )}
+                    </Button>
+                )}
 
                 {!isAbierto && (
                     <Button
@@ -121,26 +123,26 @@ export function LoteActionButtons({ loteId, loteCodigo, estado }: LoteActionButt
                             <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
                             <>
-                                <Trash2 className="mr-2 h-4 w-4" /> Eliminar Lote (Desasignar)
+                                <Trash2 className="mr-2 h-4 w-4" /> Cancelar Lote (Desasignar)
                             </>
                         )}
                     </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent className="rounded-3xl border-none shadow-2xl">
                     <AlertDialogHeader>
-                        <AlertDialogTitle className="text-xl font-black text-slate-800 tracking-tight">¿Eliminar Lote?</AlertDialogTitle>
+                        <AlertDialogTitle className="text-xl font-black text-slate-800 tracking-tight">¿Cancelar Lote?</AlertDialogTitle>
                         <AlertDialogDescription className="text-slate-500 font-medium">
                             Esta acción desasignará todos los equipos del técnico y los devolverá al inventario con estado "En Inventario". 
                             No se puede deshacer.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="gap-2">
-                        <AlertDialogCancel className="rounded-2xl font-bold border-slate-200 text-slate-500 h-12">Cancelar</AlertDialogCancel>
+                        <AlertDialogCancel className="rounded-2xl font-bold border-slate-200 text-slate-500 h-10">Volver</AlertDialogCancel>
                         <AlertDialogAction 
                             onClick={handleCancel}
-                            className="rounded-2xl font-black bg-rose-600 hover:bg-rose-700 text-white h-12 px-6 shadow-lg shadow-rose-200"
+                            className="rounded-2xl font-black bg-rose-600 hover:bg-rose-700 text-white h-10 px-6 shadow-lg shadow-rose-200"
                         >
-                            Sí, Eliminar y Desasignar
+                            Sí, Cancelar y Desasignar
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
