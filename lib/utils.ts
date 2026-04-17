@@ -23,5 +23,18 @@ export function formatDateTime(date: Date | string | null | undefined) {
 export function getProfileImageUrl(image: string | null | undefined) {
   if (!image) return null;
   if (image.startsWith('http')) return image;
-  return `/profile_images/${image}`;
+  
+  // Si ya tiene el path completo o empieza con /, lo devolvemos tal cual
+  if (image.startsWith('/profile_images/')) return image;
+  if (image.startsWith('profile_images/')) return `/${image}`;
+  
+  // Si empieza con public/, se lo quitamos
+  if (image.startsWith('public/')) {
+    const cleaned = image.replace('public/', '/');
+    return cleaned.startsWith('//') ? cleaned.substring(1) : cleaned;
+  }
+
+  // Caso base: añadir el prefijo
+  const cleanedImage = image.startsWith('/') ? image.substring(1) : image;
+  return `/profile_images/${cleanedImage}`;
 }

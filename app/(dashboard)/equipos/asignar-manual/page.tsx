@@ -20,7 +20,14 @@ export default async function ManualAssignPage() {
         redirect("/");
     }
 
-    const qcUsers = await getQCUsers();
+    const [qcUsers, availableEquipments] = await Promise.all([
+        getQCUsers(),
+        prisma.equipo.findMany({
+            where: { estado: 'En Inventario' },
+            include: { deviceModel: true },
+            orderBy: { fechaIngreso: 'desc' }
+        })
+    ]);
 
     return (
         <div className="flex-1 space-y-8 relative z-10 pb-10">
@@ -54,7 +61,10 @@ export default async function ManualAssignPage() {
                 </div>
             </div>
 
-            <ManualAssignmentClient qcUsers={qcUsers} />
+            <ManualAssignmentClient 
+                qcUsers={qcUsers} 
+                availableEquipments={availableEquipments} 
+            />
         </div>
     );
 }
