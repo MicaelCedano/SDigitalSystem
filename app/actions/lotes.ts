@@ -246,3 +246,67 @@ export async function rejectLote(loteId: number) {
         return { success: false, error: error.message };
     }
 }
+
+/**
+ * Admin cancels a lot entirely, returning equipments to inventory
+ */
+export async function cancelLote(loteId: number) {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== 'admin') return { success: false, error: "No autorizado" };
+
+    try {
+        const lote = await prisma.lote.findUnique({
+            where: { id: loteId },
+            include: { equipos: true }
+        });
+
+        if (!lote) return { success: false, error: "Lote no encontrado" };
+
+        await prisma.$transaction(async (tx) => {
+            // 1. Return all equipments to "En Inventario" and clear assignment
+            const equipmentIds = lote.equipos.map(e => e.id);
+            
+            if (equipmentIds.length > 0) {
+                await tx.equipo.updateMany({
+                    where: { id: { in: equipmentIds } },
+                    data: {
+                        estado: 'En Inventario',
+                        userId: null,
+                        loteId: null
+                    }
+                });
+
+                // 2. Create history entries
+                const historyEntries = equipmentIds.map(id => ({
+                    equipoId: id,
+                    fecha: new Date(),
+                    estado: 'En Inventario',
+                    userId: Number(session.user.id),
+                    observacion: `Lote ${lote.codigo} cancelado por Administrador. Regresa a inventario.`
+                }));
+
+                await tx.equipoHistorial.createMany({
+                    data: historyEntries
+                });
+            }
+
+            // 3. Delete the lot
+            await tx.lote.delete({
+                where: { id: loteId }
+            });
+
+            // 4. Also delete related notifications for this lot code if any
+            await tx.notification.deleteMany({
+                where: { loteCodigo: lote.codigo }
+            });
+        });
+
+        revalidatePath("/");
+        revalidatePath("/qc");
+        revalidatePath("/equipos");
+        return { success: true };
+    } catch (error: any) {
+        console.error("Error canceling lote:", error);
+        return { success: false, error: error.message };
+    }
+}

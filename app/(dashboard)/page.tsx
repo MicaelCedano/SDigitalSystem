@@ -61,7 +61,7 @@ export default async function Home() {
     prisma.equipo.count({ where: { estado: "En Inventario" } }),
     prisma.equipo.count({ where: { estado: "En Revisión" } }),
     prisma.equipo.count({ where: { estado: "Revisado" } }),
-    prisma.lote.count({ where: { estado: "Pendiente" } }),
+    prisma.lote.count({ where: { estado: { in: ["Pendiente", "Abierto"] } } }),
     prisma.lote.count({ where: { estado: "Listo para Entrega" } }),
     isAdmin ? getTrabajosPendientesAprobacion() : Promise.resolve([])
   ]);
@@ -77,7 +77,7 @@ export default async function Home() {
 
   // Get lotes if admin
   const lotesToReview = (isAdmin ? await prisma.lote.findMany({
-    where: { estado: { in: ["Pendiente", "Listo para Entrega"] } },
+    where: { estado: { in: ["Abierto", "Pendiente", "Listo para Entrega"] } },
     include: {
       tecnico: true,
       equipos: {
@@ -420,7 +420,7 @@ export default async function Home() {
       {isAdmin && (
         <section id="lotes-recientes" className="mt-8 animate-in slide-in-from-left-4 duration-500 scroll-mt-24">
           <div className="flex items-center gap-2 mb-4">
-            <h3 className="text-xl font-bold text-slate-800">Lotes Pendientes de Aprobación</h3>
+            <h3 className="text-xl font-bold text-slate-800">Lotes Activos y Pendientes</h3>
           </div>
 
           {lotesToReview.length > 0 ? (
@@ -441,6 +441,7 @@ export default async function Home() {
                         </div>
                         <div className={cn(
                           "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide",
+                          lote.estado === "Abierto" ? "bg-indigo-100 text-indigo-700" :
                           lote.estado === "Pendiente" ? "bg-amber-100 text-amber-700" : "bg-purple-100 text-purple-700"
                         )}>
                           {lote.estado}
@@ -472,7 +473,7 @@ export default async function Home() {
                           </div>
                         </div>
 
-                        <LoteActionButtons loteId={lote.id} loteCodigo={lote.codigo} />
+                        <LoteActionButtons loteId={lote.id} loteCodigo={lote.codigo} estado={lote.estado} />
                       </div>
                     </CardContent>
                   </Card>
@@ -483,7 +484,7 @@ export default async function Home() {
             <Card className="border-none shadow-sm bg-slate-50 border border-slate-100">
               <CardContent className="p-8 text-center">
                 <Package className="h-10 w-10 text-slate-300 mx-auto mb-3" />
-                <p className="text-slate-500 font-medium">No hay lotes pendientes de aprobación en este momento.</p>
+                <p className="text-slate-500 font-medium">No hay lotes activos o pendientes en este momento.</p>
               </CardContent>
             </Card>
           )}
