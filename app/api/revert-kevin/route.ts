@@ -50,62 +50,86 @@ export async function GET() {
         const kevinId = latestLote.tecnicoId;
 
         await prisma.$transaction(async (tx) => {
-            // 1. Revert Lote Status
-            await tx.lote.update({
-                where: { id: latestLote.id },
-                data: { estado: 'Abierto' }
+            // 1. Get the Lote ID first to handle payment reversal
+            const firstEq = await tx.equipo.findFirst({
+                where: { imei: { in: imeis } },
+                select: { loteId: true }
             });
 
-            // 2. Revert Equipments Status
-            await tx.equipo.updateMany({
-                where: { loteId: latestLote.id },
-                data: { 
-                    estado: 'En Revisión',
-                    userId: kevinId 
-                }
-            });
+            if (firstEq?.loteId) {
+                // 2. Revert Payment if exists
+                const lastTransaction = await tx.walletTransaction.findFirst({
+                    where: { 
+                        loteId: firstEq.loteId,
+                        tipo: 'ingreso'
+                    },
+                    orderBy: { id: 'desc' }
+                });
 
-            // 3. Revert Payment
-            const lastTransaction = await tx.walletTransaction.findFirst({
-                where: { 
-                    loteId: latestLote.id,
-                    tipo: 'ingreso'
-                },
-                orderBy: { id: 'desc' }
-            });
+                if (lastTransaction) {
+                    await tx.walletTransaction.delete({ where: { id: lastTransaction.id } });
 
-            if (lastTransaction) {
-                await tx.walletTransaction.delete({ where: { id: lastTransaction.id } });
-
-                const wallet = await tx.wallet.findFirst({ where: { tecnicoId: kevinId } });
-                if (wallet) {
-                    await tx.wallet.update({
-                        where: { id: wallet.id },
-                        data: { saldo: { decrement: lastTransaction.monto } }
-                    });
-
-                    const account = await tx.walletAccount.findFirst({ where: { walletId: wallet.id, nombre: 'Principal' } });
-                    if (account) {
-                        await tx.walletAccount.update({
-                            where: { id: account.id },
+                    const wallet = await tx.wallet.findFirst({ where: { tecnicoId: kevinId } });
+                    if (wallet) {
+                        await tx.wallet.update({
+                            where: { id: wallet.id },
                             data: { saldo: { decrement: lastTransaction.monto } }
                         });
+
+                        const account = await tx.walletAccount.findFirst({ where: { walletId: wallet.id, nombre: 'Principal' } });
+                        if (account) {
+                            await tx.walletAccount.update({
+                                where: { id: account.id },
+                                data: { saldo: { decrement: lastTransaction.monto } }
+                            });
+                        }
                     }
                 }
-            }
 
-            // 4. Delete auto-generated history entries
-            await tx.equipoHistorial.deleteMany({
-                where: { 
-                    loteId: latestLote.id,
-                    observacion: { contains: 'aprobado por Administrador' }
-                }
-            });
+                // 3. Move Equipments to Inventory
+                await tx.equipo.updateMany({
+                    where: { imei: { in: imeis } },
+                    data: { 
+                        estado: 'En Inventario',
+                        userId: null,
+                        loteId: null,
+                        funcionalidad: null,
+                        grado: null,
+                        observacion: null
+                    }
+                });
+
+                // 4. Delete the Lote if it was for these equipments
+                await tx.lote.delete({
+                    where: { id: firstEq.loteId }
+                });
+
+                // 5. Delete auto-generated history entries
+                await tx.equipoHistorial.deleteMany({
+                    where: { 
+                        loteId: firstEq.loteId,
+                        observacion: { contains: 'aprobado por Administrador' }
+                    }
+                });
+            } else {
+                // Just in case they are already unassigned but not in the right state
+                await tx.equipo.updateMany({
+                    where: { imei: { in: imeis } },
+                    data: { 
+                        estado: 'En Inventario',
+                        userId: null,
+                        loteId: null,
+                        funcionalidad: null,
+                        grado: null,
+                        observacion: null
+                    }
+                });
+            }
         });
 
         return NextResponse.json({ 
             success: true, 
-            message: `Lote ${latestLote.codigo} de ${latestLote.tecnico.name || latestLote.tecnico.username} revertido correctamente.`,
+            message: `${imeis.length} equipos puestos en Inventario correctamente. El lote anterior ha sido eliminado y el pago revertido.`,
             count: imeis.length
         });
     } catch (error: any) {
