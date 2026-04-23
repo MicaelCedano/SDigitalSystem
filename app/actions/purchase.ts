@@ -74,6 +74,9 @@ export async function createPurchase(data: z.infer<typeof CreatePurchaseSchema>)
             if (imeiList.length !== item.quantity) {
                 return { success: false, error: `Fila #${index + 1}: Cantidad (${item.quantity}) no coincide con IMEIs (${imeiList.length}).` };
             }
+            if (item.modelId === 0 && (!item.brand?.trim() || !item.modelName?.trim() || !item.storageGb || item.storageGb < 1)) {
+                return { success: false, error: `Fila #${index + 1}: completa marca, modelo y capacidad para crear un modelo nuevo.` };
+            }
             for (const imei of imeiList) {
                 if (allImeis.has(imei)) return { success: false, error: `IMEI duplicado en el formulario: ${imei}` };
                 allImeis.add(imei);

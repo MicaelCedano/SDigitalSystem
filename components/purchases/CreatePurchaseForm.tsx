@@ -137,7 +137,13 @@ const PurchaseItemRow = memo(({
     const lines = localImeis.split('\n').filter((l: string) => l.trim()).length;
     const declaredQty = Number(item?.quantity) || 0;
     const isMismatch = lines > 0 && lines !== declaredQty;
-    const isNewModel = item?.modelId === 0;
+    const hasNewModelData = Boolean(
+        item?.brand?.trim() ||
+        item?.modelName?.trim() ||
+        item?.storageGb ||
+        item?.color?.trim()
+    );
+    const isNewModel = item?.modelId === 0 && hasNewModelData;
 
     return (
         <TableRow
@@ -151,13 +157,66 @@ const PurchaseItemRow = memo(({
             </TableCell>
             <TableCell>
                 {isNewModel ? (
-                    <div className="flex items-center gap-3 px-3 py-2 border border-indigo-100 bg-white rounded-xl shadow-sm">
-                        <div className="flex flex-col">
+                    <div className="space-y-3 px-3 py-3 border border-indigo-100 bg-white rounded-2xl shadow-sm">
+                        <div className="flex items-center justify-between gap-3">
                             <div className="flex items-center gap-2">
-                                <span className="font-bold text-slate-800 text-sm italic">{item?.brand} {item?.modelName}</span>
-                                <Badge className="bg-indigo-600 text-white border-none text-[8px] font-black h-4 px-1">NUEVO</Badge>
+                                <Badge className="bg-indigo-600 text-white border-none text-[8px] font-black h-5 px-2">NUEVO</Badge>
+                                <span className="text-[10px] uppercase tracking-[0.2em] text-indigo-400 font-bold">Crear modelo nuevo</span>
                             </div>
                             <span className="text-[10px] uppercase tracking-widest text-indigo-400 font-bold">{item?.storageGb}GB {item?.color && `• ${item?.color}`}</span>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                className="h-8 px-3 rounded-xl text-xs font-bold text-slate-500 hover:text-indigo-600 hover:bg-indigo-50"
+                                onClick={() => {
+                                    setValue(`items.${index}.brand`, "");
+                                    setValue(`items.${index}.modelName`, "");
+                                    setValue(`items.${index}.storageGb`, undefined);
+                                    setValue(`items.${index}.color`, "");
+                                }}
+                            >
+                                Cancelar
+                            </Button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <Input
+                                value={item?.brand || ""}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                    setValue(`items.${index}.brand`, e.target.value, { shouldValidate: true })
+                                }
+                                placeholder="Marca"
+                                className="h-11 rounded-xl border-indigo-100 bg-indigo-50/40 font-bold text-slate-700 focus:bg-white focus:border-indigo-300"
+                            />
+                            <Input
+                                value={item?.modelName || ""}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                    setValue(`items.${index}.modelName`, e.target.value, { shouldValidate: true })
+                                }
+                                placeholder="Modelo"
+                                className="h-11 rounded-xl border-indigo-100 bg-indigo-50/40 font-bold text-slate-700 focus:bg-white focus:border-indigo-300"
+                            />
+                            <Input
+                                type="number"
+                                min={1}
+                                value={item?.storageGb ?? ""}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                    setValue(
+                                        `items.${index}.storageGb`,
+                                        e.target.value ? Number(e.target.value) : undefined,
+                                        { shouldValidate: true }
+                                    )
+                                }
+                                placeholder="Capacidad (GB)"
+                                className="h-11 rounded-xl border-indigo-100 bg-indigo-50/40 font-bold text-slate-700 focus:bg-white focus:border-indigo-300"
+                            />
+                            <Input
+                                value={item?.color || ""}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                    setValue(`items.${index}.color`, e.target.value, { shouldValidate: true })
+                                }
+                                placeholder="Color (opcional)"
+                                className="h-11 rounded-xl border-indigo-100 bg-indigo-50/40 font-bold text-slate-700 focus:bg-white focus:border-indigo-300"
+                            />
                         </div>
                     </div>
                 ) : (
@@ -201,7 +260,7 @@ const PurchaseItemRow = memo(({
                                                         <CommandItem
                                                             key={model.id}
                                                             value={`${model.brand} ${model.modelName} ${model.storageGb} ${model.color || ''}`}
-                                                            onSelect={() => setValue(`items.${index}.modelId`, model.id)}
+                                                            onSelect={() => setValue(`items.${index}.modelId`, model.id, { shouldValidate: true })}
                                                             className="rounded-lg mb-1 h-11 px-3 aria-selected:bg-indigo-50 aria-selected:text-indigo-700"
                                                         >
                                                             <Check className={cn("mr-2 h-4 w-4 text-indigo-500", model.id === selectField.value ? "opacity-100" : "opacity-0")} />
@@ -212,6 +271,23 @@ const PurchaseItemRow = memo(({
                                                         </CommandItem>
                                                     ))}
                                                 </CommandGroup>
+                                                <div className="border-t border-slate-100 p-2">
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        className="w-full h-10 justify-start rounded-xl font-bold text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                                                        onClick={() => {
+                                                            setValue(`items.${index}.modelId`, 0, { shouldValidate: true });
+                                                            setValue(`items.${index}.brand`, "", { shouldValidate: true });
+                                                            setValue(`items.${index}.modelName`, "", { shouldValidate: true });
+                                                            setValue(`items.${index}.storageGb`, undefined, { shouldValidate: true });
+                                                            setValue(`items.${index}.color`, "", { shouldValidate: true });
+                                                        }}
+                                                    >
+                                                        <Plus className="mr-2 h-4 w-4" />
+                                                        Crear modelo nuevo
+                                                    </Button>
+                                                </div>
                                             </CommandList>
                                         </Command>
                                     </PopoverContent>
@@ -425,6 +501,15 @@ export function CreatePurchaseForm({ suppliers, deviceModels }: CreatePurchaseFo
                 setLoading(false);
                 submitLockRef.current = false;
                 toast.error(`Error en la fila #${index + 1}: La cantidad no coincide con los IMEIs.`);
+                return;
+            }
+            if (
+                item.modelId === 0 &&
+                (!item.brand?.trim() || !item.modelName?.trim() || !item.storageGb || item.storageGb < 1)
+            ) {
+                setLoading(false);
+                submitLockRef.current = false;
+                toast.error(`Error en la fila #${index + 1}: completa marca, modelo y capacidad para crear un modelo nuevo.`);
                 return;
             }
         }
