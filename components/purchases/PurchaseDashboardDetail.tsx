@@ -71,9 +71,16 @@ interface PurchaseDetailProps {
         modelSummary: ModelSummary[];
         equipos: any[]; // Using any for now, but ideally strict type
     };
+    deviceModels: {
+        id: number;
+        brand: string;
+        modelName: string;
+        storageGb: number;
+        color: string | null;
+    }[];
 }
 
-export function PurchaseDashboardDetail({ purchase }: PurchaseDetailProps) {
+export function PurchaseDashboardDetail({ purchase, deviceModels }: PurchaseDetailProps) {
     const [modelSearch, setModelSearch] = useState("");
     const [equipmentSearch, setEquipmentSearch] = useState("");
     const router = useRouter();
@@ -172,7 +179,7 @@ export function PurchaseDashboardDetail({ purchase }: PurchaseDetailProps) {
                         </Button>
                     </Link>
 
-                    <AddEquipmentDialog purchaseId={purchase.id} purchaseNumber={purchase.id} />
+                    <AddEquipmentDialog purchaseId={purchase.id} purchaseNumber={purchase.id} deviceModels={deviceModels} />
 
 
                     <DropdownMenu>

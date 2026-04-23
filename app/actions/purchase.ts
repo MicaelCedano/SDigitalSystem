@@ -20,6 +20,19 @@ const CreatePurchaseSchema = z.object({
     }))
 });
 
+const AddManualEquipmentSchema = z.object({
+    purchaseId: z.coerce.number(),
+    item: z.object({
+        modelId: z.coerce.number(),
+        quantity: z.coerce.number().min(1),
+        imeis: z.string().min(1),
+        brand: z.string().optional(),
+        modelName: z.string().optional(),
+        storageGb: z.coerce.number().optional(),
+        color: z.string().optional().nullable(),
+    })
+});
+
 export type PurchaseWithProgress = Purchase & {
     supplier: Supplier;
     items: PurchaseItem[];
@@ -463,6 +476,184 @@ export async function getPurchaseById(id: number) {
         nonFunctionalPercentage,
         modelSummary
     } as any;
+}
+
+export async function addManualEquipmentToPurchase(data: z.infer<typeof AddManualEquipmentSchema>) {
+    const result = AddManualEquipmentSchema.safeParse(data);
+    if (!result.success) {
+        return { success: false, error: "Datos inválidos para agregar equipos." };
+    }
+
+    const { purchaseId, item } = result.data;
+    const imeiList = item.imeis.split('\n').map(s => s.trim()).filter(Boolean);
+
+    if (imeiList.length !== item.quantity) {
+        return { success: false, error: `La cantidad (${item.quantity}) no coincide con los IMEIs (${imeiList.length}).` };
+    }
+
+    const uniqueImeis = new Set<string>();
+    for (const imei of imeiList) {
+        if (!/^\d{15}$/.test(imei)) {
+            return { success: false, error: `IMEI inválido: ${imei}` };
+        }
+        if (uniqueImeis.has(imei)) {
+            return { success: false, error: `IMEI duplicado en el formulario: ${imei}` };
+        }
+        uniqueImeis.add(imei);
+    }
+
+    if (item.modelId === 0 && (!item.brand?.trim() || !item.modelName?.trim() || !item.storageGb || item.storageGb < 1)) {
+        return { success: false, error: "Completa marca, modelo y capacidad para crear el nuevo modelo." };
+    }
+
+    try {
+        const purchase = await prisma.purchase.findUnique({
+            where: { id: purchaseId },
+            select: { id: true }
+        });
+
+        if (!purchase) {
+            return { success: false, error: "La compra no existe." };
+        }
+
+        const existingEquipos = await prisma.equipo.findMany({
+            where: { imei: { in: imeiList } },
+            select: { id: true, imei: true, purchaseId: true }
+        });
+        const existingEquiposMap = new Map(existingEquipos.map(eq => [eq.imei, eq]));
+
+        if (existingEquipos.some(eq => eq.purchaseId === purchaseId)) {
+            const duplicatedHere = existingEquipos.find(eq => eq.purchaseId === purchaseId);
+            return { success: false, error: `El IMEI ${duplicatedHere?.imei} ya pertenece a esta compra.` };
+        }
+
+        await runTransactionWithRetry(async (tx) => {
+            let finalModelId = item.modelId;
+
+            if (finalModelId === 0) {
+                const existingModel = await tx.deviceModel.findFirst({
+                    where: {
+                        brand: item.brand!.trim(),
+                        modelName: item.modelName!.trim(),
+                        storageGb: item.storageGb,
+                        color: item.color || null
+                    }
+                });
+
+                if (existingModel) {
+                    finalModelId = existingModel.id;
+                } else {
+                    const newModel = await tx.deviceModel.create({
+                        data: {
+                            brand: item.brand!.trim(),
+                            modelName: item.modelName!.trim(),
+                            storageGb: item.storageGb!,
+                            color: item.color || null,
+                            imageFilename: 'iphone-placeholder.png'
+                        }
+                    });
+                    finalModelId = newModel.id;
+                }
+            }
+
+            const deviceModel = await tx.deviceModel.findUnique({ where: { id: finalModelId } });
+            if (!deviceModel) {
+                throw new Error("No se encontró el modelo seleccionado.");
+            }
+
+            const historyToCreate: Prisma.EquipoHistorialCreateManyInput[] = [];
+
+            for (const imei of imeiList) {
+                const existing = existingEquiposMap.get(imei);
+                const commonData = {
+                    marca: deviceModel.brand,
+                    modelo: deviceModel.modelName,
+                    storageGb: deviceModel.storageGb,
+                    color: deviceModel.color,
+                    deviceModelId: deviceModel.id,
+                    purchaseId,
+                    estado: 'En Inventario' as const,
+                    fechaIngreso: new Date(),
+                    grado: null,
+                    observacion: null,
+                    funcionalidad: null,
+                    loteId: null,
+                    userId: null
+                };
+
+                if (existing) {
+                    await tx.equipo.update({
+                        where: { id: existing.id },
+                        data: commonData
+                    });
+                    historyToCreate.push({
+                        equipoId: existing.id,
+                        estado: 'En Inventario',
+                        fecha: new Date(),
+                        observacion: `Reintegrado manualmente a Compra #${purchaseId}.`
+                    });
+                } else {
+                    const created = await tx.equipo.create({
+                        data: {
+                            imei,
+                            ...commonData
+                        },
+                        select: { id: true }
+                    });
+                    historyToCreate.push({
+                        equipoId: created.id,
+                        estado: 'En Inventario',
+                        fecha: new Date(),
+                        observacion: `Ingreso manual a Compra #${purchaseId}.`
+                    });
+                }
+            }
+
+            if (historyToCreate.length > 0) {
+                await tx.equipoHistorial.createMany({ data: historyToCreate });
+            }
+
+            const allEquips = await tx.equipo.findMany({
+                where: { purchaseId },
+                select: { deviceModelId: true }
+            });
+
+            await tx.purchaseItem.deleteMany({ where: { purchaseId } });
+
+            const modelCounts = new Map<number, number>();
+            allEquips.forEach(eq => {
+                if (eq.deviceModelId) {
+                    modelCounts.set(eq.deviceModelId, (modelCounts.get(eq.deviceModelId) || 0) + 1);
+                }
+            });
+
+            if (modelCounts.size > 0) {
+                await tx.purchaseItem.createMany({
+                    data: Array.from(modelCounts.entries()).map(([modelId, quantity]) => ({
+                        purchaseId,
+                        deviceModelId: modelId,
+                        quantity
+                    }))
+                });
+            }
+
+            await tx.purchase.update({
+                where: { id: purchaseId },
+                data: { totalQuantity: allEquips.length }
+            });
+        });
+
+        revalidatePath(`/compras/${purchaseId}`);
+        revalidatePath("/compras");
+
+        return {
+            success: true,
+            message: `${item.quantity} equipo(s) agregados correctamente a la compra.`
+        };
+    } catch (error: any) {
+        console.error("Error in addManualEquipmentToPurchase:", error);
+        return { success: false, error: error.message || "Error al agregar equipos manualmente." };
+    }
 }
 
 // Helper for parsing iPhone model string (ported from Python logic)

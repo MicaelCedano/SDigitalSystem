@@ -1,4 +1,5 @@
 import { getPurchaseById } from "@/app/actions/purchase";
+import { getDeviceModels } from "@/app/actions/device-models";
 import { notFound } from "next/navigation";
 import { PurchaseDashboardDetail } from "@/components/purchases/PurchaseDashboardDetail";
 import { Metadata } from "next";
@@ -19,10 +20,13 @@ export default async function PurchaseDetailPage({ params }: { params: Promise<{
     const id = parseInt(idString);
     if (isNaN(id)) return notFound();
 
-    const purchase = await getPurchaseById(id);
+    const [purchase, deviceModels] = await Promise.all([
+        getPurchaseById(id),
+        getDeviceModels()
+    ]);
     if (!purchase) return notFound();
 
     return (
-        <PurchaseDashboardDetail purchase={purchase} />
+        <PurchaseDashboardDetail purchase={purchase} deviceModels={deviceModels} />
     );
 }
