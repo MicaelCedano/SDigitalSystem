@@ -155,7 +155,7 @@ export function DeviceModelDialog({ open, onOpenChange, model }: DeviceModelDial
                                             <Input
                                                 placeholder="Apple, Samsung..."
                                                 {...field}
-                                                className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white rounded-xl h-11"
+                                                className="rounded-xl h-11 border-slate-700 bg-slate-800 text-white placeholder:text-slate-400 caret-white focus:bg-slate-900 focus:border-blue-500 focus-visible:ring-blue-500/20"
                                             />
                                         </FormControl>
                                         <FormMessage />
@@ -172,7 +172,7 @@ export function DeviceModelDialog({ open, onOpenChange, model }: DeviceModelDial
                                             <Input
                                                 placeholder="iPhone 13, S23..."
                                                 {...field}
-                                                className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white rounded-xl h-11"
+                                                className="rounded-xl h-11 border-slate-700 bg-slate-800 text-white placeholder:text-slate-400 caret-white focus:bg-slate-900 focus:border-blue-500 focus-visible:ring-blue-500/20"
                                             />
                                         </FormControl>
                                         <FormMessage />
@@ -194,7 +194,7 @@ export function DeviceModelDialog({ open, onOpenChange, model }: DeviceModelDial
                                                 placeholder="128"
                                                 {...field}
                                                 onChange={e => field.onChange(Number(e.target.value))}
-                                                className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white rounded-xl h-11"
+                                                className="rounded-xl h-11 border-slate-700 bg-slate-800 text-white placeholder:text-slate-400 caret-white focus:bg-slate-900 focus:border-blue-500 focus-visible:ring-blue-500/20"
                                             />
                                         </FormControl>
                                         <FormMessage />
@@ -211,7 +211,7 @@ export function DeviceModelDialog({ open, onOpenChange, model }: DeviceModelDial
                                             <Input
                                                 placeholder="Midnight, Black..."
                                                 {...field}
-                                                className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white rounded-xl h-11"
+                                                className="rounded-xl h-11 border-slate-700 bg-slate-800 text-white placeholder:text-slate-400 caret-white focus:bg-slate-900 focus:border-blue-500 focus-visible:ring-blue-500/20"
                                             />
                                         </FormControl>
                                         <FormDescription className="text-xs text-slate-500">
