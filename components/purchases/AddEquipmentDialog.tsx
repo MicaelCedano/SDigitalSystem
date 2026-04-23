@@ -11,7 +11,9 @@ import {
     X,
     Loader2,
     Info,
-    PencilLine
+    PencilLine,
+    ChevronsUpDown,
+    Check
 } from "lucide-react";
 import {
     Dialog,
@@ -34,6 +36,15 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList
+} from "@/components/ui/command";
 import { toast } from "sonner";
 import { addEquipmentToPurchase, addManualEquipmentToPurchase } from "@/app/actions/purchase";
 import { motion, AnimatePresence } from "framer-motion";
@@ -65,6 +76,7 @@ export function AddEquipmentDialog({ purchaseId, purchaseNumber, deviceModels }:
     const [manualImeis, setManualImeis] = useState("");
 
     const isCreatingNewModel = manualModelId === "new";
+    const selectedModel = deviceModels.find((model) => model.id.toString() === manualModelId);
     const imeiCount = useMemo(
         () => manualImeis.split("\n").map((line) => line.trim()).filter(Boolean).length,
         [manualImeis]
@@ -385,19 +397,61 @@ export function AddEquipmentDialog({ purchaseId, purchaseNumber, deviceModels }:
                             <form onSubmit={handleManualSubmit} className="space-y-6">
                                 <div className="space-y-3">
                                     <Label className="text-xs font-bold text-slate-700 uppercase tracking-widest pl-1">Modelo</Label>
-                                    <Select value={manualModelId} onValueChange={setManualModelId}>
-                                        <SelectTrigger className="h-14 rounded-2xl border-slate-200 bg-white font-bold">
-                                            <SelectValue placeholder="Seleccionar un modelo existente o crear uno nuevo" />
-                                        </SelectTrigger>
-                                        <SelectContent className="rounded-2xl">
-                                            <SelectItem value="new" className="font-bold text-indigo-600">+ Crear modelo nuevo</SelectItem>
-                                            {deviceModels.map((model) => (
-                                                <SelectItem key={model.id} value={model.id.toString()}>
-                                                    {model.brand} {model.modelName} {model.storageGb}GB{model.color ? ` - ${model.color}` : ""}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                role="combobox"
+                                                className="h-14 w-full justify-between rounded-2xl border-slate-200 bg-white font-bold text-slate-800 hover:bg-slate-50"
+                                            >
+                                                <span className="truncate text-left">
+                                                    {isCreatingNewModel
+                                                        ? "Crear modelo nuevo"
+                                                        : selectedModel
+                                                            ? `${selectedModel.brand} ${selectedModel.modelName} ${selectedModel.storageGb}GB${selectedModel.color ? ` - ${selectedModel.color}` : ""}`
+                                                            : "Seleccionar un modelo existente o crear uno nuevo"}
+                                                </span>
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-slate-400" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 rounded-2xl border-slate-200 shadow-2xl" align="start">
+                                            <Command>
+                                                <div className="border-b border-slate-100 p-2">
+                                                    <CommandInput placeholder="Buscar por marca, modelo, GB o color..." className="h-10 rounded-xl border-none bg-slate-50" />
+                                                </div>
+                                                <CommandList className="max-h-[280px]">
+                                                    <CommandEmpty className="p-4 text-xs text-slate-400 italic">No se encontró ningún modelo.</CommandEmpty>
+                                                    <CommandGroup>
+                                                        <CommandItem
+                                                            value="crear modelo nuevo"
+                                                            onSelect={() => setManualModelId("new")}
+                                                            className="mx-2 my-1 rounded-xl font-bold text-indigo-600 aria-selected:bg-indigo-50 aria-selected:text-indigo-700"
+                                                        >
+                                                            <Check className={`mr-2 h-4 w-4 ${isCreatingNewModel ? "opacity-100" : "opacity-0"}`} />
+                                                            + Crear modelo nuevo
+                                                        </CommandItem>
+                                                        {deviceModels.map((model) => (
+                                                            <CommandItem
+                                                                key={model.id}
+                                                                value={`${model.brand} ${model.modelName} ${model.storageGb} ${model.color || ""}`}
+                                                                onSelect={() => setManualModelId(model.id.toString())}
+                                                                className="mx-2 my-1 rounded-xl aria-selected:bg-slate-50"
+                                                            >
+                                                                <Check className={`mr-2 h-4 w-4 text-indigo-500 ${manualModelId === model.id.toString() ? "opacity-100" : "opacity-0"}`} />
+                                                                <div className="flex flex-col">
+                                                                    <span className="font-bold text-sm text-slate-800">{model.brand} {model.modelName}</span>
+                                                                    <span className="text-[10px] uppercase tracking-widest text-slate-400">
+                                                                        {model.storageGb}GB{model.color ? ` - ${model.color}` : ""}
+                                                                    </span>
+                                                                </div>
+                                                            </CommandItem>
+                                                        ))}
+                                                    </CommandGroup>
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
                                 </div>
 
                                 {isCreatingNewModel && (
