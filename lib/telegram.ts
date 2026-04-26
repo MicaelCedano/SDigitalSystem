@@ -105,10 +105,11 @@ export async function editTelegramMessage(messageId: number, message: string, bu
 export async function sendTelegramDocument(
     buffer: Buffer,
     filename: string,
-    caption?: string
+    caption?: string,
+    overrideChatId?: string
 ) {
     const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
-    const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
+    const chatId = overrideChatId || process.env.TELEGRAM_ADMIN_CHAT_ID?.trim() || process.env.TELEGRAM_CHAT_ID?.trim();
 
     if (!token || !chatId) {
         console.warn("[Telegram] Bot Token o Chat ID no configurados");
