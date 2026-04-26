@@ -4,6 +4,8 @@ import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { Prisma, Purchase, Supplier, PurchaseItem, Equipo, DeviceModel } from "@prisma/client";
 import { z } from "zod";
+import { sendTelegramDocument } from "@/lib/telegram";
+import ExcelJS from "exceljs";
 
 const CreatePurchaseSchema = z.object({
     supplierId: z.coerce.number(),
@@ -992,21 +994,89 @@ export async function addEquipmentToPurchase(formData: FormData) {
     }
 }
 
+/**
+ * Checks if all equipos in a purchase have been approved by admin (estado Revisado).
+ * Called after admin approves a lote. Sends Excel via Telegram when 100% complete.
+ */
+export async function checkAndNotifyPurchaseComplete(purchaseId: number) {
+    try {
+        const purchase = await prisma.purchase.findUnique({
+            where: { id: purchaseId },
+            include: {
+                supplier: true,
+                equipos: {
+                    include: { deviceModel: true }
+                }
+            }
+        });
 
+        if (!purchase || purchase.equipos.length === 0) return;
 
+        const TERMINAL_STATES = ['Revisado', 'Entregado', 'Vendido'];
+        const total = purchase.equipos.length;
+        const approved = (purchase.equipos as any[]).filter((e) => TERMINAL_STATES.includes(e.estado)).length;
 
+        if (approved < total) return;
 
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('Compra ' + purchaseId);
 
+        sheet.columns = [
+            { header: 'IMEI', key: 'imei', width: 20 },
+            { header: 'Marca', key: 'marca', width: 15 },
+            { header: 'Modelo', key: 'modelo', width: 20 },
+            { header: 'Almacenamiento', key: 'storage', width: 16 },
+            { header: 'Color', key: 'color', width: 14 },
+            { header: 'Funcionalidad', key: 'funcionalidad', width: 16 },
+            { header: 'Estado', key: 'estado', width: 14 },
+            { header: 'Grado', key: 'grado', width: 10 },
+            { header: 'Observacion', key: 'observacion', width: 30 },
+        ];
 
+        sheet.getRow(1).eachCell((cell: any) => {
+            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4F46E5' } };
+            cell.alignment = { horizontal: 'center' };
+        });
 
+        for (const eq of purchase.equipos as any[]) {
+            const storageStr = eq.storageGb
+                ? eq.storageGb + 'GB'
+                : (eq.deviceModel?.storageGb ? eq.deviceModel.storageGb + 'GB' : '');
+            sheet.addRow({
+                imei: eq.imei,
+                marca: eq.marca || eq.deviceModel?.brand || '',
+                modelo: eq.modelo || eq.deviceModel?.modelName || '',
+                storage: storageStr,
+                color: eq.color || eq.deviceModel?.color || '',
+                funcionalidad: eq.funcionalidad || '',
+                estado: eq.estado,
+                grado: eq.grado || '',
+                observacion: eq.observacion || '',
+            });
+        }
 
+        const buffer = Buffer.from(await workbook.xlsx.writeBuffer());
+        const supplierName = (purchase as any).supplier?.name || 'Proveedor';
+        const now = new Date();
+        const fecha = now.getDate().toString().padStart(2,'0') + '-' +
+            (now.getMonth()+1).toString().padStart(2,'0') + '-' + now.getFullYear();
+        const safeName = supplierName.replace(/[^a-zA-Z0-9]/g, '_');
+        const filename = 'Compra_' + purchaseId + '_' + safeName + '_' + fecha + '.xlsx';
 
+        const funcionales = (purchase.equipos as any[]).filter((e) => e.funcionalidad === 'Funcional').length;
+        const noFuncionales = (purchase.equipos as any[]).filter((e) => e.funcionalidad === 'No funcional').length;
 
+        const caption = '<b>Compra #' + purchaseId + ' - REVISION COMPLETA</b>\n' +
+            'Proveedor: <b>' + supplierName + '</b>\n' +
+            'Total equipos: <b>' + total + '</b>\n' +
+            'Funcionales: <b>' + funcionales + '</b>\n' +
+            'No funcionales: <b>' + noFuncionales + '</b>\n' +
+            'Fecha: ' + fecha;
 
-
-
-
-
-
-
-
+        await sendTelegramDocument(buffer, filename, caption);
+        console.log('[Purchase] Compra #' + purchaseId + ' completa - Excel enviado por Telegram.');
+    } catch (error: any) {
+        console.error('[Purchase] Error en checkAndNotifyPurchaseComplete #' + purchaseId + ':', error);
+    }
+}

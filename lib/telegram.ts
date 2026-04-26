@@ -25,7 +25,6 @@ export async function sendTelegramMessage(message: string, buttons?: any) {
         };
 
         if (buttons) {
-            // Check if it's already a full reply_markup object or just an array for inline_keyboard
             if (buttons.inline_keyboard || buttons.keyboard) {
                 body.reply_markup = buttons;
             } else {
@@ -48,7 +47,6 @@ export async function sendTelegramMessage(message: string, buttons?: any) {
         if (!response.ok) {
             console.error("[Telegram] Error de API:", data);
 
-            // Reintento sin HTML si falló por parseo
             if (data.description?.includes("can't parse entities")) {
                 const plainText = (message || "").replace(/<[^>]*>?/gm, '');
                 const retryResponse = await fetch(url, {
@@ -68,7 +66,7 @@ export async function sendTelegramMessage(message: string, buttons?: any) {
         console.log("[Telegram] Mensaje enviado correctamente");
         return { success: true, data };
     } catch (error: any) {
-        console.error("[Telegram] Error crítico:", error);
+        console.error("[Telegram] Error critico:", error);
         return { success: false, error: error.message };
     }
 }
@@ -101,6 +99,43 @@ export async function editTelegramMessage(messageId: number, message: string, bu
         return { success: response.ok, data: await response.json() };
     } catch (error) {
         return { success: false, error };
+    }
+}
+
+export async function sendTelegramDocument(
+    buffer: Buffer,
+    filename: string,
+    caption?: string
+) {
+    const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
+    const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
+
+    if (!token || !chatId) {
+        console.warn("[Telegram] Bot Token o Chat ID no configurados");
+        return { success: false, error: "Credenciales no configuradas" };
+    }
+
+    try {
+        const mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        const formData = new FormData();
+        formData.append('chat_id', isNaN(Number(chatId)) ? chatId : String(Number(chatId)));
+        formData.append('document', new Blob([new Uint8Array(buffer)], { type: mimeType }), filename);
+        if (caption) {
+            formData.append('caption', caption);
+            formData.append('parse_mode', 'HTML');
+        }
+
+        const response = await fetch(`https://api.telegram.org/bot${token}/sendDocument`, {
+            method: 'POST',
+            body: formData,
+        });
+
+        const data = await response.json();
+        if (!response.ok) console.error("[Telegram] Error enviando documento:", data);
+        return { success: response.ok, data };
+    } catch (error: any) {
+        console.error("[Telegram] Error critico enviando documento:", error);
+        return { success: false, error: error.message };
     }
 }
 
