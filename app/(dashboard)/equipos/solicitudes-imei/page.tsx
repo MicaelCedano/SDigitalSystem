@@ -49,7 +49,7 @@ export default async function SolicitudesImeiAdminPage() {
             </div>
 
             {pendientes.length > 0 ? (
-                <PendingImeiRequests solicitudes={pendientes} />
+                <PendingImeiRequests solicitudes={pendientes.map(s => ({ ...s, imeis: s.imeis as string[] }))} />
             ) : (
                 <div className="text-center py-12 text-slate-400 font-medium">No hay solicitudes pendientes.</div>
             )}
