@@ -4,14 +4,15 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
 // PATCH - Admin aprueba o rechaza una solicitud
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const session = await getServerSession(authOptions);
     if (!session || session.user.role !== 'admin') {
         return NextResponse.json({ success: false, error: "No autorizado" }, { status: 401 });
     }
 
     try {
-        const solicitudId = Number(params.id);
+        const { id } = await params;
+        const solicitudId = Number(id);
         const { accion, observacion } = await req.json(); // accion: "aprobar" | "rechazar"
 
         if (!["aprobar", "rechazar"].includes(accion)) {
