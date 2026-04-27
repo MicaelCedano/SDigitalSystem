@@ -5,7 +5,7 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  // directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -48,6 +48,8 @@ model User {
   wallet                  Wallet[]
   walletTransactions      WalletTransaction[]
   conversations           Conversation[]                 @relation("ConversationToUser")
+  solicitudesImeiQC       SolicitudImei[]                @relation("SolicitudQC")
+  solicitudesImeiAdmin    SolicitudImei[]                @relation("SolicitudAdmin")
 
   @@map("users")
 }
@@ -498,6 +500,21 @@ model TrabajoGarantiaLoteHistorial {
   usuario           User                @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@map("trabajo_garantia_lote_historial")
+}
+
+model SolicitudImei {
+  id              Int       @id @default(autoincrement())
+  qcId            Int       @map("qc_id")
+  imeis           Json
+  estado          String    @default("Pendiente") @db.VarChar(20)
+  observacion     String?
+  adminId         Int?      @map("admin_id")
+  fechaCreacion   DateTime  @default(now()) @map("fecha_creacion") @db.Timestamp(6)
+  fechaResolucion DateTime? @map("fecha_resolucion") @db.Timestamp(6)
+  qc              User      @relation("SolicitudQC", fields: [qcId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  admin           User?     @relation("SolicitudAdmin", fields: [adminId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("solicitud_imei")
 }
 
 model system_setting {

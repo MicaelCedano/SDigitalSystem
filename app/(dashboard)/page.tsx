@@ -9,6 +9,7 @@ import { LoteActionButtons } from "@/components/admin/LoteActionButtons";
 import { LoteDetailsModal } from "@/components/admin/LoteDetailsModal";
 import { getTrabajosPendientesAprobacion } from "@/app/actions/garantias";
 import { PendingWorkApproval } from "@/components/garantias/PendingWorkApproval";
+import { PendingImeiRequests } from "@/components/admin/PendingImeiRequests";
 import {
   DollarSign,
   Package,
@@ -63,7 +64,12 @@ export default async function Home() {
     prisma.equipo.count({ where: { estado: "Revisado" } }),
     prisma.lote.count({ where: { estado: { in: ["Pendiente", "Abierto"] } } }),
     prisma.lote.count({ where: { estado: "Listo para Entrega" } }),
-    isAdmin ? getTrabajosPendientesAprobacion() : Promise.resolve([])
+    isAdmin ? getTrabajosPendientesAprobacion() : Promise.resolve([]),
+    isAdmin ? prisma.solicitudImei.findMany({
+      where: { estado: "Pendiente" },
+      include: { qc: { select: { id: true, name: true, username: true, profileImage: true } } },
+      orderBy: { fechaCreacion: "desc" }
+    }) : Promise.resolve([])
   ]);
 
   const [
@@ -72,8 +78,9 @@ export default async function Home() {
     revisados,
     lotesPendientesCount,
     lotesReadyCount,
-    trabajosPendientes
-  ] = results as [number, number, number, number, number, any[]];
+    trabajosPendientes,
+    solicitudesImeiPendientes
+  ] = results as [number, number, number, number, number, any[], any[]];
 
   // Get lotes if admin
   const lotesToReview = (isAdmin ? await prisma.lote.findMany({
@@ -408,6 +415,13 @@ export default async function Home() {
           </div>
         </div>
       </div>
+
+      {/* Solicitudes de IMEIs Pendientes */}
+      {isAdmin && solicitudesImeiPendientes.length > 0 && (
+        <section className="mt-8 animate-in fade-in slide-in-from-right-4 duration-1000">
+          <PendingImeiRequests solicitudes={solicitudesImeiPendientes} />
+        </section>
+      )}
 
       {/* Reported Technician Work Pending Approval */}
       {isAdmin && trabajosPendientes.length > 0 && (

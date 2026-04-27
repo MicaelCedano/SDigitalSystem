@@ -133,6 +133,7 @@ const Sidebar = ({ initialUser, forceShow = false }: { initialUser?: any, forceS
                                         <SubNavItem href="/compras" label="Compras" />
                                         <SubNavItem href="/equipos" label="Inventario" />
                                         <SubNavItem href="/equipos/asignar-manual" label="Asignar por IMEI" />
+                                        <SubNavItem href="/equipos/solicitudes-imei" label="Solicitudes IMEIs" />
                                         <SubNavItem href="/compras/proveedores" label="Proveedores" />
                                         <SubNavItem href="/compras/modelos" label="Modelos" />
                                         <SubNavItem href="/admin/pagos" label="Gestión de Pagos" />
@@ -152,6 +153,7 @@ const Sidebar = ({ initialUser, forceShow = false }: { initialUser?: any, forceS
                         <div className="space-y-1">
                             {!collapsed && <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mt-4 mb-2 pl-4">Panel de Calidad</div>}
                             {isQC && !isAdmin && <NavItem href="/qc" icon={<LayoutDashboard size={20} />} label="Dashboard" active={pathname === '/qc'} collapsed={collapsed} user={user} />}
+                            {isQC && !isAdmin && <NavItem href="/qc/solicitar-imeis" icon={<Send size={20} />} label="Solicitar IMEIs" active={pathname === '/qc/solicitar-imeis'} collapsed={collapsed} user={user} />}
                             <NavItem href="/ranking" icon={<Trophy size={20} />} label="Ranking" active={pathname === '/ranking'} collapsed={collapsed} user={user} />
                             {isQC && !isAdmin && <NavItem href="/wallet" icon={<Wallet size={20} />} label="Mi Wallet" active={pathname === '/wallet'} collapsed={collapsed} user={user} />}
                         </div>
