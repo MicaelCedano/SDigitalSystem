@@ -21,8 +21,13 @@ interface Solicitud {
     imeis: string[];
     estado: string;
     observacion: string | null;
-    fechaCreacion: string;
-    qc: { id: number; name: string | null; username: string; profileImage: string | null };
+    fechaCreacion: string | Date;
+    qc: {
+        id: number;
+        name: string | null;
+        username: string;
+        profileImage?: string | null;
+    };
 }
 
 export function PendingImeiRequests({ solicitudes }: { solicitudes: Solicitud[] }) {
