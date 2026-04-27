@@ -5,7 +5,8 @@ import { authOptions } from "@/lib/auth";
 
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'admin') {
+    const role = session?.user?.role;
+    if (!session || (role !== "admin" && role !== "control_calidad")) {
         return NextResponse.json({ success: false, error: "No autorizado" }, { status: 401 });
     }
 

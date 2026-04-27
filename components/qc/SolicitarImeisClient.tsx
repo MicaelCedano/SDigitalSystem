@@ -79,7 +79,16 @@ export default function SolicitarImeisClient() {
                 body: JSON.stringify({ imeis: unique })
             });
             const data = await res.json();
-            if (!data.success) return;
+            if (!res.ok || !data.success) {
+                setImeiStatuses(prev =>
+                    prev.map(item =>
+                        item.status === "duplicate"
+                            ? item
+                            : { ...item, status: "not_available", label: data.error || "No se pudo validar" }
+                    )
+                );
+                return;
+            }
 
             setImeiStatuses(prev =>
                 prev.map(item => {
@@ -90,7 +99,13 @@ export default function SolicitarImeisClient() {
                 })
             );
         } catch {
-            // silently fail validation
+            setImeiStatuses(prev =>
+                prev.map(item =>
+                    item.status === "duplicate"
+                        ? item
+                        : { ...item, status: "not_available", label: "Error de red al validar" }
+                )
+            );
         }
     }, []);
 
