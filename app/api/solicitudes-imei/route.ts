@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { sendTelegramMessage, escapeHTML } from "@/lib/telegram";
 
 // POST - QC crea una solicitud de IMEIs
 export async function POST(req: NextRequest) {
@@ -54,6 +55,22 @@ export async function POST(req: NextRequest) {
                     redirectUrl: "/"
                 }))
             });
+        }
+
+        // Notificar al admin por Telegram
+        try {
+            const userName = session.user.name || session.user.username;
+            const msg =
+                `📋 <b>Nueva Solicitud de IMEIs</b>\n\n` +
+                `👤 <b>Solicitante:</b> ${escapeHTML(String(userName))}\n` +
+                `📱 <b>Equipos:</b> ${imeisValidos.length}` +
+                (observacion ? `\n📝 <b>Observación:</b> ${escapeHTML(observacion)}` : '');
+            const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID || process.env.TELEGRAM_CHAT_ID;
+            await sendTelegramMessage(msg, [
+                [{ text: "📦 Ver Solicitudes", url: "https://sdigitalsystem.vercel.app/equipos/solicitudes-imei" }]
+            ], adminChatId);
+        } catch (tgError) {
+            console.warn("[Telegram] Error enviando notificación IMEI:", tgError);
         }
 
         return NextResponse.json({

@@ -6,6 +6,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { checkAchievements } from "./achievements";
 import { checkAndNotifyPurchaseComplete } from "./purchase";
+import { sendTelegramMessage, escapeHTML } from "@/lib/telegram";
 
 /**
  * Technician submits a lot for review by the administrator.
@@ -17,7 +18,7 @@ export async function submitLoteForReview(loteId: number) {
     try {
         const lote = await prisma.lote.findUnique({
             where: { id: loteId },
-            include: { tecnico: true }
+            include: { tecnico: true, _count: { select: { equipos: true } } }
         });
 
         if (!lote) return { success: false, error: "Lote no encontrado" };
@@ -48,6 +49,28 @@ export async function submitLoteForReview(loteId: number) {
 
         if (notifications.length > 0) {
             await prisma.notification.createMany({ data: notifications });
+        }
+
+        // Notificar al admin por Telegram con botones de acción
+        try {
+            const equiposCount = lote._count.equipos;
+            const paymentEstimado = equiposCount * 50;
+            const msg =
+                `🔔 <b>Lote para Revisión</b>\n\n` +
+                `👤 <b>Técnico:</b> ${escapeHTML(tecnicoName)}\n` +
+                `📦 <b>Lote:</b> <code>${escapeHTML(lote.codigo)}</code>\n` +
+                `📱 <b>Equipos:</b> ${equiposCount}\n` +
+                `💰 <b>Pago estimado:</b> RD$ ${paymentEstimado.toLocaleString()}`;
+            const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID || process.env.TELEGRAM_CHAT_ID;
+            await sendTelegramMessage(msg, [
+                [
+                    { text: "✅ Aprobar", callback_data: `approve_lote:${loteId}` },
+                    { text: "❌ Rechazar", callback_data: `reject_lote:${loteId}` }
+                ],
+                [{ text: "🔗 Ver Lote", url: `https://sdigitalsystem.vercel.app/qc?lote=${lote.codigo}` }]
+            ], adminChatId);
+        } catch (tgError) {
+            console.warn("[Telegram] Error enviando notificación de lote:", tgError);
         }
 
         revalidatePath("/qc");

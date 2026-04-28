@@ -7,9 +7,9 @@ export function escapeHTML(str: string) {
         .replace(/'/g, '&#039;');
 }
 
-export async function sendTelegramMessage(message: string, buttons?: any) {
+export async function sendTelegramMessage(message: string, buttons?: any, chatIdOverride?: string) {
     const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
-    const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
+    const chatId = chatIdOverride || process.env.TELEGRAM_CHAT_ID?.trim();
 
     if (!token || !chatId) {
         console.warn("[Telegram] Bot Token o Chat ID no configurados");

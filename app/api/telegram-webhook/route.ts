@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { sendTelegramMessage, editTelegramMessage, answerCallbackQuery, escapeHTML } from "@/lib/telegram";
+import { checkAchievements } from "@/app/actions/achievements";
+import { checkAndNotifyPurchaseComplete } from "@/app/actions/purchase";
 
 export async function POST(req: Request) {
     try {
@@ -101,6 +103,180 @@ export async function POST(req: Request) {
 
         if (body.callback_query) {
             const { id, data, message, from } = body.callback_query;
+
+            if (data && (data.startsWith("approve_lote:") || data.startsWith("reject_lote:"))) {
+                const isApprove = data.startsWith("approve_lote:");
+                const loteId = parseInt(data.split(":")[1]);
+
+                if (isNaN(loteId)) {
+                    await answerCallbackQuery(id, "Error: ID de lote inválido");
+                    return NextResponse.json({ ok: true });
+                }
+
+                const lote = await prisma.lote.findUnique({
+                    where: { id: loteId },
+                    include: {
+                        equipos: { select: { id: true, purchaseId: true } },
+                        tecnico: { select: { id: true, name: true, username: true } }
+                    }
+                });
+
+                if (!lote) {
+                    await answerCallbackQuery(id, "Lote no encontrado");
+                    return NextResponse.json({ ok: true });
+                }
+
+                if (lote.estado === "Entregado") {
+                    await answerCallbackQuery(id, "Este lote ya fue aprobado");
+                    return NextResponse.json({ ok: true });
+                }
+
+                if (lote.estado !== "Pendiente") {
+                    await answerCallbackQuery(id, `Lote en estado: ${lote.estado}`);
+                    return NextResponse.json({ ok: true });
+                }
+
+                const admin = await prisma.user.findFirst({ where: { role: 'admin' } });
+                const adminUserId = admin?.id || 1;
+                const tecnicoName = lote.tecnico.name || lote.tecnico.username;
+                const equiposCount = lote.equipos.length;
+
+                if (isApprove) {
+                    const paymentAmount = equiposCount * 50;
+
+                    await prisma.$transaction(async (tx) => {
+                        await tx.lote.update({ where: { id: loteId }, data: { estado: "Entregado" } });
+
+                        await tx.equipo.updateMany({
+                            where: { loteId },
+                            data: { estado: "Revisado", userId: null }
+                        });
+
+                        if (equiposCount > 0) {
+                            await tx.equipoHistorial.createMany({
+                                data: lote.equipos.map(eq => ({
+                                    equipoId: eq.id,
+                                    fecha: new Date(),
+                                    estado: "Revisado",
+                                    userId: adminUserId,
+                                    observacion: `Lote ${lote.codigo} aprobado vía Telegram.`,
+                                    loteId
+                                }))
+                            });
+                        }
+
+                        if (paymentAmount > 0) {
+                            let wallet = await tx.wallet.findFirst({
+                                where: { tecnicoId: lote.tecnicoId },
+                                include: { accounts: { where: { nombre: "Principal" } } }
+                            });
+
+                            if (!wallet) {
+                                wallet = await tx.wallet.create({
+                                    data: { tecnicoId: lote.tecnicoId, saldo: 0 },
+                                    include: { accounts: { where: { nombre: "Principal" } } }
+                                });
+                            }
+
+                            let principalAcc = wallet.accounts[0];
+                            if (!principalAcc) {
+                                principalAcc = await tx.walletAccount.create({
+                                    data: {
+                                        walletId: wallet.id,
+                                        nombre: "Principal",
+                                        tipo: "corriente",
+                                        saldo: 0,
+                                        fechaCreacion: new Date()
+                                    }
+                                });
+                            }
+
+                            await tx.walletTransaction.create({
+                                data: {
+                                    tecnicoId: lote.tecnicoId,
+                                    loteId,
+                                    monto: paymentAmount,
+                                    tipo: "ingreso",
+                                    estado: "Aprobado",
+                                    fecha: new Date(),
+                                    descripcion: `Pago por Lote QC: ${lote.codigo} (${equiposCount} equipos) [Telegram]`
+                                }
+                            });
+
+                            await tx.walletAccount.update({
+                                where: { id: principalAcc.id },
+                                data: { saldo: { increment: paymentAmount } }
+                            });
+
+                            await tx.wallet.update({
+                                where: { id: wallet.id },
+                                data: { saldo: { increment: paymentAmount } }
+                            });
+                        }
+
+                        await tx.notification.create({
+                            data: {
+                                tecnicoId: lote.tecnicoId,
+                                tipo: "lote_aprobado",
+                                titulo: "Lote Aprobado",
+                                mensaje: `Tu lote ${lote.codigo} ha sido aprobado. Se han acreditado RD$ ${paymentAmount.toLocaleString()} a tu cuenta.`,
+                                monto: paymentAmount,
+                                loteCodigo: lote.codigo,
+                                fromUserId: adminUserId,
+                                redirectUrl: `/qc?lote=${lote.codigo}`,
+                                leida: false,
+                                fecha: new Date()
+                            }
+                        });
+                    });
+
+                    await checkAchievements(lote.tecnicoId);
+                    const purchaseIds = [...new Set(lote.equipos.map(e => e.purchaseId).filter(Boolean))] as number[];
+                    for (const purchaseId of purchaseIds) {
+                        await checkAndNotifyPurchaseComplete(purchaseId);
+                    }
+
+                    const updatedMsg =
+                        `🔔 <b>Lote para Revisión</b>\n\n` +
+                        `👤 <b>Técnico:</b> ${escapeHTML(tecnicoName)}\n` +
+                        `📦 <b>Lote:</b> <code>${escapeHTML(lote.codigo)}</code>\n` +
+                        `📱 <b>Equipos:</b> ${equiposCount}\n` +
+                        `💰 <b>Pago:</b> RD$ ${paymentAmount.toLocaleString()}\n\n` +
+                        `✅ <b>APROBADO</b> por ${escapeHTML(from.first_name || 'Admin')}`;
+
+                    await editTelegramMessage(message.message_id, updatedMsg, []);
+                    await answerCallbackQuery(id, `✅ Lote ${lote.codigo} aprobado`);
+
+                } else {
+                    await prisma.lote.update({ where: { id: loteId }, data: { estado: "Abierto" } });
+
+                    await prisma.notification.create({
+                        data: {
+                            tecnicoId: lote.tecnicoId,
+                            tipo: "lote_rechazado",
+                            titulo: "Lote Devuelto",
+                            mensaje: `Tu lote ${lote.codigo} ha sido devuelto para correcciones.`,
+                            loteCodigo: lote.codigo,
+                            fromUserId: adminUserId,
+                            redirectUrl: `/qc?lote=${lote.codigo}`,
+                            leida: false,
+                            fecha: new Date()
+                        }
+                    });
+
+                    const updatedMsg =
+                        `🔔 <b>Lote para Revisión</b>\n\n` +
+                        `👤 <b>Técnico:</b> ${escapeHTML(tecnicoName)}\n` +
+                        `📦 <b>Lote:</b> <code>${escapeHTML(lote.codigo)}</code>\n` +
+                        `📱 <b>Equipos:</b> ${equiposCount}\n\n` +
+                        `❌ <b>RECHAZADO</b> por ${escapeHTML(from.first_name || 'Admin')}`;
+
+                    await editTelegramMessage(message.message_id, updatedMsg, []);
+                    await answerCallbackQuery(id, `❌ Lote ${lote.codigo} rechazado`);
+                }
+
+                return NextResponse.json({ ok: true });
+            }
 
             if (data && data.startsWith("update_status:")) {
                 const [_, orderIdStr, newStatus] = data.split(":");
