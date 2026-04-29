@@ -51,7 +51,7 @@ export default async function InventoryPage({
 
     const resolvedParams = await searchParams;
     const query = resolvedParams?.q || "";
-    // const status = resolvedParams?.status || "all"; // Not used in this specific view for now, usually
+    const status = resolvedParams?.status || "all";
     const currentPage = Number(resolvedParams?.page) || 1;
     const itemsPerPage = 10;
     const skip = (currentPage - 1) * itemsPerPage;
@@ -67,11 +67,8 @@ export default async function InventoryPage({
             trimmedQuery
                 ? {
                     OR: [
-                        // Exact match first (extremely fast due to unique index)
                         { imei: trimmedQuery },
                         { imei: queryNoSpaces },
-
-                        // Fallback to contains for partial search
                         { imei: { contains: trimmedQuery, mode: "insensitive" } },
                         { marca: { contains: trimmedQuery, mode: "insensitive" } },
                         { modelo: { contains: trimmedQuery, mode: "insensitive" } },
@@ -83,6 +80,7 @@ export default async function InventoryPage({
                     ],
                 }
                 : {},
+            status !== "all" ? { estado: status } : {},
         ],
     };
 
@@ -184,6 +182,7 @@ export default async function InventoryPage({
                 totalPages={totalPages}
                 currentPage={currentPage}
                 query={query}
+                status={status}
                 qcUsers={qcUsers}
             />
         </div>

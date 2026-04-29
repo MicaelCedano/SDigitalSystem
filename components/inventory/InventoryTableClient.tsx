@@ -7,7 +7,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Palette, CheckCircle2, XCircle, Users, Loader2 } from "lucide-react";
+import { Search, Palette, CheckCircle2, XCircle, Users, Loader2, Filter, X } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuLabel,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { InventoryPagination } from "@/components/inventory/InventoryPagination";
 import { EquipmentActions } from "@/components/inventory/EquipmentActions";
 import { cn, formatDateTime } from "@/lib/utils";
@@ -32,6 +42,7 @@ interface InventoryTableClientProps {
     totalPages: number;
     currentPage: number;
     query: string;
+    status?: string;
     qcUsers: { id: number; name: string | null; username: string }[];
 }
 
@@ -43,10 +54,12 @@ export function InventoryTableClient({
     totalPages,
     currentPage,
     query,
+    status = "all",
     qcUsers
 }: InventoryTableClientProps) {
     const router = useRouter();
     const [searchTerm, setSearchTerm] = useState(query);
+    const [statusFilter, setStatusFilter] = useState(status);
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
     const [selectedQcId, setSelectedQcId] = useState<string>("");
@@ -64,29 +77,43 @@ export function InventoryTableClient({
 
     const [isSearching, startTransition] = useTransition();
 
+    const buildUrl = (q: string, status: string) => {
+        const params = new URLSearchParams();
+        if (q) params.set("q", q);
+        if (status && status !== "all") params.set("status", status);
+        params.set("page", "1");
+        return `?${params.toString()}`;
+    };
+
     // Debounced automatic search
     useEffect(() => {
-        // Skip initial mount if search terms match exactly
         if (searchTerm === query) return;
 
         const timer = setTimeout(() => {
             startTransition(() => {
                 const newQuery = searchTerm.trim();
                 lastPushedQuery.current = newQuery;
-                router.push(`?q=${newQuery}&page=1`);
+                router.push(buildUrl(newQuery, statusFilter));
             });
-        }, 400); // 400ms debounce for smoother typing
+        }, 400);
 
         return () => clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [searchTerm]); 
+    }, [searchTerm]);
+
+    useEffect(() => {
+        startTransition(() => {
+            router.push(buildUrl(searchTerm.trim(), statusFilter));
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [statusFilter]);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         startTransition(() => {
             const newQuery = searchTerm.trim();
             lastPushedQuery.current = newQuery;
-            router.push(`?q=${newQuery}&page=1`);
+            router.push(buildUrl(newQuery, statusFilter));
         });
     };
 
@@ -168,7 +195,38 @@ export function InventoryTableClient({
                     />
                 </div>
 
-                <div className="flex gap-3 w-full lg:w-auto">
+                <div className="flex gap-3 w-full lg:w-auto flex-wrap">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button type="button" variant="outline" className={cn(
+                                "flex-1 lg:flex-none border-slate-200 font-semibold",
+                                statusFilter !== "all" && "border-indigo-300 bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
+                            )}>
+                                <Filter className="mr-2 h-4 w-4" />
+                                {statusFilter === "all" ? "Todos los estados" : statusFilter}
+                                {statusFilter !== "all" && (
+                                    <span
+                                        role="button"
+                                        className="ml-2 hover:text-red-500"
+                                        onClick={(e) => { e.stopPropagation(); setStatusFilter("all"); }}
+                                    >
+                                        <X size={12} />
+                                    </span>
+                                )}
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-52">
+                            <DropdownMenuLabel>Filtrar por estado</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuRadioGroup value={statusFilter} onValueChange={setStatusFilter}>
+                                <DropdownMenuRadioItem value="all">Todos</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="En Inventario">En Inventario</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="En Revisión">En Revisión</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="Revisado">Revisado</DropdownMenuRadioItem>
+                            </DropdownMenuRadioGroup>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
                     <Button type="button" variant="outline" className="flex-1 lg:flex-none border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 hover:text-purple-800 font-bold border-dashed">
                         <Palette className="mr-2 h-4 w-4" />
                         Actualizar Colores
