@@ -61,12 +61,16 @@ export async function POST(req: NextRequest) {
         try {
             const userName = session.user.name || session.user.username;
             const msg =
-                `📋 <b>Nueva Solicitud de IMEIs</b>\n\n` +
+                `📋 <b>Nueva Solicitud de IMEIs #${solicitud.id}</b>\n\n` +
                 `👤 <b>Solicitante:</b> ${escapeHTML(String(userName))}\n` +
                 `📱 <b>Equipos:</b> ${imeisValidos.length}` +
                 (observacion ? `\n📝 <b>Observación:</b> ${escapeHTML(observacion)}` : '');
             const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID || process.env.TELEGRAM_CHAT_ID;
             await sendTelegramMessage(msg, [
+                [
+                    { text: "✅ Aprobar", callback_data: `approve_solicitud:${solicitud.id}` },
+                    { text: "❌ Rechazar", callback_data: `reject_solicitud:${solicitud.id}` }
+                ],
                 [{ text: "📦 Ver Solicitudes", url: "https://sdigitalsystem.vercel.app/equipos/solicitudes-imei" }]
             ], adminChatId);
         } catch (tgError) {

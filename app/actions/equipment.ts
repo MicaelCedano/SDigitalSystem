@@ -124,6 +124,74 @@ export async function getEquipmentFullDetails(id: number) {
     }
 }
 
+export async function getNoFuncionalesData() {
+    const session = await getServerSession(authOptions);
+    if (!session) return { pendientes: [], recuperados: [] };
+
+    const pendientes = await prisma.equipo.findMany({
+        where: { funcionalidad: "No funcional" },
+        include: {
+            purchase: { include: { supplier: true } },
+            deviceModel: true,
+        },
+        orderBy: { fechaIngreso: "desc" },
+    });
+
+    const recuperados = await prisma.equipo.findMany({
+        where: { funcionalidad: "Funcional" },
+        include: {
+            purchase: { include: { supplier: true } },
+            deviceModel: true,
+            historial: {
+                where: { observacion: { startsWith: "Recuperado:" } },
+                orderBy: { fecha: "desc" },
+                take: 1,
+            },
+        },
+        orderBy: { fechaIngreso: "desc" },
+    });
+
+    const recuperadosConHistorial = recuperados.filter(e => e.historial.length > 0);
+
+    return {
+        pendientes: JSON.parse(JSON.stringify(pendientes)),
+        recuperados: JSON.parse(JSON.stringify(recuperadosConHistorial)),
+    };
+}
+
+export async function markAsFuncional(equipoId: number) {
+    const session = await getServerSession(authOptions);
+    if (!session) return { success: false, error: "No autorizado" };
+
+    try {
+        const equipo = await prisma.equipo.findUnique({ where: { id: equipoId } });
+        if (!equipo) return { success: false, error: "Equipo no encontrado" };
+
+        await prisma.$transaction([
+            prisma.equipo.update({
+                where: { id: equipoId },
+                data: { funcionalidad: "Funcional" },
+            }),
+            prisma.equipoHistorial.create({
+                data: {
+                    equipoId,
+                    fecha: new Date(),
+                    estado: equipo.estado,
+                    userId: Number(session.user.id),
+                    observacion: "Recuperado: cambiado de No funcional a Funcional",
+                    loteId: equipo.loteId,
+                },
+            }),
+        ]);
+
+        revalidatePath("/compras/no-funcionales");
+        return { success: true };
+    } catch (error) {
+        console.error("Error marking as funcional:", error);
+        return { success: false, error: "Error al actualizar equipo" };
+    }
+}
+
 export async function getQCUsers() {
     const session = await getServerSession(authOptions);
     if (!session) return [];
