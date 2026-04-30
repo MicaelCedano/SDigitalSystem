@@ -135,7 +135,6 @@ const Sidebar = ({ initialUser, forceShow = false }: { initialUser?: any, forceS
                                         <SubNavItem href="/equipos" label="Inventario" />
                                         <SubNavItem href="/equipos/asignar-manual" label="Asignar por IMEI" />
                                         <SubNavItem href="/equipos/solicitudes-imei" label="Solicitudes IMEIs" />
-                                        <SubNavItem href="/compras/no-funcionales" label="No Funcionales" />
                                         <SubNavItem href="/compras/proveedores" label="Proveedores" />
                                         <SubNavItem href="/compras/modelos" label="Modelos" />
                                         <SubNavItem href="/admin/pagos" label="Gestión de Pagos" />

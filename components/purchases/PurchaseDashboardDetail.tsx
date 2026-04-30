@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -19,7 +19,9 @@ import {
     Search,
     Pencil,
     Trash2,
-    Truck
+    Truck,
+    AlertTriangle,
+    Smartphone
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +44,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { AddEquipmentDialog } from "./AddEquipmentDialog";
 import { deletePurchase } from "@/app/actions/purchase";
+import { markAsFuncional } from "@/app/actions/equipment";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -85,6 +88,21 @@ export function PurchaseDashboardDetail({ purchase, deviceModels }: PurchaseDeta
     const [equipmentSearch, setEquipmentSearch] = useState("");
     const router = useRouter();
     const [deleting, setDeleting] = useState(false);
+    const [loadingFuncionalId, setLoadingFuncionalId] = useState<number | null>(null);
+    const [isPending, startTransition] = useTransition();
+    const [noFuncSearch, setNoFuncSearch] = useState("");
+
+    const handleMarkFuncional = async (equipoId: number) => {
+        setLoadingFuncionalId(equipoId);
+        const res = await markAsFuncional(equipoId);
+        setLoadingFuncionalId(null);
+        if (res.success) {
+            toast.success("Equipo marcado como Funcional");
+            startTransition(() => router.refresh());
+        } else {
+            toast.error(res.error || "Error al actualizar");
+        }
+    };
 
     // Filter logic
     const filteredModels = purchase.modelSummary.filter(m =>
@@ -230,6 +248,95 @@ export function PurchaseDashboardDetail({ purchase, deviceModels }: PurchaseDeta
                     color="indigo"
                 />
             </div>
+
+            {/* No Funcionales Section */}
+            {purchase.nonFunctionalCount > 0 && (() => {
+                const noFuncEquipos = purchase.equipos.filter((e: any) => e.funcionalidad === "No funcional");
+                const filteredNoFunc = noFuncEquipos.filter((e: any) => {
+                    const q = noFuncSearch.toLowerCase();
+                    return (
+                        e.imei?.toLowerCase().includes(q) ||
+                        (e.deviceModel?.modelName || "").toLowerCase().includes(q) ||
+                        (e.deviceModel?.brand || "").toLowerCase().includes(q)
+                    );
+                });
+                return (
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-between px-4">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-rose-50 text-rose-600 rounded-xl">
+                                    <AlertTriangle className="h-5 w-5" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-slate-800 tracking-tight">
+                                    No Funcionales
+                                    <span className="ml-3 text-base font-bold text-rose-500">({noFuncEquipos.length})</span>
+                                </h3>
+                            </div>
+                            <div className="relative w-56">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
+                                <Input
+                                    placeholder="Buscar IMEI o modelo..."
+                                    className="pl-9 h-10 bg-white border-slate-100 rounded-2xl text-sm font-medium"
+                                    value={noFuncSearch}
+                                    onChange={(e) => setNoFuncSearch(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <div className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-rose-50 overflow-hidden">
+                            <Table>
+                                <TableHeader className="bg-rose-50/40">
+                                    <TableRow className="hover:bg-transparent border-rose-100/60">
+                                        <TableHead className="w-[50px] text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] pl-8">#</TableHead>
+                                        <TableHead className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">IMEI</TableHead>
+                                        <TableHead className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Dispositivo</TableHead>
+                                        <TableHead className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Grado</TableHead>
+                                        <TableHead className="text-right text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] pr-8">Acción</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {filteredNoFunc.length > 0 ? filteredNoFunc.map((eq: any, idx: number) => (
+                                        <TableRow key={eq.id} className="hover:bg-rose-50/30 border-slate-50 transition-colors group">
+                                            <TableCell className="font-mono text-xs text-slate-300 pl-8">{idx + 1}</TableCell>
+                                            <TableCell>
+                                                <span className="font-mono text-xs font-bold text-rose-600 bg-rose-50 px-3 py-1.5 rounded-xl border border-rose-100">
+                                                    {eq.imei}
+                                                </span>
+                                            </TableCell>
+                                            <TableCell className="py-4">
+                                                <p className="font-bold text-slate-800 text-sm">{eq.deviceModel?.brand} {eq.deviceModel?.modelName}</p>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                                                    {eq.deviceModel?.storageGb}GB • {eq.deviceModel?.color || eq.color || "N/A"}
+                                                </p>
+                                            </TableCell>
+                                            <TableCell>
+                                                {eq.grado ? (
+                                                    <Badge className="bg-slate-100 text-slate-600 border-0 font-bold text-xs">{eq.grado}</Badge>
+                                                ) : (
+                                                    <span className="text-slate-300 text-xs">—</span>
+                                                )}
+                                            </TableCell>
+                                            <TableCell className="text-right pr-8">
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() => handleMarkFuncional(eq.id)}
+                                                    disabled={loadingFuncionalId === eq.id || isPending}
+                                                    className="h-9 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50"
+                                                >
+                                                    {loadingFuncionalId === eq.id ? "..." : "Marcar Funcional"}
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    )) : (
+                                        <TableRow>
+                                            <TableCell colSpan={5} className="text-center py-10 text-slate-300 font-bold italic">Sin resultados</TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </div>
+                );
+            })()}
 
             {/* Reports Section */}
             <div className="space-y-1">
