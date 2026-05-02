@@ -50,8 +50,7 @@ const Sidebar = ({ initialUser, forceShow = false }: { initialUser?: any, forceS
             setUnreadCount(count);
         };
         fetchUnread();
-        // Polling cada 30 segundos
-        const interval = setInterval(fetchUnread, 30000);
+        const interval = setInterval(fetchUnread, 300000);
         return () => clearInterval(interval);
     }, []);
 

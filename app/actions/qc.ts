@@ -70,22 +70,37 @@ export async function getQCDashboardData() {
             where: { estado: "En Revisión" }
         });
 
-        // Current assigned equipement
+        const deviceModelSelect = { select: { id: true, brand: true, modelName: true, storageGb: true, color: true } } as const;
+
         const equipos = await prisma.equipo.findMany({
             where: {
                 ...commonWhere,
                 estado: { in: ["En Revisión", "Revisado"] }
             },
-            include: { lote: true, deviceModel: true }
+            select: {
+                id: true, imei: true, marca: true, modelo: true,
+                storageGb: true, color: true, estado: true,
+                funcionalidad: true, grado: true, loteId: true,
+                lote: { select: { id: true, estado: true, codigo: true } },
+                deviceModel: deviceModelSelect,
+            },
         });
 
-        // Open lots for the user
         const lotesAbiertos = await prisma.lote.findMany({
             where: {
                 tecnicoId: userId,
                 estado: { in: ["Abierto", "Pendiente", "Listo para Entrega"] }
             },
-            include: { equipos: { include: { deviceModel: true } } }
+            include: {
+                equipos: {
+                    select: {
+                        id: true, imei: true, marca: true, modelo: true,
+                        storageGb: true, color: true, estado: true,
+                        funcionalidad: true, grado: true, loteId: true,
+                        deviceModel: deviceModelSelect,
+                    }
+                }
+            }
         });
 
         // Accurate Rankings based on EquipoHistorial (as in Python version)
@@ -162,7 +177,8 @@ export async function getQCDashboardData() {
         const topGlobal = await getRanking(undefined, 5);
 
         const rawDeviceModels = await prisma.deviceModel.findMany({
-            orderBy: [{ brand: 'asc' }, { modelName: 'asc' }]
+            orderBy: [{ brand: 'asc' }, { modelName: 'asc' }],
+            select: { id: true, brand: true, modelName: true, storageGb: true, color: true }
         });
 
         const deviceModels = rawDeviceModels.map(m => ({

@@ -17,6 +17,7 @@ export async function getNotifications() {
         orderBy: {
             fecha: 'desc'
         },
+        take: 50,
         include: {
             tecnico: {
                 select: {

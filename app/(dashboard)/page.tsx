@@ -221,7 +221,7 @@ export default async function Home() {
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-10">
-      <AutoRefresh intervalMs={30000} />
+      <AutoRefresh intervalMs={300000} />
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h2 className="text-4xl font-extrabold tracking-tight text-slate-800">
