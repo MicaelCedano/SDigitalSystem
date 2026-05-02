@@ -244,7 +244,7 @@ export async function POST(req: Request) {
                         `💰 <b>Pago:</b> RD$ ${paymentAmount.toLocaleString()}\n\n` +
                         `✅ <b>APROBADO</b> por ${escapeHTML(from.first_name || 'Admin')}`;
 
-                    await editTelegramMessage(message.message_id, updatedMsg, []);
+                    await editTelegramMessage(message.message_id, updatedMsg, [], message.chat?.id);
                     await answerCallbackQuery(id, `✅ Lote ${lote.codigo} aprobado`);
 
                 } else {
@@ -271,7 +271,7 @@ export async function POST(req: Request) {
                         `📱 <b>Equipos:</b> ${equiposCount}\n\n` +
                         `❌ <b>RECHAZADO</b> por ${escapeHTML(from.first_name || 'Admin')}`;
 
-                    await editTelegramMessage(message.message_id, updatedMsg, []);
+                    await editTelegramMessage(message.message_id, updatedMsg, [], message.chat?.id);
                     await answerCallbackQuery(id, `❌ Lote ${lote.codigo} rechazado`);
                 }
 
@@ -347,7 +347,7 @@ export async function POST(req: Request) {
 
                 const updatedText = `${originalText}\n\n📍 <b>Actualizado a:</b> ${statusLabels[newStatus] || newStatus}\n👤 <b>Por:</b> ${from.first_name || 'Usuario'} (Telegram)`;
 
-                await editTelegramMessage(message.message_id, updatedText, nextButtons.length > 0 ? nextButtons : null);
+                await editTelegramMessage(message.message_id, updatedText, nextButtons.length > 0 ? nextButtons : [], message.chat?.id);
                 await answerCallbackQuery(id, `Pedido ${order.codigo} actualizado a ${newStatus}`);
             }
         }
