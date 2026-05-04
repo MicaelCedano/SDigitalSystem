@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 
+const ORDERS_MODULE_ENABLED = false;
+
 interface EditUserModalProps {
     user: any;
     isOpen: boolean;
@@ -135,6 +137,7 @@ export function EditUserModal({ user, isOpen, onClose }: EditUserModalProps) {
                                 </div>
                             </div>
 
+                            {ORDERS_MODULE_ENABLED && (
                             <div className="flex items-start space-x-3 p-3 bg-white border border-slate-200 rounded-xl shadow-sm">
                                 <Checkbox
                                     id="canManageOrders"
@@ -151,6 +154,7 @@ export function EditUserModal({ user, isOpen, onClose }: EditUserModalProps) {
                                     </p>
                                 </div>
                             </div>
+                            )}
                         </div>
 
                         <div className="border-t border-slate-200/60 my-2"></div>

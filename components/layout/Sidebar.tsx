@@ -32,6 +32,8 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 import { getUnreadCount } from '@/app/actions/notifications';
 import { useEffect } from 'react';
 
+const ORDERS_MODULE_ENABLED = false;
+
 const Sidebar = ({ initialUser, forceShow = false }: { initialUser?: any, forceShow?: boolean }) => {
     const { data: session } = useSession();
     const user = initialUser || session?.user;
@@ -66,7 +68,6 @@ const Sidebar = ({ initialUser, forceShow = false }: { initialUser?: any, forceS
 
     const role = user?.role?.toLowerCase() || '';
     const isAdmin = role === 'admin';
-    const isAlmacen = role === 'almacen' || role === 'vendedor' || user?.canManageOrders === true;
     const isQC = role === 'control_calidad' || isAdmin;
     const isGarantiaTec = role === 'tecnico_garantias' || isAdmin;
 
@@ -146,7 +147,7 @@ const Sidebar = ({ initialUser, forceShow = false }: { initialUser?: any, forceS
                         </div>
                     )}
 
-                    {(isAdmin || isAlmacen) && (
+                    {ORDERS_MODULE_ENABLED && (
                         <NavItem href="/pedidos" icon={<Package size={20} />} label="Pedidos Almacén" active={pathname === '/pedidos'} collapsed={collapsed} user={user} />
                     )}
 
