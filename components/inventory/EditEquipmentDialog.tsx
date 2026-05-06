@@ -141,7 +141,7 @@ export function EditEquipmentDialog({ equipo, open, onOpenChange }: EditEquipmen
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="Funcional">Funcional</SelectItem>
-                                    <SelectItem value="No Funcional">No Funcional</SelectItem>
+                                    <SelectItem value="No funcional">No Funcional</SelectItem>
                                     <SelectItem value="Sin Verificar">Sin Verificar</SelectItem>
                                 </SelectContent>
                             </Select>
