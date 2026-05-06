@@ -31,6 +31,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { getUnreadCount } from '@/app/actions/notifications';
 import { useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 
 const ORDERS_MODULE_ENABLED = false;
 
@@ -52,10 +53,19 @@ const Sidebar = ({ initialUser, forceShow = false }: { initialUser?: any, forceS
             setUnreadCount(count);
         };
         fetchUnread();
-        // Polling cada 30 segundos
-        const interval = setInterval(fetchUnread, 30000);
-        return () => clearInterval(interval);
-    }, []);
+        const userId = user?.id;
+        if (!userId) return;
+        const channel = supabase
+            .channel(`sidebar-notifications-${userId}`)
+            .on("postgres_changes" as any, {
+                event: "*",
+                schema: "public",
+                table: "notification",
+                filter: `tecnico_id=eq.${userId}`
+            }, () => { fetchUnread(); })
+            .subscribe();
+        return () => { supabase.removeChannel(channel); };
+    }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const toggleSection = (section: string) => {
         if (collapsed) {

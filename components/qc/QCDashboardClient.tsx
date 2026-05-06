@@ -13,7 +13,7 @@ import { submitLoteForReview } from "@/app/actions/lotes";
 import { startReviewing } from "@/app/actions/qc";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { AutoRefresh } from "@/components/layout/AutoRefresh";
+import { RealtimeRefresh } from "@/components/layout/RealtimeRefresh";
 
 interface QCDashboardProps {
     initialData: any;
@@ -109,7 +109,7 @@ export function QCDashboardClient({ initialData, currentUser }: QCDashboardProps
 
     return (
         <div className="space-y-4 sm:space-y-5 animate-in fade-in duration-500 slide-in-from-bottom-4">
-            <AutoRefresh intervalMs={30000} />
+            <RealtimeRefresh tables={["equipo", "lotes"]} />
 
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

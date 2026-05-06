@@ -30,7 +30,7 @@ export default async function DashboardLayout({
                 {/* Fixed Top Actions Bar (Desktop Only) */}
                 <div className="hidden md:flex absolute top-8 right-12 z-50 items-center gap-4 pointer-events-none">
                     <div className="pointer-events-auto">
-                        <NotificationsCenter />
+                        <NotificationsCenter userId={Number(session.user.id)} />
                     </div>
                 </div>
 

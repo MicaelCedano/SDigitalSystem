@@ -18,8 +18,9 @@ import { getNotifications, markAsRead, markAllAsRead, getUnreadCount } from "@/a
 import { cn, getProfileImageUrl } from "@/lib/utils";
 import Link from "next/link";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 
-export function NotificationsCenter() {
+export function NotificationsCenter({ userId }: { userId?: number | null }) {
     const [notifications, setNotifications] = useState<any[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [open, setOpen] = useState(false);
@@ -35,10 +36,18 @@ export function NotificationsCenter() {
 
     useEffect(() => {
         loadData();
-        // Polling every 30 seconds for new notifications
-        const interval = setInterval(loadData, 30000);
-        return () => clearInterval(interval);
-    }, []);
+        if (!userId) return;
+        const channel = supabase
+            .channel(`notifications-center-${userId}`)
+            .on("postgres_changes" as any, {
+                event: "*",
+                schema: "public",
+                table: "notification",
+                filter: `tecnico_id=eq.${userId}`
+            }, () => { loadData(); })
+            .subscribe();
+        return () => { supabase.removeChannel(channel); };
+    }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleMarkAsRead = async (id: number) => {
         const res = await markAsRead(id);

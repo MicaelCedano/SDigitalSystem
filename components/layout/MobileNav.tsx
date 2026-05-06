@@ -49,7 +49,7 @@ export function MobileNav({ user }: { user: any }) {
             </div>
 
             <div className="flex items-center gap-2">
-                <NotificationsCenter />
+                <NotificationsCenter userId={user?.id ? Number(user.id) : null} />
             </div>
         </div>
     );
