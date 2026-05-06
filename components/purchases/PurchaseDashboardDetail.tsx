@@ -84,19 +84,25 @@ interface PurchaseDetailProps {
 export function PurchaseDashboardDetail({ purchase, deviceModels }: PurchaseDetailProps) {
     const [modelSearch, setModelSearch] = useState("");
     const [equipmentSearch, setEquipmentSearch] = useState("");
+    const [showOnlyPending, setShowOnlyPending] = useState(false);
     const router = useRouter();
     const [deleting, setDeleting] = useState(false);
+
+    const REVIEWED_STATES = ['Revisado', 'Entregado', 'Vendido', 'Dañado'];
 
     // Filter logic
     const filteredModels = purchase.modelSummary.filter(m =>
         m.full_name.toLowerCase().includes(modelSearch.toLowerCase())
     );
 
-    const filteredEquipments = purchase.equipos.filter(e =>
-        e.imei.toLowerCase().includes(equipmentSearch.toLowerCase()) ||
-        (e.deviceModel?.modelName || "").toLowerCase().includes(equipmentSearch.toLowerCase()) ||
-        (e.deviceModel?.brand || "").toLowerCase().includes(equipmentSearch.toLowerCase())
-    );
+    const filteredEquipments = purchase.equipos.filter(e => {
+        const matchesSearch =
+            e.imei.toLowerCase().includes(equipmentSearch.toLowerCase()) ||
+            (e.deviceModel?.modelName || "").toLowerCase().includes(equipmentSearch.toLowerCase()) ||
+            (e.deviceModel?.brand || "").toLowerCase().includes(equipmentSearch.toLowerCase());
+        const matchesPending = showOnlyPending ? !REVIEWED_STATES.includes(e.estado) : true;
+        return matchesSearch && matchesPending;
+    });
 
     const isCompleted = purchase.estado === 'activa' && purchase.reviewedCount >= purchase.totalQuantity;
 
@@ -344,14 +350,28 @@ export function PurchaseDashboardDetail({ purchase, deviceModels }: PurchaseDeta
                         </div>
                     </div>
 
-                    <div className="relative group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-hover:text-indigo-400 transition-colors" />
-                        <Input
-                            placeholder="Buscar por IMEI o modelo..."
-                            className="h-16 pl-12 bg-white border-slate-100 rounded-[1.5rem] font-bold text-slate-700 shadow-sm focus-visible:ring-indigo-500/20"
-                            value={equipmentSearch}
-                            onChange={(e) => setEquipmentSearch(e.target.value)}
-                        />
+                    <div className="flex gap-3">
+                        <div className="relative group flex-1">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-hover:text-indigo-400 transition-colors" />
+                            <Input
+                                placeholder="Buscar por IMEI o modelo..."
+                                className="h-16 pl-12 bg-white border-slate-100 rounded-[1.5rem] font-bold text-slate-700 shadow-sm focus-visible:ring-indigo-500/20"
+                                value={equipmentSearch}
+                                onChange={(e) => setEquipmentSearch(e.target.value)}
+                            />
+                        </div>
+                        <Button
+                            variant={showOnlyPending ? "default" : "outline"}
+                            onClick={() => setShowOnlyPending(p => !p)}
+                            className={cn(
+                                "h-16 px-5 rounded-[1.5rem] font-bold text-sm whitespace-nowrap transition-all",
+                                showOnlyPending
+                                    ? "bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-200 border-none"
+                                    : "border-slate-100 text-slate-500 hover:border-amber-300 hover:text-amber-600"
+                            )}
+                        >
+                            {showOnlyPending ? `Pendientes (${filteredEquipments.length})` : "Solo Pendientes"}
+                        </Button>
                     </div>
 
                     <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/40 border border-slate-50 overflow-hidden">

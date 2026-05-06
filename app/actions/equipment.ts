@@ -128,30 +128,48 @@ export async function getNoFuncionalesData() {
     const session = await getServerSession(authOptions);
     if (!session) return { pendientes: [], recuperados: [] };
 
+    const equipoSelect = {
+        id: true,
+        imei: true,
+        modelo: true,
+        marca: true,
+        storageGb: true,
+        color: true,
+        fechaIngreso: true,
+        purchaseId: true,
+        purchase: {
+            select: {
+                id: true,
+                purchaseDate: true,
+                supplier: { select: { name: true } }
+            }
+        },
+    } as const;
+
     const pendientes = await prisma.equipo.findMany({
         where: { funcionalidad: "No funcional" },
-        include: {
-            purchase: { include: { supplier: true } },
-            deviceModel: true,
-        },
+        select: equipoSelect,
         orderBy: { fechaIngreso: "desc" },
     });
 
     const recuperados = await prisma.equipo.findMany({
-        where: { funcionalidad: "Funcional" },
-        include: {
-            purchase: { include: { supplier: true } },
-            deviceModel: true,
+        where: {
+            funcionalidad: "Funcional",
+            historial: { some: { observacion: { startsWith: "Recuperado:" } } }
+        },
+        select: {
+            ...equipoSelect,
             historial: {
                 where: { observacion: { startsWith: "Recuperado:" } },
                 orderBy: { fecha: "desc" },
                 take: 1,
+                select: { fecha: true }
             },
         },
         orderBy: { fechaIngreso: "desc" },
     });
 
-    const recuperadosConHistorial = recuperados.filter(e => e.historial.length > 0);
+    const recuperadosConHistorial = recuperados;
 
     return {
         pendientes: JSON.parse(JSON.stringify(pendientes)),

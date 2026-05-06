@@ -58,7 +58,7 @@ export async function submitLoteForReview(loteId: number) {
                 where: { loteId, funcionalidad: "Funcional" }
             });
             const malos = equiposCount - buenos;
-            const paymentEstimado = buenos * 50;
+            const paymentEstimado = equiposCount * 50;
             const msg =
                 `🔔 <b>Lote para Revisión</b>\n\n` +
                 `👤 <b>Técnico:</b> ${escapeHTML(tecnicoName)}\n` +

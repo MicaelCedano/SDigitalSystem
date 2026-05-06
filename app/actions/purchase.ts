@@ -252,48 +252,51 @@ export async function createPurchase(data: z.infer<typeof CreatePurchaseSchema>)
 }
 
 export async function getPurchases() {
-    // Mimic the Python logic: Active separated from History
     const purchases = await prisma.purchase.findMany({
         where: { estado: { not: "borrador" } },
         orderBy: { id: 'desc' },
         include: {
-            supplier: true
+            supplier: { select: { id: true, name: true, contactInfo: true } }
         }
     }) as any[];
 
-    const active: any[] = [];
-    const history: any[] = [];
+    if (purchases.length === 0) return { active: [], history: [] };
 
-    // Calculate progress for each
-    for (const purchase of purchases) {
-        const totalEquipments = purchase.totalQuantity;
-        // Count completed equipments: Anything that has been reviewed (funcionalidad is not null)
-        // or is in a terminal state.
-        const completedCount = await prisma.equipo.count({
+    const purchaseIds = purchases.map((p: any) => p.id);
+
+    const [completedCounts, totalCounts] = await Promise.all([
+        prisma.equipo.groupBy({
+            by: ['purchaseId'],
             where: {
-                purchaseId: purchase.id,
+                purchaseId: { in: purchaseIds },
                 OR: [
                     { estado: { in: ['Revisado', 'Entregado', 'Vendido'] } },
                     { funcionalidad: { not: null } }
                 ]
-            }
-        });
+            },
+            _count: { id: true }
+        }),
+        prisma.equipo.groupBy({
+            by: ['purchaseId'],
+            where: { purchaseId: { in: purchaseIds } },
+            _count: { id: true }
+        })
+    ]);
 
-        // We should also check the real count in the table. 
-        // If equipment was moved or deleted, totalQuantity might be wrong.
-        const actualTotalInTable = await prisma.equipo.count({
-            where: { purchaseId: purchase.id }
-        });
+    const completedMap = new Map(completedCounts.map((c: any) => [c.purchaseId, c._count.id]));
+    const totalMap = new Map(totalCounts.map((c: any) => [c.purchaseId, c._count.id]));
 
-        // Use the actual count in table as the base if it's different from totalQuantity
-        // this fixes the "97%" stuck issue for old purchases where some items were removed/moved.
-        const referenceTotal = actualTotalInTable > 0 ? actualTotalInTable : totalEquipments;
+    const active: any[] = [];
+    const history: any[] = [];
 
+    for (const purchase of purchases) {
+        const completedCount = completedMap.get(purchase.id) ?? 0;
+        const actualTotalInTable = totalMap.get(purchase.id) ?? 0;
+        const referenceTotal = actualTotalInTable > 0 ? actualTotalInTable : purchase.totalQuantity;
         const percentage = referenceTotal > 0 ? (completedCount / referenceTotal) * 100 : 0;
 
         const enhancedPurchase: any = {
             ...purchase,
-            supplier: (purchase as any).supplier,
             displayProgress: Math.min(percentage, 100),
             completedCount,
             originalTotal: referenceTotal

@@ -35,8 +35,7 @@ export function NotificationsCenter() {
 
     useEffect(() => {
         loadData();
-        // Polling every 30 seconds for new notifications
-        const interval = setInterval(loadData, 30000);
+        const interval = setInterval(loadData, 300000);
         return () => clearInterval(interval);
     }, []);
 

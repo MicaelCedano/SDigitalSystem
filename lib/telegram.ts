@@ -71,9 +71,10 @@ export async function sendTelegramMessage(message: string, buttons?: any, chatId
     }
 }
 
-export async function editTelegramMessage(messageId: number, message: string, buttons?: any) {
+export async function editTelegramMessage(messageId: number, message: string, buttons?: any, chatIdOverride?: string | number) {
     const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
-    const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
+    const rawChatId = chatIdOverride ?? process.env.TELEGRAM_ADMIN_CHAT_ID?.trim() ?? process.env.TELEGRAM_CHAT_ID?.trim();
+    const chatId = rawChatId != null ? String(rawChatId).trim() : "";
 
     if (!token || !chatId) return { success: false };
 
@@ -86,8 +87,12 @@ export async function editTelegramMessage(messageId: number, message: string, bu
             parse_mode: 'HTML',
         };
 
-        if (buttons) {
-            body.reply_markup = { inline_keyboard: buttons };
+        if (buttons !== undefined) {
+            if (buttons && (buttons.inline_keyboard || buttons.keyboard)) {
+                body.reply_markup = buttons;
+            } else {
+                body.reply_markup = { inline_keyboard: buttons ?? [] };
+            }
         }
 
         const response = await fetch(url, {
