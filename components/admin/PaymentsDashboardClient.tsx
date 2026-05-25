@@ -85,7 +85,7 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
         receiptBreakdown.forEach((item: any) => {
             const desc = (item.descripcion || '').toLowerCase();
             const amount = item.monto || 0;
-            let cat = 'Otros';
+            let cat = '';
 
             if (desc.includes('pago por lote qc') || desc.includes('revisión') || desc.includes('chequeo')) {
                 cat = 'Revisión de Equipos';
@@ -97,8 +97,18 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
                 cat = 'Acreditaciones Manuales';
             } else if (desc.includes('trabajo:') || desc.includes('reparaci') || desc.includes('cambio')) {
                 cat = 'Trabajos y Reparaciones';
+            } else {
+                const cleanDesc = item.descripcion ? item.descripcion.trim() : '';
+                if (cleanDesc) {
+                    cat = cleanDesc.charAt(0).toUpperCase() + cleanDesc.slice(1);
+                } else {
+                    cat = 'Otros';
+                }
             }
 
+            if (!categories[cat]) {
+                categories[cat] = { amount: 0 };
+            }
             categories[cat].amount += amount;
 
             const unitMatch = desc.match(/(\d+)\s*(equipos|celulares|unid|viajes|viaje)/i);
@@ -120,7 +130,14 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
 
         return Object.entries(categories)
             .filter(([_, data]) => data.amount > 0)
-            .sort((a, b) => priorityOrder.indexOf(a[0]) - priorityOrder.indexOf(b[0]))
+            .sort((a, b) => {
+                const idxA = priorityOrder.indexOf(a[0]);
+                const idxB = priorityOrder.indexOf(b[0]);
+                const posA = idxA !== -1 ? idxA : 999;
+                const posB = idxB !== -1 ? idxB : 999;
+                if (posA !== posB) return posA - posB;
+                return a[0].localeCompare(b[0]);
+            })
             .map(([name, data]) => ({ ...data, name }));
     };
 

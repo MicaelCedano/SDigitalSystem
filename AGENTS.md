@@ -16,7 +16,8 @@ Seguimos el sistema de diseño **"Glassy-Solid Hybrid"**.
 - **Botones**: Altura `h-14` o `h-16`, muy redondeados, con sombras de color.
 - **Colores**: Indigo-600 (Primary), Emerald-600 (Success), Amber-600 (Warning), Rose-600 (Error).
 
-## 📋 Tareas Recientes (2026-03-07)
+## 📋 Tareas Recientes (2026-05-25)
+- [x] **Conceptos Dinámicos en Bauchers**: Se modificó la categorización de ingresos en el desglose del Baucher de Pago para que las acreditaciones manuales u otros conceptos específicos (como "Combustible") se muestren con su descripción original capitalizada en lugar de agruparse en "Otros", evitando confusiones.
 - [x] **Rediseño de PendingWorkApproval**: Se optimizó el modal de detalles del técnico con el nuevo sistema de diseño para evitar la visualización "amontonada".
 - [x] **Centralización de Agenda**: Creación de este archivo `AGENTS.md`.
 - [x] **Ajuste de Pagos de Técnicos**: Se implementó la capacidad de ajustar el monto por equipo durante el proceso de aprobación de reportes de trabajo, permitiendo pagos personalizados y automáticos.
