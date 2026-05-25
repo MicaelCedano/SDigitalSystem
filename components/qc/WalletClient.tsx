@@ -86,6 +86,7 @@ export function WalletClient({ initialData, currentUser }: WalletProps) {
             'Lotes de Reparación': { amount: 0 },
             'Acreditaciones Manuales': { amount: 0 },
             'Trabajos y Reparaciones': { amount: 0 },
+            'Armado de Bicicletas': { amount: 0 },
             'Otros': { amount: 0 }
         };
 
@@ -104,6 +105,8 @@ export function WalletClient({ initialData, currentUser }: WalletProps) {
                 cat = 'Acreditaciones Manuales';
             } else if (desc.includes('trabajo:') || desc.includes('reparaci') || desc.includes('cambio')) {
                 cat = 'Trabajos y Reparaciones';
+            } else if (desc.includes('armado de') && desc.includes('bicicleta')) {
+                cat = 'Armado de Bicicletas';
             } else {
                 const cleanDesc = item.descripcion ? item.descripcion.trim() : '';
                 if (cleanDesc) {
@@ -118,7 +121,7 @@ export function WalletClient({ initialData, currentUser }: WalletProps) {
             }
             categories[cat].amount += amount;
 
-            const unitMatch = desc.match(/(\d+)\s*(equipos|celulares|unid|viajes|viaje)/i);
+            const unitMatch = desc.match(/(\d+)\s*(equipos|celulares|unid|viajes|viaje|bicicletas|bicicleta)/i);
             if (unitMatch) {
                 const count = parseInt(unitMatch[1]);
                 categories[cat].units = (categories[cat].units || 0) + count;
@@ -132,6 +135,7 @@ export function WalletClient({ initialData, currentUser }: WalletProps) {
             'Viajes',
             'Lotes de Reparación',
             'Trabajos y Reparaciones',
+            'Armado de Bicicletas',
             'Otros'
         ];
 
