@@ -17,6 +17,7 @@ Seguimos el sistema de diseño **"Glassy-Solid Hybrid"**.
 - **Colores**: Indigo-600 (Primary), Emerald-600 (Success), Amber-600 (Warning), Rose-600 (Error).
 
 ## 📋 Tareas Recientes (2026-05-25)
+- [x] **Organización Inteligente de Equipos en Compras**: Se implementó un algoritmo de ordenamiento inteligente (smart sorting) para organizar de manera coherente los equipos de las compras al generar el archivo Excel y reportes PDF. Ahora los equipos se ordenan de forma natural y ascendente por marca (Apple/iPhone primero), modelo/generación (ej. iPhone 11 -> 12 -> 12 Pro -> 13 -> 13 Pro Max), capacidad de almacenamiento, color, grado e IMEI, evitando que se listen de forma desordenada o aleatoria.
 - [x] **Conceptos Dinámicos en Bauchers**: Se modificó la categorización de ingresos en el desglose del Baucher de Pago para que las acreditaciones manuales u otros conceptos específicos (como "Combustible") se muestren con su descripción original capitalizada en lugar de agruparse en "Otros", evitando confusiones. Además, se agrupan todos los armados de bicicletas en un único concepto unificado ("Armado de Bicicletas") sumando sus unidades respectivas para optimizar el espacio.
 - [x] **Rediseño de PendingWorkApproval**: Se optimizó el modal de detalles del técnico con el nuevo sistema de diseño para evitar la visualización "amontonada".
 - [x] **Centralización de Agenda**: Creación de este archivo `AGENTS.md`.

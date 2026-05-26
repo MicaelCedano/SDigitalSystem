@@ -4,7 +4,7 @@ import prisma from '@/lib/prisma';
 import ExcelJS from 'exceljs';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { formatDateTime } from '@/lib/utils';
+import { formatDateTime, sortEquipments } from '@/lib/utils';
 import { format } from 'date-fns';
 
 export async function GET(
@@ -57,6 +57,9 @@ export async function GET(
         title = `Lote Completo - Compra #${purchaseId}`;
         filename = `lote_completo_compra_${purchaseId}`;
     }
+
+    // Sort equipments logically (e.g., Apple iPhone 11 -> 12 -> 13 -> 14, storage, color, etc.)
+    equipments = sortEquipments(equipments);
 
     // Add Supplier Name and Date to filename
     const supplierName = purchase.supplier?.name.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'sin_proveedor';

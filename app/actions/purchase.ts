@@ -6,6 +6,7 @@ import { Prisma, Purchase, Supplier, PurchaseItem, Equipo, DeviceModel } from "@
 import { z } from "zod";
 import { sendTelegramDocument } from "@/lib/telegram";
 import ExcelJS from "exceljs";
+import { sortEquipments } from "@/lib/utils";
 
 const CreatePurchaseSchema = z.object({
     supplierId: z.coerce.number(),
@@ -1039,7 +1040,8 @@ export async function checkAndNotifyPurchaseComplete(purchaseId: number) {
             cell.alignment = { horizontal: 'center' };
         });
 
-        for (const eq of purchase.equipos as any[]) {
+        const sortedEquipos = sortEquipments(purchase.equipos);
+        for (const eq of sortedEquipos) {
             const storageStr = eq.storageGb
                 ? eq.storageGb + 'GB'
                 : (eq.deviceModel?.storageGb ? eq.deviceModel.storageGb + 'GB' : '');
