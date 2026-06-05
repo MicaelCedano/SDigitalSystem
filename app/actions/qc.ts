@@ -3,6 +3,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { getSantoDomingoStartOfDay, getSantoDomingoStartOfMonth } from "@/lib/utils";
 
 export async function getQCDashboardData() {
     const session = await getServerSession(authOptions);
@@ -90,8 +91,8 @@ export async function getQCDashboardData() {
 
         // Accurate Rankings based on EquipoHistorial (as in Python version)
         const now = new Date();
-        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const startOfDay = getSantoDomingoStartOfDay(now);
+        const startOfMonth = getSantoDomingoStartOfMonth(now);
 
         // helper to get ranking data
         const getRanking = async (since?: Date, limit: number = 5) => {

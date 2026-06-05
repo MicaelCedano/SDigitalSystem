@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { getSantoDomingoDateStr, getSantoDomingoDayRange } from "@/lib/utils";
 
 // PATCH - Admin aprueba o rechaza una solicitud
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -78,11 +79,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
         const equipoIds = equipos.map(e => e.id);
         const qcName = qcUser.name || qcUser.username;
-        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const dateStr = getSantoDomingoDateStr();
         const baseCode = `LOTE-${qcName}-${dateStr}`;
 
-        const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
-        const todayEnd = new Date(); todayEnd.setHours(23, 59, 59, 999);
+        const { start: todayStart, end: todayEnd } = getSantoDomingoDayRange();
 
         const lastLote = await prisma.lote.findFirst({
             where: { tecnicoId: qcUser.id, fecha: { gte: todayStart, lte: todayEnd }, codigo: { startsWith: baseCode } },

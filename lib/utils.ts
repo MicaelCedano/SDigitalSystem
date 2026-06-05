@@ -20,6 +20,62 @@ export function formatDateTime(date: Date | string | null | undefined) {
   return formatted.replace(/\.\s?m\./i, 'M').toUpperCase();
 }
 
+export function getSantoDomingoStartOfDay(date: Date = new Date()): Date {
+  const astTime = new Date(date.getTime() - 4 * 60 * 60 * 1000);
+  const year = astTime.getUTCFullYear();
+  const month = astTime.getUTCMonth();
+  const day = astTime.getUTCDate();
+  return new Date(Date.UTC(year, month, day, 4, 0, 0, 0));
+}
+
+export function getSantoDomingoStartOfMonth(date: Date = new Date()): Date {
+  const astTime = new Date(date.getTime() - 4 * 60 * 60 * 1000);
+  const year = astTime.getUTCFullYear();
+  const month = astTime.getUTCMonth();
+  return new Date(Date.UTC(year, month, 1, 4, 0, 0, 0));
+}
+
+export function getSantoDomingoDateStr(date: Date = new Date()): string {
+  const parts = new Intl.DateTimeFormat('es-DO', {
+    timeZone: 'America/Santo_Domingo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(date);
+
+  const year = parts.find(p => p.type === 'year')?.value || '';
+  const month = parts.find(p => p.type === 'month')?.value || '';
+  const day = parts.find(p => p.type === 'day')?.value || '';
+
+  return `${year}${month}${day}`;
+}
+
+export function getSantoDomingoDayRange(date: Date = new Date()) {
+  const start = getSantoDomingoStartOfDay(date);
+  const end = new Date(start.getTime() + 24 * 60 * 60 * 1000 - 1);
+  return { start, end };
+}
+
+export function formatTimeSD(date: Date | string | null | undefined): string {
+  if (!date) return '--:--';
+  return new Intl.DateTimeFormat('es-DO', {
+    timeZone: 'America/Santo_Domingo',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  }).format(new Date(date)).replace(/\.\s?m\./i, 'M').toUpperCase();
+}
+
+export function formatDateSD(date: Date | string | null | undefined): string {
+  if (!date) return '';
+  return new Intl.DateTimeFormat('es-DO', {
+    timeZone: 'America/Santo_Domingo',
+    day: '2-digit',
+    month: 'short',
+  }).format(new Date(date)).toUpperCase();
+}
+
+
 export function getProfileImageUrl(image: string | null | undefined) {
   if (!image) return null;
   if (image.startsWith('http')) return image;

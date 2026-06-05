@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { getSantoDomingoDateStr, getSantoDomingoDayRange } from "@/lib/utils";
 
 export async function POST(req: NextRequest) {
     try {
@@ -43,14 +44,11 @@ export async function POST(req: NextRequest) {
         }
 
         // Crear código de Lote
-        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const dateStr = getSantoDomingoDateStr();
         const qcName = qcUser.name || qcUser.username;
         const baseCode = `LOTE-${qcName}-${dateStr}`;
 
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
-        const todayEnd = new Date();
-        todayEnd.setHours(23, 59, 59, 999);
+        const { start: todayStart, end: todayEnd } = getSantoDomingoDayRange();
 
         const lastLote = await prisma.lote.findFirst({
             where: {

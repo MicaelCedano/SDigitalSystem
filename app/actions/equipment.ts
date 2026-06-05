@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { getSantoDomingoDateStr, getSantoDomingoDayRange } from "@/lib/utils";
 
 export async function updateEquipment(id: number, data: any) {
     const session = await getServerSession(authOptions);
@@ -219,14 +220,11 @@ export async function assignToQualityControl(equipoIds: number[], qcId: number) 
             return { success: false, error: "Usuario de Control de Calidad inválido o inactivo" };
         }
 
-        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const dateStr = getSantoDomingoDateStr();
         const qcName = qcUser.name || qcUser.username;
         const baseCode = `LOTE-${qcName}-${dateStr}`;
 
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
-        const todayEnd = new Date();
-        todayEnd.setHours(23, 59, 59, 999);
+        const { start: todayStart, end: todayEnd } = getSantoDomingoDayRange();
 
         const lastLote = await prisma.lote.findFirst({
             where: {

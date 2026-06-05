@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add *)",
+      "mcp__b56224c5-7436-41ca-825e-e39fc1fd436b__list_teams",
+      "mcp__b56224c5-7436-41ca-825e-e39fc1fd436b__list_projects",
+      "mcp__b56224c5-7436-41ca-825e-e39fc1fd436b__get_runtime_logs",
+      "Bash(npx tsc *)",
+      "mcp__9d224a40-1b1d-415b-92f0-06c8ab65cafc__list_projects",
+      "mcp__9d224a40-1b1d-415b-92f0-06c8ab65cafc__execute_sql",
+      "mcp__9d224a40-1b1d-415b-92f0-06c8ab65cafc__apply_migration",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(gh pr create --title 'fix: normalize funcionalidad value to '\\\\''No funcional'\\\\'' in EditEquipmentDialog' --body ' *)"
+    ]
+  }
+}

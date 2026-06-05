@@ -69,7 +69,7 @@ export default async function SolicitudesImeiAdminPage() {
                                     </div>
                                     <div className="flex items-center gap-4">
                                         <p className="text-xs text-slate-400 hidden md:block">
-                                            {sol.fechaResolucion ? new Date(sol.fechaResolucion).toLocaleDateString("es-DO", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "—"}
+                                            {sol.fechaResolucion ? new Date(sol.fechaResolucion).toLocaleDateString("es-DO", { timeZone: "America/Santo_Domingo", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "—"}
                                         </p>
                                         {sol.estado === "Aprobado"
                                             ? <Badge className="bg-emerald-50 text-emerald-600 border-emerald-200 font-black text-[10px] uppercase">Aprobado</Badge>

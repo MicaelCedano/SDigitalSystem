@@ -1,6 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
+import { getSantoDomingoStartOfDay } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
 import { ACHIEVEMENTS_DEF } from "../lib/achievements-config";
 
@@ -59,8 +60,7 @@ export async function checkAchievements(userId: number) {
             where: { tecnicoId: userId, estado: "Entregado" }
         });
 
-        const startOfDay = new Date();
-        startOfDay.setHours(0, 0, 0, 0);
+        const startOfDay = getSantoDomingoStartOfDay();
         const revisadosHoy = await prisma.equipoHistorial.count({
             where: {
                 userId,

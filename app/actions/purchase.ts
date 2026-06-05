@@ -1061,8 +1061,12 @@ export async function checkAndNotifyPurchaseComplete(purchaseId: number) {
         const buffer = Buffer.from(await workbook.xlsx.writeBuffer());
         const supplierName = (purchase as any).supplier?.name || 'Proveedor';
         const now = new Date();
-        const fecha = now.getDate().toString().padStart(2,'0') + '-' +
-            (now.getMonth()+1).toString().padStart(2,'0') + '-' + now.getFullYear();
+        const fecha = new Intl.DateTimeFormat('es-DO', {
+            timeZone: 'America/Santo_Domingo',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        }).format(now).replace(/\//g, '-');
         const safeName = supplierName.replace(/[^a-zA-Z0-9]/g, '_');
         const filename = 'Compra_' + purchaseId + '_' + safeName + '_' + fecha + '.xlsx';
 

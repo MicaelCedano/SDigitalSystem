@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { cn, getProfileImageUrl } from "@/lib/utils";
+import { cn, getProfileImageUrl, getSantoDomingoStartOfDay, formatTimeSD, formatDateSD } from "@/lib/utils";
 
 import { LoteActionButtons } from "@/components/admin/LoteActionButtons";
 import { LoteDetailsModal } from "@/components/admin/LoteDetailsModal";
@@ -115,7 +115,7 @@ export default async function Home() {
 
   // Accurate Rankings based on current active work and today's activity
   const now = new Date();
-  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfDay = getSantoDomingoStartOfDay(now);
 
   const qcUsers = await prisma.user.findMany({
     where: { 
@@ -545,10 +545,10 @@ export default async function Home() {
                   </div>
                   <div className="flex flex-col items-end shrink-0">
                     <span className="text-xs font-black text-slate-600 group-hover:text-indigo-600 transition-colors">
-                      {item.fecha ? new Date(item.fecha).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                      {item.fecha ? formatTimeSD(item.fecha) : '--:--'}
                     </span>
                     <span className="text-[9px] font-bold text-slate-300 uppercase tracking-tighter mt-0.5">
-                      {item.fecha ? new Date(item.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : ''}
+                      {item.fecha ? formatDateSD(item.fecha) : ''}
                     </span>
                   </div>
                 </div>

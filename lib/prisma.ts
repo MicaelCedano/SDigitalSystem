@@ -1,4 +1,7 @@
+process.env.TZ = 'America/Santo_Domingo';
+
 import { PrismaClient } from '@prisma/client'
+
 
 const prismaClientSingleton = () => {
     return new PrismaClient()
