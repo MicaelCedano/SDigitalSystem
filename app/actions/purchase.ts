@@ -744,21 +744,81 @@ export async function addEquipmentToPurchase(formData: FormData) {
 
         if (!worksheet) return { success: false, error: "No se encontró la hoja en el archivo." };
 
+        // Detectar formato del Excel de forma robusta. Soportamos 3 casos:
+        //   A) Header real: la primera fila contiene la palabra "IMEI"
+        //      (en cualquier columna). Usamos esos headers tal cual.
+        //   B) Sin header, columnas en orden: la primera celda (col 1)
+        //      es VACÍA o texto no-IMEI, y la col 2 trae el primer IMEI
+        //      (15 dígitos). Interpretamos col 1 = vacía/header-fantasma,
+        //      col 2 = IMEI, col 3 = Modelo, etc.
+        //   C) Sin header, columnas en orden directo: la col 1 ya trae
+        //      un IMEI válido. Interpretamos col 1 = IMEI, col 2 = Modelo.
+        // Esto arregla el bug donde Excels con la primera columna vacía
+        // (Libro1.xlsx: ['', IMEI, Modelo]) se rechazaban con "IMEI vacío".
+        const firstRow = worksheet.getRow(1);
+        const firstRowTexts: string[] = [];
+        firstRow.eachCell((cell: any, colNumber: number) => {
+            firstRowTexts[colNumber] = (cell.text || '').toString().trim();
+        });
+        const hasRealHeader = firstRowTexts.some(
+            (t) => t && /imei/i.test(t.replace(/\s+/g, ''))
+        );
+        const isFirstCellImei = /^\d{15}$/.test(firstRowTexts[1] || '');
+
         const rows: any[] = [];
         const headers: string[] = [];
 
-        worksheet.getRow(1).eachCell((cell: any, colNumber: number) => {
-            headers[colNumber] = cell.text.trim();
-        });
-
-        worksheet.eachRow((row: any, rowNumber: number) => {
-            if (rowNumber === 1) return;
-            const rowData: any = {};
-            row.eachCell((cell: any, colNumber: number) => {
-                rowData[headers[colNumber]] = cell.text;
+        if (hasRealHeader) {
+            // Caso A: header real
+            firstRow.eachCell((cell: any, colNumber: number) => {
+                headers[colNumber] = cell.text.trim();
             });
-            rows.push(rowData);
-        });
+            worksheet.eachRow((row: any, rowNumber: number) => {
+                if (rowNumber === 1) return;
+                const rowData: any = {};
+                row.eachCell((cell: any, colNumber: number) => {
+                    rowData[headers[colNumber]] = cell.text;
+                });
+                rows.push(rowData);
+            });
+        } else {
+            // Sin header: decidimos el orden de columnas.
+            // Si la primera celda YA es un IMEI válido → orden directo.
+            // Si la primera celda está vacía y la segunda es un IMEI → hay
+            // una columna fantasma a la izquierda, saltamos col 1.
+            let startCol = 1;
+            let col1IsEmpty = !firstRowTexts[1];
+            let col2IsImei = /^\d{15}$/.test(firstRowTexts[2] || '');
+            if (col1IsEmpty && col2IsImei) {
+                startCol = 2;
+            } else if (!isFirstCellImei && !col1IsEmpty) {
+                // Celda 1 tiene texto que no es IMEI ni header. Probable
+                // header "fantasma" en col 1. Marcamos la fila 1 como dato
+                // pero advertimos: si empieza con número, no es header.
+                startCol = 1;
+            }
+            const syntheticHeaders =
+                importType === 'iphone'
+                    ? ['IMEI', 'Modelo']
+                    : ['IMEI', 'Marca', 'Modelo', 'GB', 'Color'];
+            syntheticHeaders.forEach((h, i) => {
+                headers[startCol + i] = h;
+            });
+            worksheet.eachRow((row: any, _rowNumber: number) => {
+                const rowData: any = {};
+                let hasAnyValue = false;
+                row.eachCell((cell: any, colNumber: number) => {
+                    const h = headers[colNumber];
+                    if (h) {
+                        rowData[h] = cell.text;
+                        if (cell.text && String(cell.text).trim()) {
+                            hasAnyValue = true;
+                        }
+                    }
+                });
+                if (hasAnyValue) rows.push(rowData);
+            });
+        }
 
         const purchase = await prisma.purchase.findUnique({
             where: { id: purchaseId }
@@ -795,7 +855,36 @@ export async function addEquipmentToPurchase(formData: FormData) {
             if (importType === 'iphone') {
                 const rawModel = String(row['Modelo'] || '').trim();
                 const parsed = parseIphoneModel(rawModel);
-                brand = "Apple";
+                // El modo "Smart iPhone" existe para que el usuario suba Excels
+                // sin tener que poner la marca. Pero NO debemos forzar "Apple"
+                // si el modelo claramente no es iPhone (ej. "Galaxy S22 5G 256GB"),
+                // porque guardaríamos "Apple Galaxy" en la BD.
+                const isIphoneModel = /iphone/i.test(rawModel);
+                const isIphoneByGen = /^\s*(1[1-6])\s+(pro\s*max|pro|plus|mini)\b/i.test(rawModel);
+                if (isIphoneModel || isIphoneByGen) {
+                    brand = "Apple";
+                } else {
+                    // Heurística de marca en 3 capas (orden de prioridad):
+                    //   1) Si el texto contiene "Galaxy" → Samsung (los Galaxy
+                    //      SIEMPRE son Samsung aunque el usuario no lo escriba).
+                    //   2) Si empieza con una marca conocida del listado, la
+                    //      usamos tal cual.
+                    //   3) Si empieza con "Pixel" → Google.
+                    //   4) Fallback: primer token del modelo.
+                    if (/\bgalaxy\b/i.test(rawModel)) {
+                        brand = "Samsung";
+                    } else if (/\bpixel\b/i.test(rawModel)) {
+                        brand = "Google";
+                    } else {
+                        const knownBrands = ['Samsung', 'Xiaomi', 'Huawei', 'Motorola',
+                            'Google', 'OnePlus', 'Sony', 'LG', 'Nokia', 'Realme', 'Oppo'];
+                        const firstWord = rawModel.split(/\s+/)[0] || '';
+                        const matchedBrand = knownBrands.find(
+                            (b) => b.toLowerCase() === firstWord.toLowerCase()
+                        );
+                        brand = matchedBrand || firstWord;
+                    }
+                }
                 modelName = parsed.modelName;
                 storageGb = parsed.storageGb;
                 color = parsed.color;
