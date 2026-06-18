@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
+import { getSantoDomingoDateStr } from "@/lib/utils";
 import { authOptions } from "@/lib/auth";
 import { checkAchievements } from "./achievements";
 
@@ -135,7 +136,7 @@ export async function createGarantia(data: {
 
     try {
         const count = await prisma.garantia.count();
-        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const dateStr = getSantoDomingoDateStr().replace(/-/g, '');
         const codigo = `GAR-${dateStr}-${count + 1}`;
 
         const garantia = await prisma.garantia.create({
@@ -677,7 +678,7 @@ export async function createGarantiasLote(data: {
         const result = await prisma.$transaction(async (tx) => {
             // 1. Create Lote Record
             const countLotes = await tx.garantiaLoteIngreso.count();
-            const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            const dateStr = getSantoDomingoDateStr().replace(/-/g, '');
             const codigoLote = `LOTE-GAR-${dateStr}-${countLotes + 1}`;
 
             const lote = await tx.garantiaLoteIngreso.create({
@@ -755,7 +756,7 @@ export async function createTrabajoLote(data: {
 
     try {
         const count = await prisma.trabajoGarantiaLote.count();
-        const codigo = `TL-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${count + 1}`;
+        const codigo = `TL-${getSantoDomingoDateStr().replace(/-/g, '')}-${count + 1}`;
 
         const trabajo = await prisma.trabajoGarantiaLote.create({
             data: {
@@ -871,7 +872,7 @@ export async function createConduce(data: {
     try {
         const result = await prisma.$transaction(async (tx) => {
             const count = await tx.conduceEnvio.count();
-            const codigo = `COND-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${count + 1}`;
+            const codigo = `COND-${getSantoDomingoDateStr().replace(/-/g, '')}-${count + 1}`;
 
             const conduce = await tx.conduceEnvio.create({
                 data: {
@@ -971,7 +972,7 @@ export async function reportarTrabajosRealizados(data: {
         
         // Count total lotes for numeric code
         const count = await prisma.garantiaLoteIngreso.count();
-        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const dateStr = getSantoDomingoDateStr().replace(/-/g, '');
         const codigoLote = `TRA-${dateStr}-${count + 1}`;
 
         const result = await prisma.$transaction(async (tx) => {
