@@ -21,7 +21,8 @@ import {
     Bell,
     Package,
     Zap,
-    Send
+    Send,
+    Lock
 } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import { useState } from 'react';
@@ -150,6 +151,7 @@ const Sidebar = ({ initialUser, forceShow = false }: { initialUser?: any, forceS
                                         <SubNavItem href="/compras/modelos" label="Modelos" />
                                         <SubNavItem href="/admin/pagos" label="Gestión de Pagos" />
                                         <SubNavItem href="/admin/penalidades" label="Historial Penalidades" />
+                                        <SubNavItem href="/admin/desbloqueos" label="Aprobar Desbloqueos" />
                                         <SubNavItem href="/garantias" label="Garantías" />
                                     </div>
                                 )}
@@ -166,6 +168,7 @@ const Sidebar = ({ initialUser, forceShow = false }: { initialUser?: any, forceS
                             {!collapsed && <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mt-4 mb-2 pl-4">Panel de Calidad</div>}
                             {isQC && !isAdmin && <NavItem href="/qc" icon={<LayoutDashboard size={20} />} label="Dashboard" active={pathname === '/qc'} collapsed={collapsed} user={user} />}
                             {isQC && !isAdmin && <NavItem href="/qc/solicitar-imeis" icon={<Send size={20} />} label="Solicitar IMEIs" active={pathname === '/qc/solicitar-imeis'} collapsed={collapsed} user={user} />}
+                            {isQC && !isAdmin && <NavItem href="/qc/desbloqueos" icon={<Lock size={20} />} label="Desbloqueos QC" active={pathname === '/qc/desbloqueos'} collapsed={collapsed} user={user} />}
                             <NavItem href="/ranking" icon={<Trophy size={20} />} label="Ranking" active={pathname === '/ranking'} collapsed={collapsed} user={user} />
                             {isQC && !isAdmin && <NavItem href="/wallet" icon={<Wallet size={20} />} label="Mi Wallet" active={pathname === '/wallet'} collapsed={collapsed} user={user} />}
                         </div>
@@ -203,6 +206,7 @@ const Sidebar = ({ initialUser, forceShow = false }: { initialUser?: any, forceS
 
                     <div className={cn("pt-6 border-t border-white/5", collapsed ? "flex flex-col items-center gap-2" : "")}>
                         {!collapsed && <p className="px-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3">Sistema</p>}
+                        <NavItem href="/desbloqueos" icon={<Lock size={18} />} label="Mis Desbloqueos" active={pathname === '/desbloqueos' || pathname === '/desbloqueos/nuevo'} collapsed={collapsed} user={user} />
                         <NavItem href="/notificaciones" icon={<Bell size={18} />} label="Notificaciones" active={pathname === '/notificaciones'} collapsed={collapsed} badge={unreadCount} user={user} />
                         <NavItem href="/profile" icon={<UserIcon size={18} />} label="Mi Perfil" active={pathname === '/profile'} collapsed={collapsed} user={user} />
                         <NavItem href="/settings" icon={<Settings size={18} />} label="Ajustes" active={pathname === '/settings'} collapsed={collapsed} user={user} />

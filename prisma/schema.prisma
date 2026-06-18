@@ -50,6 +50,10 @@ model User {
   conversations           Conversation[]                 @relation("ConversationToUser")
   solicitudesImeiQC       SolicitudImei[]                @relation("SolicitudQC")
   solicitudesImeiAdmin    SolicitudImei[]                @relation("SolicitudAdmin")
+  solicitudesDesbloqueoTecnico SolicitudDesbloqueo[]      @relation("SolicitudDesbloqueoTecnico")
+  solicitudesDesbloqueoQC       SolicitudDesbloqueo[]      @relation("SolicitudDesbloqueoQC")
+  solicitudesDesbloqueoAdmin    SolicitudDesbloqueo[]      @relation("SolicitudDesbloqueoAdmin")
+  equiposDesbloqueados     Equipo[]                       @relation("EquipoDesbloqueadoPor")
 
   @@map("users")
 }
@@ -146,10 +150,13 @@ model Equipo {
   funcionalidad String?           @db.VarChar(20)
   color         String?           @db.VarChar(50)
   imageFilename String?           @map("image_filename") @db.VarChar(255)
+  desbloqueadoPorId Int?           @map("desbloqueado_por_id")
+  fechaDesbloqueo   DateTime?      @map("fecha_desbloqueo") @db.Timestamp(6)
   deviceModel   DeviceModel?      @relation(fields: [deviceModelId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   lote          Lote?             @relation(fields: [loteId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   purchase      Purchase          @relation(fields: [purchaseId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   user          User?             @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  desbloqueadoPor User?            @relation("EquipoDesbloqueadoPor", fields: [desbloqueadoPorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   historial     EquipoHistorial[]
   garantias     Garantia[]
   penalidades   Penalidad[]
@@ -515,6 +522,32 @@ model SolicitudImei {
   admin           User?     @relation("SolicitudAdmin", fields: [adminId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@map("solicitud_imei")
+}
+
+model SolicitudDesbloqueo {
+  id                Int       @id @default(autoincrement())
+  codigo            String    @unique @db.VarChar(64)
+  tecnicoId         Int       @map("tecnico_id")
+  imeis             Json
+  estado            String    @default("Pendiente QC") @db.VarChar(20)
+  observacion       String?
+  qcId              Int?      @map("qc_id")
+  fechaQc           DateTime? @map("fecha_qc") @db.Timestamp(6)
+  observacionQc     String?   @map("observacion_qc")
+  adminId           Int?      @map("admin_id")
+  fechaAdmin        DateTime? @map("fecha_admin") @db.Timestamp(6)
+  observacionAdmin  String?   @map("observacion_admin")
+  totalEquipos      Int       @default(0) @map("total_equipos")
+  equiposAprobados  Int       @default(0) @map("equipos_aprobados")
+  equiposRechazados Int       @default(0) @map("equipos_rechazados")
+  montoPorEquipo    Float     @default(25) @map("monto_por_equipo")
+  montoTotalPagado  Float     @default(0) @map("monto_total_pagado")
+  fechaCreacion     DateTime  @default(now()) @map("fecha_creacion") @db.Timestamp(6)
+  tecnico           User      @relation("SolicitudDesbloqueoTecnico", fields: [tecnicoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  qc                User?     @relation("SolicitudDesbloqueoQC", fields: [qcId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  admin             User?     @relation("SolicitudDesbloqueoAdmin", fields: [adminId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("solicitud_desbloqueo")
 }
 
 model system_setting {
