@@ -163,6 +163,66 @@ export async function updateProfile(userId: number, formData: FormData) {
     }
 }
 
+/**
+ * Cambia la contraseña del propio usuario desde su perfil.
+ * Requiere la contraseña actual como medida de seguridad.
+ */
+export async function changeOwnPassword(userId: number, formData: FormData) {
+    if (!userId || isNaN(userId)) {
+        return { success: false, error: "ID de usuario no válido" };
+    }
+
+    const currentPassword = formData.get("currentPassword") as string;
+    const newPassword = formData.get("newPassword") as string;
+    const confirmPassword = formData.get("confirmPassword") as string;
+
+    // Validaciones básicas
+    if (!currentPassword || !newPassword || !confirmPassword) {
+        return { success: false, error: "Todos los campos de contraseña son obligatorios" };
+    }
+
+    if (newPassword.length < 6) {
+        return { success: false, error: "La nueva contraseña debe tener al menos 6 caracteres" };
+    }
+
+    if (newPassword !== confirmPassword) {
+        return { success: false, error: "La nueva contraseña y su confirmación no coinciden" };
+    }
+
+    if (currentPassword === newPassword) {
+        return { success: false, error: "La nueva contraseña debe ser diferente a la actual" };
+    }
+
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { passwordHash: true }
+        });
+
+        if (!user) {
+            return { success: false, error: "Usuario no encontrado" };
+        }
+
+        // Verificar contraseña actual
+        const isCurrentValid = await bcrypt.compare(currentPassword, user.passwordHash);
+        if (!isCurrentValid) {
+            return { success: false, error: "La contraseña actual es incorrecta" };
+        }
+
+        // Hashear y guardar nueva contraseña
+        const newHash = await bcrypt.hash(newPassword, 10);
+        await prisma.user.update({
+            where: { id: userId },
+            data: { passwordHash: newHash }
+        });
+
+        return { success: true };
+    } catch (error: any) {
+        console.error("Error changing password:", error);
+        return { success: false, error: error.message || "Error al cambiar la contraseña" };
+    }
+}
+
 export async function updateUserAdmin(userId: number, formData: FormData) {
     const role = formData.get("role") as string;
     const canCreateGarantias = formData.get("canCreateGarantias") === "true";

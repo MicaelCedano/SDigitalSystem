@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { User, Mail, Camera, Save, Loader2, Shield } from "lucide-react";
+import { User, Mail, Camera, Save, Loader2, Shield, Lock, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
-import { updateProfile } from "@/app/actions/user";
+import { updateProfile, changeOwnPassword } from "@/app/actions/user";
 import { useSession } from "next-auth/react";
 import { getProfileImageUrl } from "@/lib/utils";
 
@@ -26,7 +26,9 @@ interface ProfileFormProps {
 export default function ProfileForm({ user }: ProfileFormProps) {
     const { update } = useSession();
     const [isLoading, setIsLoading] = useState(false);
+    const [isChangingPassword, setIsChangingPassword] = useState(false);
     const [preview, setPreview] = useState<string | null>(getProfileImageUrl(user.profileImage));
+    const [showPasswords, setShowPasswords] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -78,7 +80,29 @@ export default function ProfileForm({ user }: ProfileFormProps) {
         }
     }
 
+    async function handleChangePassword(formData: FormData) {
+        setIsChangingPassword(true);
+        try {
+            const result = await changeOwnPassword(user.id, formData);
+
+            if (result.success) {
+                toast.success("Contraseña actualizada correctamente");
+                // Limpiar el form de contraseñas
+                const form = document.getElementById("password-form") as HTMLFormElement | null;
+                if (form) form.reset();
+            } else {
+                toast.error(result.error || "Error al cambiar la contraseña");
+            }
+        } catch (error: any) {
+            console.error("Change password component error:", error);
+            toast.error(error.message || "Error inesperado al cambiar la contraseña");
+        } finally {
+            setIsChangingPassword(false);
+        }
+    }
+
     return (
+        <>
         <Card className="max-w-2xl mx-auto border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl relative overflow-hidden group">
             {/* Glossy Overlay */}
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-purple-500/5 pointer-events-none" />
@@ -199,5 +223,104 @@ export default function ProfileForm({ user }: ProfileFormProps) {
                 </form>
             </CardContent>
         </Card>
+
+        {/* Cambiar Contraseña */}
+        <Card className="max-w-2xl mx-auto mt-6 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl relative overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-rose-500/5 pointer-events-none" />
+
+            <CardHeader className="relative z-10 border-b border-slate-100 dark:border-white/5 pb-8">
+                <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 bg-amber-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-amber-500/20">
+                        <Lock size={24} />
+                    </div>
+                    <div>
+                        <CardTitle className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Cambiar Contraseña</CardTitle>
+                        <CardDescription className="text-slate-500 dark:text-slate-400 font-medium">
+                            Actualiza tu clave de acceso. Necesitarás tu contraseña actual.
+                        </CardDescription>
+                    </div>
+                </div>
+            </CardHeader>
+
+            <CardContent className="relative z-10 pt-8">
+                <form id="password-form" action={handleChangePassword} className="space-y-6">
+                    <div className="space-y-2">
+                        <Label className="text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest">Contraseña Actual</Label>
+                        <div className="relative group">
+                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500 group-focus-within:text-amber-500 transition-colors" />
+                            <Input
+                                name="currentPassword"
+                                type={showPasswords ? "text" : "password"}
+                                required
+                                autoComplete="current-password"
+                                placeholder="Tu contraseña actual"
+                                className="pl-10 pr-10 h-12 bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:bg-white dark:focus:bg-white/10 transition-all rounded-xl"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label className="text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest">Nueva Contraseña</Label>
+                            <div className="relative group">
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500 group-focus-within:text-amber-500 transition-colors" />
+                                <Input
+                                    name="newPassword"
+                                    type={showPasswords ? "text" : "password"}
+                                    required
+                                    minLength={6}
+                                    autoComplete="new-password"
+                                    placeholder="Mínimo 6 caracteres"
+                                    className="pl-10 h-12 bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:bg-white dark:focus:bg-white/10 transition-all rounded-xl"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label className="text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest">Confirmar</Label>
+                            <div className="relative group">
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500 group-focus-within:text-amber-500 transition-colors" />
+                                <Input
+                                    name="confirmPassword"
+                                    type={showPasswords ? "text" : "password"}
+                                    required
+                                    minLength={6}
+                                    autoComplete="new-password"
+                                    placeholder="Repite la nueva contraseña"
+                                    className="pl-10 h-12 bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:bg-white dark:focus:bg-white/10 transition-all rounded-xl"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-3 pt-1">
+                        <button
+                            type="button"
+                            onClick={() => setShowPasswords(!showPasswords)}
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors uppercase tracking-widest"
+                        >
+                            {showPasswords ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                            {showPasswords ? "Ocultar" : "Mostrar"} contraseñas
+                        </button>
+                    </div>
+
+                    <div className="pt-2">
+                        <Button
+                            type="submit"
+                            disabled={isChangingPassword}
+                            className="w-full h-12 bg-amber-600 hover:bg-amber-700 text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-amber-500/20 rounded-xl transition-all duration-300"
+                        >
+                            {isChangingPassword ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                                <Lock className="mr-2 h-4 w-4" />
+                            )}
+                            Actualizar Contraseña
+                        </Button>
+                    </div>
+                </form>
+            </CardContent>
+        </Card>
+        </>
     );
 }
