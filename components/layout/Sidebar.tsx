@@ -168,7 +168,6 @@ const Sidebar = ({ initialUser, forceShow = false }: { initialUser?: any, forceS
                             {!collapsed && <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mt-4 mb-2 pl-4">Panel de Calidad</div>}
                             {isQC && !isAdmin && <NavItem href="/qc" icon={<LayoutDashboard size={20} />} label="Dashboard" active={pathname === '/qc'} collapsed={collapsed} user={user} />}
                             {isQC && !isAdmin && <NavItem href="/qc/solicitar-imeis" icon={<Send size={20} />} label="Solicitar IMEIs" active={pathname === '/qc/solicitar-imeis'} collapsed={collapsed} user={user} />}
-                            {isQC && !isAdmin && <NavItem href="/qc/desbloqueos" icon={<Lock size={20} />} label="Revisar Desbloqueos" active={pathname === '/qc/desbloqueos'} collapsed={collapsed} user={user} />}
                             <NavItem href="/ranking" icon={<Trophy size={20} />} label="Ranking" active={pathname === '/ranking'} collapsed={collapsed} user={user} />
                             {isQC && !isAdmin && <NavItem href="/wallet" icon={<Wallet size={20} />} label="Mi Wallet" active={pathname === '/wallet'} collapsed={collapsed} user={user} />}
                         </div>
