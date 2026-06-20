@@ -356,7 +356,9 @@ export async function POST(req: Request) {
                 const imeisCount = Array.isArray(solicitud.imeis) ? (solicitud.imeis as unknown[]).length : 0;
 
                 if (isApprove) {
+                    console.log(`[Telegram Webhook] approve_solicitud:${solicitudId} start, adminUserId=${adminUserId}`);
                     const result = await aprobarSolicitudImei(solicitudId, adminUserId, null);
+                    console.log(`[Telegram Webhook] approve_solicitud:${solicitudId} result:`, JSON.stringify(result));
 
                     if (!result.success) {
                         await answerCallbackQuery(id, `❌ ${result.message}`);
@@ -371,7 +373,9 @@ export async function POST(req: Request) {
                         `✅ <b>APROBADO</b> por ${escapeHTML(from.first_name || "Admin")}`;
 
                     await editTelegramMessage(message.message_id, updatedMsg, []);
+                    console.log(`[Telegram Webhook] approve_solicitud:${solicitudId} message edited, calling answerCallbackQuery`);
                     await answerCallbackQuery(id, `✅ Solicitud #${solicitudId} aprobada → ${result.codigoLote}`);
+                    console.log(`[Telegram Webhook] approve_solicitud:${solicitudId} DONE`);
                 } else {
                     const result = await rechazarSolicitudImei(solicitudId, adminUserId, null);
 
