@@ -7,6 +7,7 @@ import { authOptions } from "@/lib/auth";
 import { checkAchievements } from "./achievements";
 import { checkAndNotifyPurchaseComplete } from "./purchase";
 import { sendTelegramMessage, escapeHTML } from "@/lib/telegram";
+import { calcularPagoLote } from "@/lib/pago-lote";
 
 /**
  * Technician submits a lot for review by the administrator.
@@ -53,18 +54,15 @@ export async function submitLoteForReview(loteId: number) {
 
         // Notificar al admin por Telegram con botones de acción
         try {
-            const equiposCount = lote._count.equipos;
-            const buenos = await prisma.equipo.count({
-                where: { loteId, funcionalidad: "Funcional" }
-            });
-            const malos = equiposCount - buenos;
-            const paymentEstimado = buenos * 50;
+            // Fuente única de verdad: misma función que usa approveLote al pagar.
+            // Garantiza que el "Pago estimado" del bot coincida con el monto real.
+            const pago = await calcularPagoLote(prisma, loteId);
             const msg =
                 `🔔 <b>Lote para Revisión</b>\n\n` +
                 `👤 <b>Técnico:</b> ${escapeHTML(tecnicoName)}\n` +
                 `📦 <b>Lote:</b> <code>${escapeHTML(lote.codigo)}</code>\n` +
-                `📱 <b>Equipos:</b> ${equiposCount}  ✅ Buenos: ${buenos}  ❌ Malos: ${malos}\n` +
-                `💰 <b>Pago estimado:</b> RD$ ${paymentEstimado.toLocaleString()}`;
+                `📱 <b>Equipos:</b> ${pago.totalEquipos}  ✅ Buenos: ${pago.buenos}  ❌ Malos: ${pago.malos}\n` +
+                `💰 <b>Pago estimado:</b> RD$ ${pago.total.toLocaleString()} (RD$ ${pago.tarifa.toLocaleString()}/equipo bueno)`;
             const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID || process.env.TELEGRAM_CHAT_ID;
             const loteUrl = `https://sdigitalsystem.vercel.app/equipos?q=${encodeURIComponent(lote.codigo)}`;
             await sendTelegramMessage(msg, [
@@ -89,6 +87,8 @@ export async function submitLoteForReview(loteId: number) {
 
 /**
  * Admin approves a lot, pays the technician, and moves equipment to inventory.
+ * El monto pagado SIEMPRE se calcula con `calcularPagoLote` para coincidir
+ * con el "Pago estimado" que vio el admin en el bot de Telegram.
  */
 export async function approveLote(loteId: number) {
     const session = await getServerSession(authOptions);
@@ -105,8 +105,10 @@ export async function approveLote(loteId: number) {
 
         if (!lote) return { success: false, error: "Lote no encontrado" };
 
-        const totalCount = lote.equipos.length;
-        const paymentAmount = totalCount * 50;
+        // Cálculo de pago FUERA de la transacción: misma fuente de verdad
+        // que el bot. Si no hay tarifa configurada, usa TARIFA_FALLBACK (50).
+        const pago = await calcularPagoLote(prisma, loteId);
+        const paymentAmount = pago.total;
 
         await prisma.$transaction(async (tx) => {
             await tx.lote.update({
@@ -171,7 +173,7 @@ export async function approveLote(loteId: number) {
                         tipo: "ingreso",
                         estado: "Aprobado",
                         fecha: new Date(),
-                        descripcion: `Pago por Lote QC: ${lote.codigo} (${totalCount} equipos)`
+                        descripcion: `Pago por Lote QC: ${lote.codigo} (${pago.buenos}/${pago.totalEquipos} buenos × RD$${pago.tarifa})`
                     }
                 });
 

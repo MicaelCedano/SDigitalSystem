@@ -3,6 +3,28 @@ import prisma from "@/lib/prisma";
 import { sendTelegramMessage, editTelegramMessage, answerCallbackQuery, escapeHTML } from "@/lib/telegram";
 import { checkAchievements } from "@/app/actions/achievements";
 import { checkAndNotifyPurchaseComplete } from "@/app/actions/purchase";
+import { calcularPagoLote } from "@/lib/pago-lote";
+
+/**
+ * Devuelve los chat_id autorizados para ejecutar acciones de admin
+ * (aprobar/rechazar lotes, cambiar estado de pedidos) desde el bot.
+ *
+ * Prioridad:
+ *  1. TELEGRAM_ADMIN_CHAT_ID (lista separada por comas si hay varios admins)
+ *  2. TELEGRAM_CHAT_ID (legacy)
+ *  3. empty → nadie autorizado (fail closed)
+ */
+function getAuthorizedAdminChatIds(): string[] {
+    const raw = process.env.TELEGRAM_ADMIN_CHAT_ID || process.env.TELEGRAM_CHAT_ID || "";
+    return raw.split(",").map(s => s.trim()).filter(Boolean);
+}
+
+function isAuthorizedAdmin(chatId: number | string | undefined): boolean {
+    if (chatId === undefined || chatId === null) return false;
+    const authorized = getAuthorizedAdminChatIds();
+    if (authorized.length === 0) return false;
+    return authorized.includes(String(chatId));
+}
 
 export async function POST(req: Request) {
     try {
@@ -104,6 +126,20 @@ export async function POST(req: Request) {
         if (body.callback_query) {
             const { id, data, message, from } = body.callback_query;
 
+            // Gate de seguridad: solo Micael (o admins autorizados en el env)
+            // pueden ejecutar acciones desde el bot. Cualquier otro chat_id
+            // recibe una respuesta neutral y la acción se ignora silenciosamente.
+            if (!isAuthorizedAdmin(from?.id)) {
+                await answerCallbackQuery(
+                    id,
+                    "⛔ No autorizado. Esta acción solo la puede ejecutar el administrador."
+                ).catch(() => {});
+                console.warn(
+                    `[Telegram Webhook] Callback rechazado: chat_id=${from?.id} username=${from?.username} data=${data}`
+                );
+                return NextResponse.json({ ok: true });
+            }
+
             if (data && (data.startsWith("approve_lote:") || data.startsWith("reject_lote:"))) {
                 const isApprove = data.startsWith("approve_lote:");
                 const loteId = parseInt(data.split(":")[1]);
@@ -141,8 +177,13 @@ export async function POST(req: Request) {
                 const tecnicoName = lote.tecnico.name || lote.tecnico.username;
                 const equiposCount = lote.equipos.length;
 
+                // Fuente única de verdad: se usa para pago (approve) Y para
+                // los mensajes del bot (approve y reject). Garantiza que el
+                // número de equipos, buenos y malos mostrado sea el real.
+                const pago = await calcularPagoLote(prisma, loteId);
+                const paymentAmount = pago.total;
+
                 if (isApprove) {
-                    const paymentAmount = equiposCount * 50;
 
                     await prisma.$transaction(async (tx) => {
                         await tx.lote.update({ where: { id: loteId }, data: { estado: "Entregado" } });
@@ -199,7 +240,7 @@ export async function POST(req: Request) {
                                     tipo: "ingreso",
                                     estado: "Aprobado",
                                     fecha: new Date(),
-                                    descripcion: `Pago por Lote QC: ${lote.codigo} (${equiposCount} equipos) [Telegram]`
+                                    descripcion: `Pago por Lote QC: ${lote.codigo} (${pago.buenos}/${pago.totalEquipos} buenos × RD$${pago.tarifa}) [Telegram]`
                                 }
                             });
 
@@ -240,8 +281,8 @@ export async function POST(req: Request) {
                         `🔔 <b>Lote para Revisión</b>\n\n` +
                         `👤 <b>Técnico:</b> ${escapeHTML(tecnicoName)}\n` +
                         `📦 <b>Lote:</b> <code>${escapeHTML(lote.codigo)}</code>\n` +
-                        `📱 <b>Equipos:</b> ${equiposCount}\n` +
-                        `💰 <b>Pago:</b> RD$ ${paymentAmount.toLocaleString()}\n\n` +
+                        `📱 <b>Equipos:</b> ${pago.totalEquipos}  ✅ Buenos: ${pago.buenos}  ❌ Malos: ${pago.malos}\n` +
+                        `💰 <b>Pago:</b> RD$ ${paymentAmount.toLocaleString()} (RD$ ${pago.tarifa.toLocaleString()}/bueno)\n\n` +
                         `✅ <b>APROBADO</b> por ${escapeHTML(from.first_name || 'Admin')}`;
 
                     await editTelegramMessage(message.message_id, updatedMsg, []);
@@ -268,7 +309,7 @@ export async function POST(req: Request) {
                         `🔔 <b>Lote para Revisión</b>\n\n` +
                         `👤 <b>Técnico:</b> ${escapeHTML(tecnicoName)}\n` +
                         `📦 <b>Lote:</b> <code>${escapeHTML(lote.codigo)}</code>\n` +
-                        `📱 <b>Equipos:</b> ${equiposCount}\n\n` +
+                        `📱 <b>Equipos:</b> ${pago.totalEquipos}  ✅ Buenos: ${pago.buenos}  ❌ Malos: ${pago.malos}\n\n` +
                         `❌ <b>RECHAZADO</b> por ${escapeHTML(from.first_name || 'Admin')}`;
 
                     await editTelegramMessage(message.message_id, updatedMsg, []);
@@ -279,6 +320,8 @@ export async function POST(req: Request) {
             }
 
             if (data && data.startsWith("update_status:")) {
+                // El gate de admin ya se aplicó arriba (en el bloque de
+                // callback_query), así que no hace falta duplicarlo aquí.
                 const [_, orderIdStr, newStatus] = data.split(":");
                 const orderId = parseInt(orderIdStr);
 
