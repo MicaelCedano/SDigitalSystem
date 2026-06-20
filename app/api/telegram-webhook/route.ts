@@ -4,6 +4,7 @@ import { sendTelegramMessage, editTelegramMessage, answerCallbackQuery, escapeHT
 import { checkAchievements } from "@/app/actions/achievements";
 import { checkAndNotifyPurchaseComplete } from "@/app/actions/purchase";
 import { calcularPagoLote } from "@/lib/pago-lote";
+import { aprobarSolicitudImei, rechazarSolicitudImei } from "@/lib/solicitudes-imei";
 
 /**
  * Devuelve los chat_id autorizados para ejecutar acciones de admin
@@ -314,6 +315,79 @@ export async function POST(req: Request) {
 
                     await editTelegramMessage(message.message_id, updatedMsg, []);
                     await answerCallbackQuery(id, `❌ Lote ${lote.codigo} rechazado`);
+                }
+
+                return NextResponse.json({ ok: true });
+            }
+
+            // ============================================================
+            // SolicitudImei: QC pide IMEIs del inventario para revisar.
+            // Botones: approve_solicitud:<id> / reject_solicitud:<id>
+            // Mismo gate de admin aplicado arriba en callback_query.
+            // ============================================================
+            if (data && (data.startsWith("approve_solicitud:") || data.startsWith("reject_solicitud:"))) {
+                const isApprove = data.startsWith("approve_solicitud:");
+                const solicitudId = parseInt(data.split(":")[1]);
+
+                if (isNaN(solicitudId)) {
+                    await answerCallbackQuery(id, "Error: ID de solicitud inválido");
+                    return NextResponse.json({ ok: true });
+                }
+
+                const solicitud = await prisma.solicitudImei.findUnique({
+                    where: { id: solicitudId },
+                    include: { qc: { select: { name: true, username: true } } }
+                });
+
+                if (!solicitud) {
+                    await answerCallbackQuery(id, "Solicitud no encontrada");
+                    return NextResponse.json({ ok: true });
+                }
+
+                if (solicitud.estado !== "Pendiente") {
+                    await answerCallbackQuery(id, `Solicitud ya procesada: ${solicitud.estado}`);
+                    return NextResponse.json({ ok: true });
+                }
+
+                // Buscar adminId en BD (la lógica de aprobación lo requiere)
+                const adminUser = await prisma.user.findFirst({ where: { role: "admin" } });
+                const adminUserId = adminUser?.id || 1;
+                const qcName = solicitud.qc?.name || solicitud.qc?.username || "QC";
+                const imeisCount = Array.isArray(solicitud.imeis) ? (solicitud.imeis as unknown[]).length : 0;
+
+                if (isApprove) {
+                    const result = await aprobarSolicitudImei(solicitudId, adminUserId, null);
+
+                    if (!result.success) {
+                        await answerCallbackQuery(id, `❌ ${result.message}`);
+                        return NextResponse.json({ ok: true });
+                    }
+
+                    const updatedMsg =
+                        `📋 <b>Solicitud de IMEIs #${solicitudId}</b>\n\n` +
+                        `👤 <b>Solicitante:</b> ${escapeHTML(qcName)}\n` +
+                        `📱 <b>Equipos aprobados:</b> ${imeisCount}\n` +
+                        `📦 <b>Lote creado:</b> <code>${escapeHTML(result.codigoLote || "")}</code>\n\n` +
+                        `✅ <b>APROBADO</b> por ${escapeHTML(from.first_name || "Admin")}`;
+
+                    await editTelegramMessage(message.message_id, updatedMsg, []);
+                    await answerCallbackQuery(id, `✅ Solicitud #${solicitudId} aprobada → ${result.codigoLote}`);
+                } else {
+                    const result = await rechazarSolicitudImei(solicitudId, adminUserId, null);
+
+                    if (!result.success) {
+                        await answerCallbackQuery(id, `❌ ${result.message}`);
+                        return NextResponse.json({ ok: true });
+                    }
+
+                    const updatedMsg =
+                        `📋 <b>Solicitud de IMEIs #${solicitudId}</b>\n\n` +
+                        `👤 <b>Solicitante:</b> ${escapeHTML(qcName)}\n` +
+                        `📱 <b>Equipos:</b> ${imeisCount}\n\n` +
+                        `❌ <b>RECHAZADO</b> por ${escapeHTML(from.first_name || "Admin")}`;
+
+                    await editTelegramMessage(message.message_id, updatedMsg, []);
+                    await answerCallbackQuery(id, `❌ Solicitud #${solicitudId} rechazada`);
                 }
 
                 return NextResponse.json({ ok: true });
