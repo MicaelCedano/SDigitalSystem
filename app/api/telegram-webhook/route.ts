@@ -241,7 +241,7 @@ export async function POST(req: Request) {
                                     tipo: "ingreso",
                                     estado: "Aprobado",
                                     fecha: new Date(),
-                                    descripcion: `Pago por Lote QC: ${lote.codigo} (${pago.buenos}/${pago.totalEquipos} buenos × RD$${pago.tarifa}) [Telegram]`
+                                    descripcion: `Pago por Lote QC: ${lote.codigo} (${pago.totalEquipos} equipos × RD$${pago.tarifa}) [Telegram]`
                                 }
                             });
 

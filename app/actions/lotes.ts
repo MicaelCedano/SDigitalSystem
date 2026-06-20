@@ -62,7 +62,7 @@ export async function submitLoteForReview(loteId: number) {
                 `👤 <b>Técnico:</b> ${escapeHTML(tecnicoName)}\n` +
                 `📦 <b>Lote:</b> <code>${escapeHTML(lote.codigo)}</code>\n` +
                 `📱 <b>Equipos:</b> ${pago.totalEquipos}  ✅ Buenos: ${pago.buenos}  ❌ Malos: ${pago.malos}\n` +
-                `💰 <b>Pago estimado:</b> RD$ ${pago.total.toLocaleString()} (RD$ ${pago.tarifa.toLocaleString()}/equipo bueno)`;
+                `💰 <b>Pago estimado:</b> RD$ ${pago.total.toLocaleString()} (RD$ ${pago.tarifa.toLocaleString()}/equipo revisado)`;
             const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID || process.env.TELEGRAM_CHAT_ID;
             const loteUrl = `https://sdigitalsystem.vercel.app/equipos?q=${encodeURIComponent(lote.codigo)}`;
             await sendTelegramMessage(msg, [
@@ -173,7 +173,7 @@ export async function approveLote(loteId: number) {
                         tipo: "ingreso",
                         estado: "Aprobado",
                         fecha: new Date(),
-                        descripcion: `Pago por Lote QC: ${lote.codigo} (${pago.buenos}/${pago.totalEquipos} buenos × RD$${pago.tarifa})`
+                        descripcion: `Pago por Lote QC: ${lote.codigo} (${pago.totalEquipos} equipos × RD$${pago.tarifa})`
                     }
                 });
 

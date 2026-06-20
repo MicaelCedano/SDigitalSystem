@@ -4,7 +4,9 @@ import type { PrismaClient } from "@prisma/client";
  * Fuente única de verdad para el cálculo de pago de un lote de QC.
  *
  * Reglas de negocio:
- *  - Solo se pagan los equipos con `funcionalidad = "Funcional"` (los "buenos").
+ *  - Se pagan TODOS los equipos del lote (buenos + malos), ya que el técnico
+ *    revisa el lote completo. Solo cambia el destino del equipo: los buenos
+ *    van a inventario; los malos se marcan como "Descartado" (defectuoso).
  *  - La tarifa por equipo se lee de `TecnicoGarantiaPago.montoPorReparacion`
  *    configurada para el técnico. Si no hay config, se usa 50 como fallback
  *    histórico (consistente con la lógica previa).
@@ -28,7 +30,7 @@ export interface PagoLoteResult {
     malos: number;
     /** Tarifa aplicada por equipo (RD$). */
     tarifa: number;
-    /** Monto total a pagar = buenos × tarifa. */
+    /** Monto total a pagar = totalEquipos × tarifa (buenos + malos). */
     total: number;
     /** true si la tarifa vino de la BD; false si fue el fallback. */
     tarifaConfigurada: boolean;
@@ -69,7 +71,7 @@ export async function calcularPagoLote(
         buenos,
         malos: totalEquipos - buenos,
         tarifa,
-        total: buenos * tarifa,
+        total: totalEquipos * tarifa,
         tarifaConfigurada
     };
 }
