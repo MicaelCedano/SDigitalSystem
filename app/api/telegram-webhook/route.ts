@@ -186,9 +186,22 @@ export async function POST(req: Request) {
 
                 if (isApprove) {
 
-                    await prisma.$transaction(async (tx) => {
-                        await tx.lote.update({ where: { id: loteId }, data: { estado: "Entregado" } });
+                    // Lock optimista: solo el primer callback que logra transicionar
+                    // Pendiente -> Entregado ejecuta el resto. Telegram a veces
+                    // reenvía el mismo callback (cold start de Vercel, timeout, etc.)
+                    // y sin este guard se duplican mensajes, pagos y notificaciones.
+                    const claimed = await prisma.lote.updateMany({
+                        where: { id: loteId, estado: "Pendiente" },
+                        data: { estado: "Entregado" }
+                    });
 
+                    if (claimed.count === 0) {
+                        // Otro callback ya aprobó este lote. Salir silenciosamente.
+                        await answerCallbackQuery(id, `Lote ${lote.codigo} ya fue aprobado`);
+                        return NextResponse.json({ ok: true });
+                    }
+
+                    await prisma.$transaction(async (tx) => {
                         await tx.equipo.updateMany({
                             where: { loteId },
                             data: { estado: "Revisado", userId: null }
