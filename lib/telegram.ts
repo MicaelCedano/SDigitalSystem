@@ -71,11 +71,11 @@ export async function sendTelegramMessage(message: string, buttons?: any, chatId
     }
 }
 
-export async function editTelegramMessage(messageId: number, message: string, buttons?: any) {
+export async function editTelegramMessage(messageId: number, message: string, buttons?: any, chatIdOverride?: string | number) {
     const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
-    const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
+    const chatId = String(chatIdOverride || process.env.TELEGRAM_CHAT_ID?.trim() || "");
 
-    if (!token || !chatId) return { success: false };
+    if (!token || !chatId) return { success: false, error: "Missing token or chat_id" };
 
     try {
         const url = `https://api.telegram.org/bot${token}/editMessageText`;
@@ -96,8 +96,13 @@ export async function editTelegramMessage(messageId: number, message: string, bu
             body: JSON.stringify(body),
         });
 
-        return { success: response.ok, data: await response.json() };
+        const data = await response.json();
+        if (!response.ok || !data.ok) {
+            console.warn(`[Telegram editMessageText] failed:`, JSON.stringify(data));
+        }
+        return { success: response.ok && data.ok, data };
     } catch (error) {
+        console.warn(`[Telegram editMessageText] exception:`, error);
         return { success: false, error };
     }
 }

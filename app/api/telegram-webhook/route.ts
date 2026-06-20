@@ -286,7 +286,7 @@ export async function POST(req: Request) {
                         `💰 <b>Pago:</b> RD$ ${paymentAmount.toLocaleString()} (RD$ ${pago.tarifa.toLocaleString()}/bueno)\n\n` +
                         `✅ <b>APROBADO</b> por ${escapeHTML(from.first_name || 'Admin')}`;
 
-                    await editTelegramMessage(message.message_id, updatedMsg, []);
+                    await editTelegramMessage(message.message_id, updatedMsg, [], message.chat.id);
                     await answerCallbackQuery(id, `✅ Lote ${lote.codigo} aprobado`);
 
                 } else {
@@ -313,7 +313,7 @@ export async function POST(req: Request) {
                         `📱 <b>Equipos:</b> ${pago.totalEquipos}  ✅ Buenos: ${pago.buenos}  ❌ Malos: ${pago.malos}\n\n` +
                         `❌ <b>RECHAZADO</b> por ${escapeHTML(from.first_name || 'Admin')}`;
 
-                    await editTelegramMessage(message.message_id, updatedMsg, []);
+                    await editTelegramMessage(message.message_id, updatedMsg, [], message.chat.id);
                     await answerCallbackQuery(id, `❌ Lote ${lote.codigo} rechazado`);
                 }
 
@@ -372,7 +372,7 @@ export async function POST(req: Request) {
                         `📦 <b>Lote creado:</b> <code>${escapeHTML(result.codigoLote || "")}</code>\n\n` +
                         `✅ <b>APROBADO</b> por ${escapeHTML(from.first_name || "Admin")}`;
 
-                    await editTelegramMessage(message.message_id, updatedMsg, []);
+                    await editTelegramMessage(message.message_id, updatedMsg, [], message.chat.id);
                     console.log(`[Telegram Webhook] approve_solicitud:${solicitudId} message edited, calling answerCallbackQuery`);
                     await answerCallbackQuery(id, `✅ Solicitud #${solicitudId} aprobada → ${result.codigoLote}`);
                     console.log(`[Telegram Webhook] approve_solicitud:${solicitudId} DONE`);
@@ -390,7 +390,7 @@ export async function POST(req: Request) {
                         `📱 <b>Equipos:</b> ${imeisCount}\n\n` +
                         `❌ <b>RECHAZADO</b> por ${escapeHTML(from.first_name || "Admin")}`;
 
-                    await editTelegramMessage(message.message_id, updatedMsg, []);
+                    await editTelegramMessage(message.message_id, updatedMsg, [], message.chat.id);
                     await answerCallbackQuery(id, `❌ Solicitud #${solicitudId} rechazada`);
                 }
 
@@ -468,7 +468,7 @@ export async function POST(req: Request) {
 
                 const updatedText = `${originalText}\n\n📍 <b>Actualizado a:</b> ${statusLabels[newStatus] || newStatus}\n👤 <b>Por:</b> ${from.first_name || 'Usuario'} (Telegram)`;
 
-                await editTelegramMessage(message.message_id, updatedText, nextButtons.length > 0 ? nextButtons : null);
+                await editTelegramMessage(message.message_id, updatedText, nextButtons.length > 0 ? nextButtons : null, message.chat.id);
                 await answerCallbackQuery(id, `Pedido ${order.codigo} actualizado a ${newStatus}`);
             }
         }
