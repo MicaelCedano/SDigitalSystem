@@ -76,6 +76,69 @@ export async function getAdminPaymentsDashboardData() {
             _sum: { monto: true }
         });
 
+        // 2a. Financial KPIs for the dashboard header (RD$).
+        // Usa la misma convención que recentEarnings: tipo=ingreso, estado Aprobado/Completado.
+        // Los rangos se calculan con UTC puro — el caller (dashboard) los renderiza
+        // formateados a America/Santo_Domingo, así que "hoy" puede variar en
+        // unas horas según la hora del servidor. Aceptable para KPI agregado.
+        const now = new Date();
+
+        const startOfDayUtc = new Date(now);
+        startOfDayUtc.setUTCHours(0, 0, 0, 0);
+
+        const startOfWeekUtc = new Date(now);
+        // Lunes como inicio de semana (1 = lunes, 0 = domingo)
+        const dayOfWeek = startOfWeekUtc.getUTCDay() || 7;
+        startOfWeekUtc.setUTCDate(startOfWeekUtc.getUTCDate() - (dayOfWeek - 1));
+        startOfWeekUtc.setUTCHours(0, 0, 0, 0);
+
+        const startOfMonthUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+        const startOfNextMonthUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+        const startOfPrevMonthUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+
+        const [earningsHoy, earningsSemana, earningsMesActual, earningsMesAnterior] = await Promise.all([
+            prisma.walletTransaction.aggregate({
+                where: {
+                    tipo: { equals: "ingreso", mode: "insensitive" },
+                    estado: { in: ["Completado", "Aprobado"] },
+                    fecha: { gte: startOfDayUtc }
+                },
+                _sum: { monto: true }
+            }),
+            prisma.walletTransaction.aggregate({
+                where: {
+                    tipo: { equals: "ingreso", mode: "insensitive" },
+                    estado: { in: ["Completado", "Aprobado"] },
+                    fecha: { gte: startOfWeekUtc }
+                },
+                _sum: { monto: true }
+            }),
+            prisma.walletTransaction.aggregate({
+                where: {
+                    tipo: { equals: "ingreso", mode: "insensitive" },
+                    estado: { in: ["Completado", "Aprobado"] },
+                    fecha: { gte: startOfMonthUtc, lt: startOfNextMonthUtc }
+                },
+                _sum: { monto: true }
+            }),
+            prisma.walletTransaction.aggregate({
+                where: {
+                    tipo: { equals: "ingreso", mode: "insensitive" },
+                    estado: { in: ["Completado", "Aprobado"] },
+                    fecha: { gte: startOfPrevMonthUtc, lt: startOfMonthUtc }
+                },
+                _sum: { monto: true }
+            })
+        ]);
+
+        const ingresosHoy = earningsHoy._sum.monto || 0;
+        const ingresosSemana = earningsSemana._sum.monto || 0;
+        const ingresosMesActual = earningsMesActual._sum.monto || 0;
+        const ingresosMesAnterior = earningsMesAnterior._sum.monto || 0;
+        const variacionMensualPct = ingresosMesAnterior > 0
+            ? ((ingresosMesActual - ingresosMesAnterior) / ingresosMesAnterior) * 100
+            : (ingresosMesActual > 0 ? 100 : 0);
+
         // 3. Mapping data per user
         const technicians = await Promise.all(users.map(async (u) => {
             const wallet = u.wallet[0];
@@ -128,7 +191,12 @@ export async function getAdminPaymentsDashboardData() {
             stats: {
                 totalPendingPayout,
                 recentEarnings: recentEarnings._sum.monto || 0,
-                pendingRetirosCount: pendingRetiros.length
+                pendingRetirosCount: pendingRetiros.length,
+                ingresosHoy,
+                ingresosSemana,
+                ingresosMesActual,
+                ingresosMesAnterior,
+                variacionMensualPct
             }
         };
 

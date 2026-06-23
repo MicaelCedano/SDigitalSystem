@@ -8,6 +8,7 @@ import { cn, getProfileImageUrl, getSantoDomingoStartOfDay, formatTimeSD, format
 import { LoteActionButtons } from "@/components/admin/LoteActionButtons";
 import { LoteDetailsModal } from "@/components/admin/LoteDetailsModal";
 import { getTrabajosPendientesAprobacion } from "@/app/actions/garantias";
+import { getAdminPaymentsDashboardData } from "@/app/actions/admin-payments";
 import { PendingWorkApproval } from "@/components/garantias/PendingWorkApproval";
 import { PendingImeiRequests } from "@/components/admin/PendingImeiRequests";
 import {
@@ -15,16 +16,19 @@ import {
   Package,
   CheckCircle2,
   TrendingUp,
+  TrendingDown,
   ShieldAlert,
   User as UserIcon,
   Clock,
   ArrowUpRight,
+  ArrowDownRight,
   Medal,
   Users,
   AlertCircle,
   Briefcase,
   Smartphone,
-  Activity
+  Activity,
+  Wallet
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -69,7 +73,8 @@ export default async function Home() {
       where: { estado: "Pendiente" },
       include: { qc: { select: { id: true, name: true, username: true, profileImage: true } } },
       orderBy: { fechaCreacion: "desc" }
-    }) : Promise.resolve([])
+    }) : Promise.resolve([]),
+    isAdmin ? getAdminPaymentsDashboardData() : Promise.resolve(null)
   ]);
 
   const [
@@ -79,8 +84,9 @@ export default async function Home() {
     lotesPendientesCount,
     lotesReadyCount,
     trabajosPendientes,
-    solicitudesImeiPendientes
-  ] = results as [number, number, number, number, number, any[], any[]];
+    solicitudesImeiPendientes,
+    paymentsData
+  ] = results as [number, number, number, number, number, any[], any[], any];
 
   // Get lotes if admin
   const lotesToReview = (isAdmin ? await prisma.lote.findMany({
@@ -249,6 +255,51 @@ export default async function Home() {
           </Button>
         </div>
       </div>
+
+      {/* Financial KPIs — lo primero que un admin quiere ver */}
+      {isAdmin && paymentsData?.stats && (() => {
+        const fmt = (n: number) => `RD$ ${Math.round(n).toLocaleString('es-DO')}`;
+        const variacion = paymentsData.stats.variacionMensualPct;
+        const variacionPositiva = variacion >= 0;
+        return (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <FinancialStatCard
+              icon={<TrendingUp className="h-6 w-6 text-emerald-600" />}
+              label="$ Pagado esta semana"
+              value={fmt(paymentsData.stats.ingresosSemana)}
+              subtext="Lun → hoy · ingresos aprobados"
+              color="emerald"
+            />
+            <FinancialStatCard
+              icon={<Clock className="h-6 w-6 text-amber-600" />}
+              label="$ Pendiente de pago"
+              value={fmt(paymentsData.stats.totalPendingPayout)}
+              subtext={`${paymentsData.stats.pendingRetirosCount} solicitudes`}
+              color="amber"
+            />
+            <FinancialStatCard
+              icon={<CheckCircle2 className="h-6 w-6 text-emerald-600" />}
+              label="$ Pagado hoy"
+              value={fmt(paymentsData.stats.ingresosHoy)}
+              subtext="Ingresos del día"
+              color="emerald"
+            />
+            <FinancialStatCard
+              icon={<Wallet className="h-6 w-6 text-indigo-600" />}
+              label="$ Pagado este mes"
+              value={fmt(paymentsData.stats.ingresosMesActual)}
+              subtext={
+                paymentsData.stats.ingresosMesAnterior > 0
+                  ? `vs ${fmt(paymentsData.stats.ingresosMesAnterior)} mes anterior`
+                  : "Primer mes con datos"
+              }
+              trend={paymentsData.stats.ingresosMesAnterior > 0 ? variacion : null}
+              trendUp={variacionPositiva}
+              color="indigo"
+            />
+          </div>
+        );
+      })()}
 
       {/* Stats Overview */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -482,7 +533,11 @@ export default async function Home() {
                         <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-dashed border-slate-200">
                           <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Pago Estimado</span>
                           <div className="flex flex-col items-end">
-                            <span className="text-base font-black text-indigo-600 font-mono">RD$ {(lote._count.equipos * 50).toLocaleString()}</span>
+                            <span className="text-base font-black text-indigo-600 font-mono">
+                              RD$ {(
+                                lote.equipos.filter((e: any) => e.funcionalidad === 'Funcional' || e.funcionalidad === 'No funcional').length * 50
+                              ).toLocaleString()}
+                            </span>
                             <LoteDetailsModal lote={lote} />
                           </div>
                         </div>
@@ -604,5 +659,61 @@ function StatsCard({ title, value, subtitle, icon, variant, badge }: { title: st
       </CardContent>
     </Card>
   )
+}
+
+function FinancialStatCard({
+  icon,
+  label,
+  value,
+  subtext,
+  color,
+  trend,
+  trendUp
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  subtext?: string;
+  color: 'indigo' | 'emerald' | 'amber' | 'rose';
+  trend?: number | null;
+  trendUp?: boolean;
+}) {
+  const iconBg = {
+    indigo: "bg-indigo-100",
+    emerald: "bg-emerald-100",
+    amber: "bg-amber-100",
+    rose: "bg-rose-100",
+  };
+
+  return (
+    <Card className="border-none shadow-xl shadow-slate-200/50 bg-white hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group">
+      <CardContent className="p-6">
+        <div className="flex justify-between items-start mb-4">
+          <div className={cn(
+            "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-110",
+            iconBg[color]
+          )}>
+            {icon}
+          </div>
+          {trend !== null && trend !== undefined && (
+            <div className={cn(
+              "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider",
+              trendUp
+                ? "bg-emerald-100 text-emerald-700"
+                : "bg-rose-100 text-rose-700"
+            )}>
+              {trendUp ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+              {Math.abs(trend).toFixed(1)}%
+            </div>
+          )}
+        </div>
+        <div>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1.5">{label}</p>
+          <h3 className="text-2xl font-black text-slate-800 tracking-tighter mb-1.5 break-all">{value}</h3>
+          {subtext && <p className="text-[11px] text-slate-500 font-medium">{subtext}</p>}
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
