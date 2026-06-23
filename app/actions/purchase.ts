@@ -415,6 +415,18 @@ export async function getPurchaseById(id: number) {
             equipos: {
                 include: {
                     deviceModel: true,
+                    lote: {
+                        include: {
+                            tecnico: {
+                                select: {
+                                    id: true,
+                                    username: true,
+                                    name: true,
+                                    profileImage: true
+                                }
+                            }
+                        }
+                    },
                     historial: { orderBy: { fecha: 'desc' }, take: 1 }
                 },
                 orderBy: { id: 'asc' }
@@ -467,6 +479,85 @@ export async function getPurchaseById(id: number) {
 
     const modelSummary = Array.from(modelSummaryMap.values()).sort((a, b) => b.count - a.count);
 
+    // === QC BREAKDOWN: agrupar equipos revisados por QC (lote.tecnico) ===
+    // Solo contamos equipos revisados (estado con funcionalidad asignada).
+    // Equipos aún sin asignar a lote (loteId = null) van a "Pendiente".
+    const qcMap = new Map<string, {
+        tecnicoId: number;
+        username: string;
+        name: string | null;
+        profileImage: string | null;
+        total: number;
+        funcionales: number;
+        noFuncionales: number;
+        equipos: Array<{
+            id: number;
+            imei: string;
+            deviceModel: { brand: string; modelName: string; storageGb: number; color: string | null } | null;
+            funcionalidad: string | null;
+            estado: string;
+            loteCodigo: string | null;
+        }>;
+    }>();
+
+    let pendingCount = 0;
+    let pendingEquipos: Array<any> = [];
+
+    purchase.equipos.forEach((eq: any) => {
+        // Equipo revisado = tiene funcionalidad asignada
+        const isReviewed = eq.funcionalidad === 'Funcional' || eq.funcionalidad === 'No funcional';
+        if (!isReviewed) return;
+
+        const tecnico = eq.lote?.tecnico;
+        if (!tecnico) {
+            // Raro pero posible: revisado sin lote. Lo agrupamos como "Sin asignar".
+            pendingCount++;
+            pendingEquipos.push({
+                id: eq.id,
+                imei: eq.imei,
+                deviceModel: eq.deviceModel,
+                funcionalidad: eq.funcionalidad,
+                estado: eq.estado,
+                loteCodigo: eq.lote?.codigo ?? null
+            });
+            return;
+        }
+
+        const key = `qc-${tecnico.id}`;
+        if (!qcMap.has(key)) {
+            qcMap.set(key, {
+                tecnicoId: tecnico.id,
+                username: tecnico.username,
+                name: tecnico.name,
+                profileImage: tecnico.profileImage,
+                total: 0,
+                funcionales: 0,
+                noFuncionales: 0,
+                equipos: []
+            });
+        }
+        const entry = qcMap.get(key)!;
+        entry.total++;
+        if (eq.funcionalidad === 'Funcional') entry.funcionales++;
+        else entry.noFuncionales++;
+        entry.equipos.push({
+            id: eq.id,
+            imei: eq.imei,
+            deviceModel: eq.deviceModel,
+            funcionalidad: eq.funcionalidad,
+            estado: eq.estado,
+            loteCodigo: eq.lote?.codigo ?? null
+        });
+    });
+
+    // Ordenar QC por total revisado desc; los equipos de cada QC por IMEI ascendente (orden natural)
+    const qcBreakdown = Array.from(qcMap.values())
+        .sort((a, b) => b.total - a.total)
+        .map(qc => ({
+            ...qc,
+            equipos: [...qc.equipos].sort((a, b) => a.imei.localeCompare(b.imei, 'es', { numeric: true }))
+        }));
+
     return {
         ...purchase,
         supplier: (purchase as any).supplier,
@@ -477,7 +568,12 @@ export async function getPurchaseById(id: number) {
         reviewedCount,
         functionalPercentage,
         nonFunctionalPercentage,
-        modelSummary
+        modelSummary,
+        qcBreakdown,
+        pendingReview: {
+            total: pendingCount,
+            equipos: pendingEquipos
+        }
     } as any;
 }
 

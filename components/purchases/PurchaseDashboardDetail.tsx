@@ -42,6 +42,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AddEquipmentDialog } from "./AddEquipmentDialog";
+import { PurchaseQCBreakdown } from "./PurchaseQCBreakdown";
 import { deletePurchase } from "@/app/actions/purchase";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -70,6 +71,8 @@ interface PurchaseDetailProps {
         nonFunctionalPercentage: number;
         displayProgress: number;
         modelSummary: ModelSummary[];
+        qcBreakdown: any[];
+        pendingReview: { total: number; equipos: any[] };
         equipos: any[]; // Using any for now, but ideally strict type
     };
     deviceModels: {
@@ -270,6 +273,13 @@ export function PurchaseDashboardDetail({ purchase, deviceModels }: PurchaseDeta
                     />
                 </div>
             </div>
+
+            {/* QC Breakdown Section */}
+            <PurchaseQCBreakdown
+                qcBreakdown={purchase.qcBreakdown || []}
+                pendingReview={purchase.pendingReview || { total: 0, equipos: [] }}
+                totalPurchase={purchase.totalQuantity}
+            />
 
             {/* Split View: Models Summary & Equipment List */}
             <div className="grid grid-cols-1 xl:grid-cols-5 gap-10">
