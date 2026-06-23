@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
     Users,
     Search,
@@ -48,14 +48,45 @@ interface QCSummary {
 }
 
 interface PurchaseQCBreakdownProps {
+    purchaseId: number;
     qcBreakdown: QCSummary[];
     pendingReview: { total: number; equipos: QCEquipo[] };
     totalPurchase: number;
 }
 
-export function PurchaseQCBreakdown({ qcBreakdown, pendingReview, totalPurchase }: PurchaseQCBreakdownProps) {
+const STORAGE_PREFIX = "sdigital.qc.collapsed.";
+
+export function PurchaseQCBreakdown({ purchaseId, qcBreakdown, pendingReview, totalPurchase }: PurchaseQCBreakdownProps) {
     const [search, setSearch] = useState("");
     const [expandedQC, setExpandedQC] = useState<number | null>(null);
+
+    // null = sin preferencia guardada (primera vez: expandido por defecto).
+    // Una vez que el usuario hace clic, persistimos en localStorage por compra.
+    const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+    const [hasUserPreference, setHasUserPreference] = useState<boolean>(false);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        const stored = window.localStorage.getItem(STORAGE_PREFIX + purchaseId);
+        if (stored === "true") {
+            setIsCollapsed(true);
+            setHasUserPreference(true);
+        } else if (stored === "false") {
+            setIsCollapsed(false);
+            setHasUserPreference(true);
+        }
+    }, [purchaseId]);
+
+    const toggleCollapsed = () => {
+        setIsCollapsed((prev) => {
+            const next = !prev;
+            if (typeof window !== "undefined") {
+                window.localStorage.setItem(STORAGE_PREFIX + purchaseId, String(next));
+            }
+            setHasUserPreference(true);
+            return next;
+        });
+    };
 
     const filteredQC = useMemo(() => {
         if (!search.trim()) return qcBreakdown;
@@ -73,20 +104,78 @@ export function PurchaseQCBreakdown({ qcBreakdown, pendingReview, totalPurchase 
     const totalReviewed = qcBreakdown.reduce((s, q) => s + q.total, 0) + pendingReview.total;
     const noReviewed = totalPurchase - totalReviewed;
 
+    // Resumen compacto que se ve cuando la sección está colapsada.
+    const compactSummary = (
+        <div className="flex items-center gap-4 flex-wrap px-2">
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-indigo-600 uppercase tracking-[0.2em] bg-indigo-50 px-2.5 py-1 rounded-lg">
+                <Users className="h-3.5 w-3.5" /> {qcBreakdown.length} QCs
+            </span>
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 uppercase tracking-[0.2em] bg-emerald-50 px-2.5 py-1 rounded-lg">
+                <CheckCircle2 className="h-3.5 w-3.5" /> {totalReviewed} revisados
+            </span>
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-rose-600 uppercase tracking-[0.2em] bg-rose-50 px-2.5 py-1 rounded-lg">
+                <XCircle className="h-3.5 w-3.5" /> {qcBreakdown.reduce((s, q) => s + q.noFuncionales, 0)} no funcionales
+            </span>
+            {noReviewed > 0 && (
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-amber-600 uppercase tracking-[0.2em] bg-amber-50 px-2.5 py-1 rounded-lg">
+                    <AlertCircle className="h-3.5 w-3.5" /> {noReviewed} pendientes
+                </span>
+            )}
+        </div>
+    );
+
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
-            {/* Header */}
-            <div className="flex items-center gap-3 px-2">
-                <div className="p-2 bg-slate-900 rounded-xl text-white">
-                    <Users className="h-5 w-5" />
+            {/* Header — clickable, colapsa/expande la sección entera */}
+            <button
+                type="button"
+                onClick={toggleCollapsed}
+                aria-expanded={!isCollapsed}
+                aria-controls={`qc-breakdown-body-${purchaseId}`}
+                className="w-full text-left group focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 rounded-2xl"
+            >
+                <div className="flex items-start gap-3 px-2 py-2 rounded-2xl transition-colors group-hover:bg-slate-50/60">
+                    <div className="p-2 bg-slate-900 rounded-xl text-white flex-shrink-0">
+                        <Users className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-3">
+                            <div>
+                                <h3 className="text-2xl font-bold text-slate-800 tracking-tight">Revisión por QC</h3>
+                                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">
+                                    Cuántos equipos revisó cada técnico en esta compra
+                                </p>
+                            </div>
+                            <div
+                                className={cn(
+                                    "h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300",
+                                    "bg-slate-100 text-slate-500 group-hover:bg-indigo-100 group-hover:text-indigo-600",
+                                    isCollapsed && "bg-indigo-100 text-indigo-600"
+                                )}
+                            >
+                                <ChevronDown
+                                    className={cn(
+                                        "h-5 w-5 transition-transform duration-300",
+                                        !isCollapsed && "rotate-180"
+                                    )}
+                                />
+                            </div>
+                        </div>
+                        {isCollapsed && (
+                            <div className="mt-3 animate-in fade-in slide-in-from-top-1 duration-300">
+                                {compactSummary}
+                            </div>
+                        )}
+                    </div>
                 </div>
-                <div>
-                    <h3 className="text-2xl font-bold text-slate-800 tracking-tight">Revisión por QC</h3>
-                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">
-                        Cuántos equipos revisó cada técnico en esta compra
-                    </p>
-                </div>
-            </div>
+            </button>
+
+            {/* Cuerpo colapsable */}
+            {!isCollapsed && (
+                <div
+                    id={`qc-breakdown-body-${purchaseId}`}
+                    className="space-y-8 animate-in fade-in slide-in-from-top-2 duration-300"
+                >
 
             {/* Resumen rápido */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -363,6 +452,8 @@ export function PurchaseQCBreakdown({ qcBreakdown, pendingReview, totalPurchase 
                         </div>
                     </div>
                 </Card>
+            )}
+                </div>
             )}
         </div>
     );

@@ -276,6 +276,7 @@ export function PurchaseDashboardDetail({ purchase, deviceModels }: PurchaseDeta
 
             {/* QC Breakdown Section */}
             <PurchaseQCBreakdown
+                purchaseId={purchase.id}
                 qcBreakdown={purchase.qcBreakdown || []}
                 pendingReview={purchase.pendingReview || { total: 0, equipos: [] }}
                 totalPurchase={purchase.totalQuantity}
