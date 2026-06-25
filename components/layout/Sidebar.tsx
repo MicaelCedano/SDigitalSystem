@@ -22,7 +22,8 @@ import {
     Package,
     Zap,
     Send,
-    Lock
+    Lock,
+    ListChecks
 } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import { useState } from 'react';
@@ -169,6 +170,7 @@ const Sidebar = ({ initialUser, forceShow = false }: { initialUser?: any, forceS
                             {isQC && !isAdmin && <NavItem href="/qc" icon={<LayoutDashboard size={20} />} label="Dashboard" active={pathname === '/qc'} collapsed={collapsed} user={user} />}
                             {isQC && !isAdmin && <NavItem href="/qc/solicitar-imeis" icon={<Send size={20} />} label="Solicitar IMEIs" active={pathname === '/qc/solicitar-imeis'} collapsed={collapsed} user={user} />}
                             <NavItem href="/ranking" icon={<Trophy size={20} />} label="Ranking" active={pathname === '/ranking'} collapsed={collapsed} user={user} />
+                            <NavItem href="/checklist" icon={<ListChecks size={20} />} label="Checklist Revisión" active={pathname === '/checklist'} collapsed={collapsed} user={user} />
                             {isQC && !isAdmin && <NavItem href="/wallet" icon={<Wallet size={20} />} label="Mi Wallet" active={pathname === '/wallet'} collapsed={collapsed} user={user} />}
                         </div>
                     )}
