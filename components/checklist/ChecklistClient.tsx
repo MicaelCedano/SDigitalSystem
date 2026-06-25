@@ -4,32 +4,29 @@ import { useEffect, useState } from "react";
 import {
     CheckCircle2,
     Circle,
-    RotateCcw,
     ShieldCheck,
     Smartphone,
     Battery,
     Wifi,
-    Bluetooth,
     Camera,
     Volume2,
     Cpu,
     Wrench,
     Trash2,
     Search,
+    ListChecks,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Item = {
     id: string;
     text: string;
-    hint?: string;
 };
 
 type Section = {
     id: string;
     title: string;
     icon: React.ReactNode;
-    accent: string;
     items: Item[];
 };
 
@@ -38,7 +35,6 @@ const SECTIONS: Section[] = [
         id: "identificacion",
         title: "1. Identificación",
         icon: <Smartphone size={18} />,
-        accent: "from-indigo-500/20 to-violet-500/10 border-indigo-500/30",
         items: [
             { id: "i1", text: "IMEI del sistema operativo" },
             { id: "i2", text: "IMEI en SDigitalSystem" },
@@ -54,7 +50,6 @@ const SECTIONS: Section[] = [
         id: "piezas",
         title: "2. Piezas desconocidas",
         icon: <ShieldCheck size={18} />,
-        accent: "from-rose-500/20 to-pink-500/10 border-rose-500/30",
         items: [
             { id: "p1", text: "General: sin piezas desconocidas" },
             { id: "p2", text: "¿Hay piezas cambiadas o de segunda mano? No" },
@@ -64,7 +59,6 @@ const SECTIONS: Section[] = [
         id: "pantalla",
         title: "3. Pantalla",
         icon: <Smartphone size={18} />,
-        accent: "from-cyan-500/20 to-blue-500/10 border-cyan-500/30",
         items: [
             { id: "pa1", text: "Píxeles muertos" },
             { id: "pa2", text: "Manchas blancas o negras" },
@@ -81,7 +75,6 @@ const SECTIONS: Section[] = [
         id: "camaras",
         title: "4. Cámaras",
         icon: <Camera size={18} />,
-        accent: "from-fuchsia-500/20 to-purple-500/10 border-fuchsia-500/30",
         items: [
             { id: "c1", text: "Cámara trasera abre rápido" },
             { id: "c2", text: "Enfoca de cerca y de lejos" },
@@ -96,7 +89,6 @@ const SECTIONS: Section[] = [
         id: "audio",
         title: "5. Audio",
         icon: <Volume2 size={18} />,
-        accent: "from-amber-500/20 to-orange-500/10 border-amber-500/30",
         items: [
             { id: "au1", text: "Altavoz inferior suena claro" },
             { id: "au2", text: "Altavoz inferior sin distorsión a volumen máximo" },
@@ -109,7 +101,6 @@ const SECTIONS: Section[] = [
         id: "botones",
         title: "6. Botones",
         icon: <Wrench size={18} />,
-        accent: "from-slate-500/20 to-zinc-500/10 border-slate-500/30",
         items: [
             { id: "b1", text: "Botón volumen +" },
             { id: "b2", text: "Botón volumen −" },
@@ -122,7 +113,6 @@ const SECTIONS: Section[] = [
         id: "conectividad",
         title: "7. Conectividad",
         icon: <Wifi size={18} />,
-        accent: "from-emerald-500/20 to-teal-500/10 border-emerald-500/30",
         items: [
             { id: "co1", text: "WiFi conecta y navega" },
             { id: "co2", text: "Bluetooth detecta dispositivos" },
@@ -136,7 +126,6 @@ const SECTIONS: Section[] = [
         id: "bateria",
         title: "8. Batería y carga",
         icon: <Battery size={18} />,
-        accent: "from-lime-500/20 to-green-500/10 border-lime-500/30",
         items: [
             { id: "bat1", text: "Porcentaje de salud anotado: ____%" },
             { id: "bat2", text: "Cumple mínimo (iPhone ≤13: ≥80% / iPhone ≥14: ≥85%)" },
@@ -148,7 +137,6 @@ const SECTIONS: Section[] = [
         id: "sensores",
         title: "9. Sensores",
         icon: <Cpu size={18} />,
-        accent: "from-sky-500/20 to-blue-500/10 border-sky-500/30",
         items: [
             { id: "s1", text: "Acelerómetro (rotación de pantalla)" },
             { id: "s2", text: "Sensor de proximidad (pantalla apaga en llamada)" },
@@ -159,7 +147,6 @@ const SECTIONS: Section[] = [
         id: "estructura",
         title: "10. Físico y estructura",
         icon: <Wrench size={18} />,
-        accent: "from-stone-500/20 to-zinc-500/10 border-stone-500/30",
         items: [
             { id: "e1", text: "Chasis sin dobleces" },
             { id: "e2", text: "Carcasa sin separación ni abierta" },
@@ -172,7 +159,6 @@ const SECTIONS: Section[] = [
         id: "estetica",
         title: "11. Grado estético",
         icon: <ShieldCheck size={18} />,
-        accent: "from-pink-500/20 to-rose-500/10 border-pink-500/30",
         items: [
             { id: "g1", text: "Grado: A / B / C / D" },
             { id: "g2", text: "Rayas anotadas (ubicación)" },
@@ -234,45 +220,59 @@ export function ChecklistClient() {
 
     return (
         <div className="space-y-6 pb-20">
-            {/* Header */}
-            <div className="rounded-[2rem] bg-gradient-to-br from-indigo-600/20 via-violet-600/10 to-cyan-500/10 border border-white/10 backdrop-blur-2xl p-6 md:p-8 shadow-xl">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <div>
-                        <div className="flex items-center gap-2 mb-2">
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-300">
+            {/* Header — solid dark, high contrast */}
+            <div className="rounded-[2.5rem] border-none shadow-xl bg-[#0f172a] p-6 md:p-10 relative overflow-hidden">
+                {/* Subtle accent gradient corner */}
+                <div className="absolute -top-20 -right-20 w-80 h-80 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none" />
+                <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                    <div className="flex items-start gap-4">
+                        <div className="h-14 w-14 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/30 flex-shrink-0">
+                            <ListChecks size={26} />
+                        </div>
+                        <div>
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400">
                                 Guía de Referencia QC
                             </span>
+                            <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-white mt-1">
+                                Checklist de Revisión iPhone
+                            </h1>
+                            <p className="text-sm text-slate-400 mt-2 max-w-2xl">
+                                Recurso de aprendizaje y referencia. Marca los items a medida que los verificas. Tu progreso se guarda automáticamente en este navegador y se puede reiniciar cuando quieras.
+                            </p>
                         </div>
-                        <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-white">
-                            Checklist de Revisión iPhone
-                        </h1>
-                        <p className="text-sm text-slate-400 mt-2 max-w-2xl">
-                            Recurso de aprendizaje y referencia. Marca los items a medida que los verificas. Tu progreso se guarda automáticamente en este navegador y se puede reiniciar cuando quieras.
-                        </p>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
-                        <div className="text-right">
-                            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                                Progreso
-                            </div>
-                            <div className="text-3xl font-black text-white tabular-nums">
-                                {checkedCount}<span className="text-slate-500 text-lg">/{totalItems}</span>
-                            </div>
+
+                    <div className="flex flex-col items-start md:items-end gap-2 flex-shrink-0">
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                            Progreso
+                        </span>
+                        <div className="flex items-baseline gap-1">
+                            <span className="text-4xl font-black text-white tabular-nums">
+                                {checkedCount}
+                            </span>
+                            <span className="text-xl font-black text-slate-500 tabular-nums">
+                                /{totalItems}
+                            </span>
                         </div>
-                        <div className="w-48 h-2 bg-white/5 rounded-full overflow-hidden">
+                        <div className="w-56 h-2.5 bg-black/40 rounded-full overflow-hidden border border-white/5">
                             <div
-                                className="h-full bg-gradient-to-r from-indigo-500 via-violet-500 to-cyan-400 transition-all duration-500"
+                                className="h-full bg-gradient-to-r from-indigo-500 via-violet-500 to-cyan-400 transition-all duration-500 shadow-lg shadow-indigo-500/30"
                                 style={{ width: `${progressPct}%` }}
                             />
                         </div>
+                        <span className="text-xs font-bold text-indigo-300 tabular-nums">
+                            {progressPct}% completado
+                        </span>
                     </div>
                 </div>
 
                 {/* Search + Reset bar */}
-                <div className="mt-6 flex flex-col md:flex-row gap-3">
+                <div className="relative z-10 mt-8 flex flex-col md:flex-row gap-3">
                     <div className="relative flex-1">
                         <Search
-                            size={16}
+                            size={18}
                             className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
                         />
                         <input
@@ -280,12 +280,12 @@ export function ChecklistClient() {
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             placeholder="Buscar item del checklist…"
-                            className="w-full h-12 pl-11 pr-4 rounded-2xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 text-sm focus:outline-none focus:border-indigo-500/50 focus:bg-white/10 transition-all"
+                            className="w-full h-14 pl-12 pr-4 rounded-2xl bg-black/30 border border-white/10 text-white placeholder:text-slate-500 text-sm font-medium focus:outline-none focus:border-indigo-500/60 focus:bg-black/40 transition-all"
                         />
                     </div>
                     <button
                         onClick={reset}
-                        className="h-12 px-5 rounded-2xl bg-white/5 hover:bg-rose-500/15 border border-white/10 hover:border-rose-500/40 text-slate-300 hover:text-rose-300 text-sm font-bold transition-all active:scale-95 flex items-center justify-center gap-2"
+                        className="h-14 px-6 rounded-2xl bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/30 hover:border-rose-500/60 text-rose-200 hover:text-white text-sm font-black uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-2"
                     >
                         <Trash2 size={16} />
                         Reiniciar
@@ -293,38 +293,49 @@ export function ChecklistClient() {
                 </div>
             </div>
 
-            {/* Sections grid */}
+            {/* Sections grid — solid dark cards */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 {filteredSections.map((section) => {
                     const sectionTotal = section.items.length;
                     const sectionDone = section.items.filter((it) => checked[it.id]).length;
                     const sectionPct = sectionTotal === 0 ? 0 : Math.round((sectionDone / sectionTotal) * 100);
+                    const isSectionComplete = sectionDone === sectionTotal && sectionTotal > 0;
 
                     return (
                         <div
                             key={section.id}
                             className={cn(
-                                "rounded-[2rem] border backdrop-blur-2xl bg-gradient-to-br p-6 shadow-xl transition-all duration-300",
-                                section.accent
+                                "rounded-[2rem] border shadow-xl p-6 transition-all duration-300",
+                                isSectionComplete
+                                    ? "bg-emerald-950/40 border-emerald-500/30"
+                                    : "bg-[#0f172a] border-white/5"
                             )}
                         >
                             {/* Section header */}
-                            <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center justify-between mb-5 pb-4 border-b border-white/5">
                                 <div className="flex items-center gap-3">
-                                    <div className="h-10 w-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center text-white">
+                                    <div className={cn(
+                                        "h-11 w-11 rounded-xl flex items-center justify-center shadow-lg",
+                                        isSectionComplete
+                                            ? "bg-emerald-600 text-white shadow-emerald-600/30"
+                                            : "bg-indigo-600 text-white shadow-indigo-600/30"
+                                    )}>
                                         {section.icon}
                                     </div>
                                     <div>
-                                        <h2 className="text-lg font-black text-white tracking-tight">
+                                        <h2 className="text-base font-black text-white tracking-tight">
                                             {section.title}
                                         </h2>
-                                        <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold">
+                                        <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold mt-0.5">
                                             {sectionDone} de {sectionTotal} verificados
                                         </p>
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <div className="text-2xl font-black text-white tabular-nums">
+                                    <div className={cn(
+                                        "text-2xl font-black tabular-nums",
+                                        isSectionComplete ? "text-emerald-400" : "text-white"
+                                    )}>
                                         {sectionPct}%
                                     </div>
                                 </div>
@@ -339,33 +350,33 @@ export function ChecklistClient() {
                                             <button
                                                 onClick={() => toggle(item.id)}
                                                 className={cn(
-                                                    "w-full text-left flex items-start gap-3 p-3 rounded-xl border transition-all duration-200 active:scale-[0.98]",
+                                                    "w-full text-left flex items-center gap-3 p-3.5 rounded-xl border transition-all duration-200 active:scale-[0.98]",
                                                     isChecked
-                                                        ? "bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/15"
-                                                        : "bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/15"
+                                                        ? "bg-emerald-500/15 border-emerald-500/40 hover:bg-emerald-500/20"
+                                                        : "bg-black/20 border-white/5 hover:bg-black/40 hover:border-white/10"
                                                 )}
                                             >
-                                                <span className="mt-0.5 flex-shrink-0">
+                                                <span className="flex-shrink-0">
                                                     {isChecked ? (
                                                         <CheckCircle2
-                                                            size={20}
+                                                            size={22}
                                                             className="text-emerald-400"
                                                             fill="currentColor"
-                                                            fillOpacity={0.15}
+                                                            fillOpacity={0.2}
                                                         />
                                                     ) : (
                                                         <Circle
-                                                            size={20}
-                                                            className="text-slate-500"
+                                                            size={22}
+                                                            className="text-slate-600"
                                                         />
                                                     )}
                                                 </span>
                                                 <span
                                                     className={cn(
-                                                        "text-sm leading-snug flex-1",
+                                                        "text-sm font-medium leading-snug flex-1",
                                                         isChecked
-                                                            ? "text-slate-400 line-through decoration-slate-500"
-                                                            : "text-slate-200"
+                                                            ? "text-emerald-100/60 line-through decoration-emerald-500/50"
+                                                            : "text-slate-100"
                                                     )}
                                                 >
                                                     {item.text}
@@ -380,14 +391,16 @@ export function ChecklistClient() {
                 })}
             </div>
 
-            {/* Footer help */}
-            <div className="rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md p-5 text-xs text-slate-400 leading-relaxed">
+            {/* Footer help — solid dark */}
+            <div className="rounded-2xl bg-[#0f172a] border border-white/5 p-5">
                 <div className="flex items-start gap-3">
-                    <RotateCcw size={16} className="text-indigo-400 mt-0.5 flex-shrink-0" />
+                    <div className="h-9 w-9 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center flex-shrink-0">
+                        <ListChecks size={16} className="text-indigo-400" />
+                    </div>
                     <div>
-                        <p className="text-slate-300 font-bold mb-1">¿Cómo funciona?</p>
-                        <p>
-                            Esta es una guía de referencia para que los QC repasen qué se debe revisar. Toca cualquier item para marcarlo/desmarcarlo. El progreso se guarda en este navegador (localStorage). Usa <strong className="text-rose-300">Reiniciar</strong> para volver a cero. Los datos adicionales (porcentaje exacto, observaciones) se anotan en SDigitalSystem, no aquí.
+                        <p className="text-slate-200 text-sm font-black mb-1">¿Cómo funciona?</p>
+                        <p className="text-xs text-slate-400 leading-relaxed">
+                            Esta es una guía de referencia para que los QC repasen qué se debe revisar. Toca cualquier item para marcarlo o desmarcarlo. El progreso se guarda en este navegador (localStorage). Usa el botón <strong className="text-rose-300">Reiniciar</strong> para volver a cero. Los datos adicionales (porcentaje exacto, observaciones) se anotan en SDigitalSystem, no aquí.
                         </p>
                     </div>
                 </div>
