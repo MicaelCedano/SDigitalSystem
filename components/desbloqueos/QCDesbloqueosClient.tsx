@@ -17,6 +17,7 @@ interface ImeiItem {
 interface Solicitud {
     id: number;
     codigo: string;
+    modelo: string | null;
     observacion: string | null;
     imeis: ImeiItem[];
     estado: string;
@@ -176,6 +177,11 @@ export function QCDesbloqueosClient({ initialSolicitudes }: Props) {
                                                     {s.tecnico.name} · {s.totalEquipos} equipo{s.totalEquipos === 1 ? "" : "s"} ·{" "}
                                                     {formatDate(s.fechaCreacion)}
                                                 </p>
+                                                {s.modelo && (
+                                                    <p className="text-xs font-bold text-indigo-700 mt-0.5">
+                                                        Modelo: {s.modelo}
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2">

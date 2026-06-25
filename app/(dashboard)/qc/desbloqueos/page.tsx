@@ -29,6 +29,7 @@ export default async function QCDesbloqueosPage() {
                 initialSolicitudes={solicitudes.map(s => ({
                     id: s.id,
                     codigo: s.codigo,
+                    modelo: s.modelo,
                     observacion: s.observacion,
                     imeis: s.imeis as any,
                     estado: s.estado,
