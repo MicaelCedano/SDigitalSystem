@@ -18,6 +18,7 @@ interface ImeiItem {
 interface SolicitudPendiente {
     id: number;
     codigo: string;
+    modelo: string | null;
     observacion: string | null;
     observacionQc: string | null;
     imeis: ImeiItem[];
@@ -166,6 +167,11 @@ export function AdminDesbloqueosClient({ pendientes, recientes }: Props) {
                                                     {" · "}
                                                     {formatDate(s.fechaCreacion)}
                                                 </p>
+                                                {s.modelo && (
+                                                    <p className="text-xs font-bold text-indigo-700 mt-0.5">
+                                                        Modelo: {s.modelo}
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-3">

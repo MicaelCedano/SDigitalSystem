@@ -38,6 +38,7 @@ export default async function AdminDesbloqueosPage() {
                 pendientes={solicitudes.map(s => ({
                     id: s.id,
                     codigo: s.codigo,
+                    modelo: s.modelo,
                     observacion: s.observacion,
                     observacionQc: s.observacionQc,
                     imeis: s.imeis as any,

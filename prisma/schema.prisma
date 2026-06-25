@@ -53,6 +53,9 @@ model User {
   solicitudesDesbloqueoTecnico SolicitudDesbloqueo[]      @relation("SolicitudDesbloqueoTecnico")
   solicitudesDesbloqueoQC       SolicitudDesbloqueo[]      @relation("SolicitudDesbloqueoQC")
   solicitudesDesbloqueoAdmin    SolicitudDesbloqueo[]      @relation("SolicitudDesbloqueoAdmin")
+  unlockRecordsTecnico   UnlockRecord[]                  @relation("UnlockRecordTecnico")
+  unlockRecordsQC        UnlockRecord[]                  @relation("UnlockRecordQC")
+  unlockRecordsAdmin     UnlockRecord[]                  @relation("UnlockRecordAdmin")
   equiposDesbloqueados     Equipo[]                       @relation("EquipoDesbloqueadoPor")
 
   @@map("users")
@@ -528,6 +531,7 @@ model SolicitudDesbloqueo {
   id                Int       @id @default(autoincrement())
   codigo            String    @unique @db.VarChar(64)
   tecnicoId         Int       @map("tecnico_id")
+  modelo            String?   @db.VarChar(150)
   imeis             Json
   estado            String    @default("Pendiente QC") @db.VarChar(20)
   observacion       String?
@@ -546,8 +550,34 @@ model SolicitudDesbloqueo {
   tecnico           User      @relation("SolicitudDesbloqueoTecnico", fields: [tecnicoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   qc                User?     @relation("SolicitudDesbloqueoQC", fields: [qcId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   admin             User?     @relation("SolicitudDesbloqueoAdmin", fields: [adminId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  unlockRecords     UnlockRecord[]
 
   @@map("solicitud_desbloqueo")
+}
+
+/// Registro de auditoría del desbloqueo. Módulo INDEPENDIENTE: no toca Equipo, Purchase, Supplier ni nada de compras.
+/// Cada UnlockRecord es un IMEI desbloqueado y aprobado por el admin (Micael). Sirve para:
+///   1. Evitar doble cobro (constraint único sobre imei).
+///   2. Buscar "¿quién desbloqueó este IMEI?" en cualquier momento.
+model UnlockRecord {
+  id            Int       @id @default(autoincrement())
+  imei          String    @unique @db.VarChar(100)
+  modelo        String?   @db.VarChar(150)
+  solicitudId   Int       @map("solicitud_id")
+  tecnicoId     Int       @map("tecnico_id")
+  qcId          Int?      @map("qc_id")
+  adminId       Int       @map("admin_id")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  paidAt        DateTime? @map("paid_at") @db.Timestamp(6)
+  solicitud     SolicitudDesbloqueo @relation(fields: [solicitudId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tecnico       User      @relation("UnlockRecordTecnico", fields: [tecnicoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  qc            User?     @relation("UnlockRecordQC", fields: [qcId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  admin         User      @relation("UnlockRecordAdmin", fields: [adminId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([imei])
+  @@index([tecnicoId])
+  @@index([createdAt])
+  @@map("unlock_record")
 }
 
 model system_setting {

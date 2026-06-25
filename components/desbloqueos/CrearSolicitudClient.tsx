@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Lock, Plus, Trash2, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { crearSolicitudDesbloqueo } from "@/app/actions/desbloqueos";
 import Link from "next/link";
@@ -15,6 +16,7 @@ interface Props {
 
 export function CrearSolicitudClient({ currentUser }: Props) {
     const router = useRouter();
+    const [modelo, setModelo] = useState("");
     const [imeisText, setImeisText] = useState("");
     const [observacion, setObservacion] = useState("");
     const [isPending, startTransition] = useTransition();
@@ -37,6 +39,10 @@ export function CrearSolicitudClient({ currentUser }: Props) {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setFeedback(null);
+        if (!modelo.trim()) {
+            setFeedback({ type: "err", msg: "Indica el modelo (ej. Vortex HD65 Ultra)" });
+            return;
+        }
         if (imeisList.length === 0) {
             setFeedback({ type: "err", msg: "Pega al menos un IMEI" });
             return;
@@ -47,9 +53,10 @@ export function CrearSolicitudClient({ currentUser }: Props) {
         }
 
         startTransition(async () => {
-            const res = await crearSolicitudDesbloqueo(imeisList, observacion.trim() || undefined);
+            const res = await crearSolicitudDesbloqueo(imeisList, modelo.trim(), observacion.trim() || undefined);
             if (res.success) {
                 setFeedback({ type: "ok", msg: res.message || "Solicitud creada" });
+                setModelo("");
                 setImeisText("");
                 setObservacion("");
                 setTimeout(() => router.push("/desbloqueos"), 1500);
@@ -91,9 +98,10 @@ export function CrearSolicitudClient({ currentUser }: Props) {
                     </h3>
                     <ul className="text-sm text-amber-900 space-y-1">
                         <li>• El pago se acredita a tu wallet <strong>después</strong> de que el administrador acepte la solicitud.</li>
+                        <li>• Una sola modelo por solicitud. Si son varios modelos, crea una solicitud por cada uno.</li>
                         <li>• No se permiten IMEIs repetidos en la misma lista.</li>
                         <li>• Si un IMEI ya está en otra solicitud pendiente, será rechazado.</li>
-                        <li>• Si el equipo ya fue desbloqueado antes, no se puede volver a desbloquear.</li>
+                        <li>• Si el IMEI ya fue desbloqueado antes, no se puede volver a desbloquear.</li>
                     </ul>
                 </CardContent>
             </Card>
@@ -107,6 +115,22 @@ export function CrearSolicitudClient({ currentUser }: Props) {
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-5">
+                        <div>
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2 block">
+                                Modelo de los Equipos
+                            </label>
+                            <Input
+                                value={modelo}
+                                onChange={(e) => setModelo(e.target.value)}
+                                placeholder="Ej. Vortex HD65 Ultra, iPhone 13, Samsung A54..."
+                                className="rounded-2xl h-12"
+                                disabled={isPending}
+                            />
+                            <p className="text-[10px] text-slate-400 mt-1">
+                                Un solo modelo por solicitud (si son varios modelos, haz una solicitud por cada uno)
+                            </p>
+                        </div>
+
                         <div>
                             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2 block">
                                 IMEIs Desbloqueados

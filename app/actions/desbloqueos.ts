@@ -16,11 +16,15 @@ const MONTO_POR_DESBLOQUEO = 25;
  * Validaciones:
  *  - Lista no vacía
  *  - Sin IMEIs vacíos / duplicados dentro de la misma lista
- *  - IMEIs existen en la tabla equipo
+ *  - Modelo obligatorio
+ *  - IMEIs NO están ya en UnlockRecord (constraint anti-doble-pago)
  *  - IMEIs no están ya en otra solicitud Pendiente QC / Pendiente Admin
- *  - IMEIs no están ya desbloqueados (campo desbloqueadoPorId no nulo)
+ *
+ * IMPORTANTE: este flujo es un MÓDULO INDEPENDIENTE. Los IMEIs NO se persisten
+ * en la tabla `equipo`. Se persisten en `UnlockRecord` recién cuando el admin
+ * aprueba la solicitud. Hasta entonces, viven sólo en el JSON de la solicitud.
  */
-export async function crearSolicitudDesbloqueo(imeis: string[], observacion?: string) {
+export async function crearSolicitudDesbloqueo(imeis: string[], modelo: string, observacion?: string) {
     const session = await getServerSession(authOptions);
     if (!session || !session.user) {
         return { success: false, error: "No autenticado" };
@@ -42,7 +46,13 @@ export async function crearSolicitudDesbloqueo(imeis: string[], observacion?: st
         return { success: false, error: "Debes enviar al menos un IMEI" };
     }
 
-    // 2. Duplicados dentro de la misma lista
+    // 2. Modelo obligatorio
+    const modeloLimpio = (modelo || "").toString().trim();
+    if (modeloLimpio.length === 0) {
+        return { success: false, error: "El modelo es obligatorio (ej. Vortex HD65 Ultra)" };
+    }
+
+    // 3. Duplicados dentro de la misma lista
     const setImeis = new Set(imeisLimpios);
     if (setImeis.size !== imeisLimpios.length) {
         const counts = new Map<string, number>();
@@ -55,27 +65,16 @@ export async function crearSolicitudDesbloqueo(imeis: string[], observacion?: st
     }
 
     try {
-        // 3. IMEIs existen en tabla equipo
-        const equipos = await prisma.equipo.findMany({
+        // 4. IMEIs ya desbloqueados antes (en UnlockRecord)
+        const yaDesbloqueados = await prisma.unlockRecord.findMany({
             where: { imei: { in: imeisLimpios } },
-            select: { id: true, imei: true, desbloqueadoPorId: true }
+            select: { imei: true, createdAt: true, tecnico: { select: { name: true } } }
         });
-
-        const imeisEncontrados = new Set(equipos.map(e => e.imei));
-        const imeisNoEncontrados = imeisLimpios.filter(i => !imeisEncontrados.has(i));
-        if (imeisNoEncontrados.length > 0) {
-            return {
-                success: false,
-                error: `Estos IMEIs no existen en el sistema: ${imeisNoEncontrados.join(", ")}`
-            };
-        }
-
-        // 4. IMEIs ya desbloqueados
-        const yaDesbloqueados = equipos.filter(e => e.desbloqueadoPorId != null).map(e => e.imei);
         if (yaDesbloqueados.length > 0) {
+            const lista = yaDesbloqueados.map(r => `${r.imei} (por ${r.tecnico.name})`).join(", ");
             return {
                 success: false,
-                error: `Estos IMEIs ya fueron desbloqueados: ${yaDesbloqueados.join(", ")}`
+                error: `Estos IMEIs ya fueron desbloqueados: ${lista}`
             };
         }
 
@@ -127,6 +126,7 @@ export async function crearSolicitudDesbloqueo(imeis: string[], observacion?: st
             data: {
                 codigo,
                 tecnicoId: userId,
+                modelo: modeloLimpio,
                 imeis: imeisJson as any,
                 estado: "Pendiente QC",
                 observacion: observacion || null,
@@ -342,14 +342,21 @@ export async function adminAceptarSolicitud(
                 );
             }
 
-            // Marcar cada equipo como desbloqueado por el técnico
-            const imeisStr = imeisAprobados.map((x: any) => x.imei);
-            await tx.equipo.updateMany({
-                where: { imei: { in: imeisStr } },
-                data: {
-                    desbloqueadoPorId: solicitud.tecnicoId,
-                    fechaDesbloqueo: new Date()
-                }
+            // Persistir cada IMEI aprobado en UnlockRecord (módulo aparte, NO toca Equipo).
+            // Si por una carrera un IMEI ya existe en UnlockRecord, la constraint @unique falla
+            // y la transacción hace rollback completo (no se pagan las wallets).
+            const now = new Date();
+            await tx.unlockRecord.createMany({
+                data: imeisAprobados.map((x: any) => ({
+                    imei: x.imei,
+                    modelo: solicitud.modelo,
+                    solicitudId: solicitudId,
+                    tecnicoId: solicitud.tecnicoId,
+                    qcId: qcId && qcId !== solicitud.tecnicoId ? qcId : null,
+                    adminId,
+                    createdAt: now,
+                    paidAt: now
+                }))
             });
 
             // Cerrar la solicitud
