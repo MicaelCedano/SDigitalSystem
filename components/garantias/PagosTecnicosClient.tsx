@@ -4,7 +4,7 @@ import { useState } from "react";
 import {
     DollarSign, Users, TrendingUp, Search, PlusCircle,
     ArrowLeft, Settings, FileText, ChevronRight, AlertCircle,
-    Printer, CreditCard, X, User as UserIcon
+    Printer, CreditCard, X, User as UserIcon, UserCheck, UserX, Eye, EyeOff
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,12 +23,14 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { manualCredit, adminManualWithdrawal } from "@/app/actions/wallet";
+import { manualCredit, adminManualWithdrawal, toggleTecnicoActivo } from "@/app/actions/wallet";
 
-export function PagosTecnicosClient({ tecnicos }: any) {
+export function PagosTecnicosClient({ tecnicos: initialTecnicos }: any) {
     const router = useRouter();
     const [searchTerm, setSearchTerm] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [tecnicos, setTecnicos] = useState<any[]>(initialTecnicos || []);
+    const [showInactive, setShowInactive] = useState(false);
 
     // Modal states
     const [showCreditModal, setShowCreditModal] = useState(false);
@@ -39,9 +41,11 @@ export function PagosTecnicosClient({ tecnicos }: any) {
     const [monto, setMonto] = useState("");
     const [concepto, setConcepto] = useState("");
 
-    const filteredTecnicos = tecnicos.filter((t: any) =>
-        (t.name || t.username).toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredTecnicos = tecnicos.filter((t: any) => {
+        const matchSearch = (t.name || t.username).toLowerCase().includes(searchTerm.toLowerCase());
+        if (!showInactive && t.isActive === false) return false;
+        return matchSearch;
+    });
 
     const totalBalance = tecnicos.reduce((acc: number, t: any) => acc + t.balance, 0);
     const avgTarifa = tecnicos.filter((t: any) => t.config).length > 0
@@ -139,14 +143,44 @@ export function PagosTecnicosClient({ tecnicos }: any) {
             {/* Filters */}
             <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-slate-200/50 bg-white p-2">
                 <CardContent className="p-4">
-                    <div className="relative">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                        <Input
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Buscar técnico por nombre o usuario..."
-                            className="h-14 pl-12 bg-slate-50 border-none rounded-2xl font-bold text-slate-700 placeholder:text-slate-300 focus-visible:ring-slate-900/10"
-                        />
+                    <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                            <Input
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                placeholder="Buscar técnico por nombre o usuario..."
+                                className="h-14 pl-12 bg-slate-50 border-none rounded-2xl font-bold text-slate-700 placeholder:text-slate-300 focus-visible:ring-slate-900/10"
+                            />
+                        </div>
+                        <Button
+                            onClick={async () => {
+                                const next = !showInactive;
+                                setShowInactive(next);
+                                if (next) {
+                                    setIsLoading(true);
+                                    try {
+                                        const { getTecnicosPaymentsInfo } = await import("@/app/actions/garantias");
+                                        const all = await getTecnicosPaymentsInfo(true);
+                                        setTecnicos(all);
+                                    } finally {
+                                        setIsLoading(false);
+                                    }
+                                } else {
+                                    setTecnicos(initialTecnicos);
+                                }
+                            }}
+                            variant="outline"
+                            className={cn(
+                                "h-14 px-6 rounded-2xl font-bold gap-2 transition-all",
+                                showInactive
+                                    ? "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                                    : "bg-slate-50 text-slate-500 border-slate-100 hover:bg-slate-100"
+                            )}
+                        >
+                            {showInactive ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                            {showInactive ? "Mostrando inactivos" : "Mostrar inactivos"}
+                        </Button>
                     </div>
                 </CardContent>
             </Card>
@@ -167,9 +201,16 @@ export function PagosTecnicosClient({ tecnicos }: any) {
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <h3 className="text-2xl font-bold text-slate-800 tracking-tighter group-hover:text-indigo-600 transition-colors">
-                                        {t.name || 'Sin nombre'}
-                                    </h3>
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="text-2xl font-bold text-slate-800 tracking-tighter group-hover:text-indigo-600 transition-colors">
+                                            {t.name || 'Sin nombre'}
+                                        </h3>
+                                        {t.isActive === false && (
+                                            <Badge className="bg-rose-50 text-rose-600 border-rose-200 rounded-xl text-[9px] font-bold uppercase tracking-widest">
+                                                Inactivo
+                                            </Badge>
+                                        )}
+                                    </div>
                                     <p className="text-slate-400 font-bold flex items-center gap-2 text-sm uppercase tracking-widest">
                                         <UserIcon className="w-4 h-4 text-indigo-400" /> {t.username}
                                     </p>
@@ -240,6 +281,36 @@ export function PagosTecnicosClient({ tecnicos }: any) {
                                         <Settings className="w-5 h-5" />
                                     </Button>
                                 </Link>
+                                <Button
+                                    onClick={async () => {
+                                        const newStatus = !(t.isActive !== false);
+                                        setIsLoading(true);
+                                        try {
+                                            const res = await toggleTecnicoActivo(t.id, newStatus);
+                                            if (res.success) {
+                                                toast.success(newStatus ? `${t.name || t.username} reactivado` : `${t.name || t.username} dado de baja`);
+                                                router.refresh();
+                                            } else {
+                                                toast.error(res.error || "Error al cambiar estado");
+                                            }
+                                        } catch {
+                                            toast.error("Error inesperado");
+                                        } finally {
+                                            setIsLoading(false);
+                                        }
+                                    }}
+                                    variant="outline" size="icon"
+                                    disabled={isLoading}
+                                    className={cn(
+                                        "h-12 w-12 rounded-2xl shadow-sm transition-all duration-300",
+                                        t.isActive === false
+                                            ? "border-emerald-100 bg-white text-emerald-500 hover:bg-emerald-600 hover:text-white"
+                                            : "border-rose-100 bg-white text-rose-500 hover:bg-rose-600 hover:text-white"
+                                    )}
+                                    title={t.isActive === false ? "Reactivar técnico" : "Dar de baja (no aparece en asignaciones)"}
+                                >
+                                    {t.isActive === false ? <UserCheck className="w-5 h-5" /> : <UserX className="w-5 h-5" />}
+                                </Button>
                             </div>
                         </div>
                     </Card>

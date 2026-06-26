@@ -15,7 +15,8 @@ export default async function PagosTecnicosPage() {
         redirect("/garantias");
     }
 
-    const tecnicosInfo = await getTecnicosPaymentsInfo();
+    // Trae solo activos por default; el client puede pedir incluir inactivos con el toggle
+    const tecnicosInfo = await getTecnicosPaymentsInfo(false);
 
     return (
         <div className="pt-4 max-w-7xl mx-auto w-full">

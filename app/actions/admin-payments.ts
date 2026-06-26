@@ -11,10 +11,11 @@ export async function getAdminPaymentsDashboardData() {
     if (!session || session.user.role !== "admin") return null;
 
     try {
-        // Fetch all users with technical roles
+        // Fetch all users with technical roles (active only)
         const users = await prisma.user.findMany({
             where: {
-                role: { in: ["tecnico", "tecnico_garantias", "control_calidad"] }
+                role: { in: ["tecnico", "tecnico_garantias", "control_calidad"] },
+                isActive: true
             },
             select: {
                 id: true,
@@ -657,7 +658,8 @@ export async function getAllPenalties() {
 
         const usersWithStats = await prisma.user.findMany({
             where: {
-                role: { in: ["tecnico", "tecnico_garantias", "control_calidad"] }
+                role: { in: ["tecnico", "tecnico_garantias", "control_calidad"] },
+                isActive: true
             },
             select: {
                 id: true,

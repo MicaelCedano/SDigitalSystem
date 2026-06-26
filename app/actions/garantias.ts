@@ -636,16 +636,17 @@ export async function saveConfiguracionPago(tecnicoId: number, data: { montoPorR
     }
 }
 
-export async function getTecnicosPaymentsInfo() {
+export async function getTecnicosPaymentsInfo(includeInactive = false) {
     const tecnicos = await prisma.user.findMany({
-        where: { 
+        where: {
             role: "tecnico_garantias",
-            isActive: true
+            ...(includeInactive ? {} : { isActive: true })
         },
         select: {
             id: true,
             name: true,
             username: true,
+            isActive: true,
             configuracionPagos: { where: { activo: true } },
             wallet: { include: { accounts: { where: { nombre: "Principal" } } } }
         }
@@ -655,6 +656,7 @@ export async function getTecnicosPaymentsInfo() {
         id: t.id,
         name: t.name,
         username: t.username,
+        isActive: t.isActive,
         config: t.configuracionPagos[0] || null,
         balance: t.wallet[0]?.accounts[0]?.saldo || 0
     }));

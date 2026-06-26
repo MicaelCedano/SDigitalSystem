@@ -464,3 +464,33 @@ export async function createWalletAccount(name: string, color: string = "blue") 
             return { success: false, error: error.message };
         }
     }
+
+/**
+ * Activa/desactiva un técnico (User.isActive).
+ * No borra historial, wallet, lotes ni transacciones. Solo oculta al usuario
+ * de los listados de asignación de QC y de la tabla de pagos.
+ * Solo admin. Reactivable en cualquier momento (toggle).
+ */
+export async function toggleTecnicoActivo(tecnicoId: number, activo: boolean) {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== "admin") {
+        return { success: false, error: "No autorizado" };
+    }
+
+    try {
+        const tecnico = await prisma.user.findUnique({ where: { id: tecnicoId } });
+        if (!tecnico) return { success: false, error: "Técnico no encontrado" };
+
+        await prisma.user.update({
+            where: { id: tecnicoId },
+            data: { isActive: activo }
+        });
+
+        revalidatePath("/garantias/pagos-tecnicos");
+        revalidatePath("/admin/payments");
+        return { success: true, isActive: activo };
+    } catch (error: any) {
+        console.error("Error toggling tecnico activo:", error);
+        return { success: false, error: error.message };
+    }
+}
