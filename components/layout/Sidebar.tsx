@@ -32,6 +32,7 @@ import { cn, getProfileImageUrl } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { getUnreadCount } from '@/app/actions/notifications';
+import { getPendingAdminDesbloqueosCount } from '@/app/actions/desbloqueos';
 import { useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
@@ -48,6 +49,7 @@ const Sidebar = ({ initialUser, forceShow = false }: { initialUser?: any, forceS
         garantias: false
     });
     const [unreadCount, setUnreadCount] = useState(0);
+    const [pendingUnlockCount, setPendingUnlockCount] = useState(0);
 
     useEffect(() => {
         const fetchUnread = async () => {
@@ -68,6 +70,20 @@ const Sidebar = ({ initialUser, forceShow = false }: { initialUser?: any, forceS
             .subscribe();
         return () => { supabase.removeChannel(channel); };
     }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Polling cada 60s del contador de desbloqueos pendientes (solo admin).
+    // Re-fetch cuando el user navega dentro del admin panel (pathname cambia a /admin).
+    useEffect(() => {
+        if (user?.role !== 'admin') return;
+        let cancelled = false;
+        const fetchPending = async () => {
+            const c = await getPendingAdminDesbloqueosCount();
+            if (!cancelled) setPendingUnlockCount(c);
+        };
+        fetchPending();
+        const interval = setInterval(fetchPending, 60_000);
+        return () => { cancelled = true; clearInterval(interval); };
+    }, [user?.role, pathname]);
 
     const toggleSection = (section: string) => {
         if (collapsed) {
@@ -152,7 +168,7 @@ const Sidebar = ({ initialUser, forceShow = false }: { initialUser?: any, forceS
                                         <SubNavItem href="/compras/modelos" label="Modelos" />
                                         <SubNavItem href="/admin/pagos" label="Gestión de Pagos" />
                                         <SubNavItem href="/admin/penalidades" label="Historial Penalidades" />
-                                        <SubNavItem href="/admin/desbloqueos" label="Aprobar Desbloqueos" />
+                                        <SubNavItem href="/admin/desbloqueos" label="Aprobar Desbloqueos" badge={pendingUnlockCount} />
                                         <SubNavItem href="/garantias" label="Garantías" />
                                     </div>
                                 )}
@@ -313,7 +329,7 @@ const NavItem = ({ href, icon, label, active, collapsed, badge, user }: { href: 
     );
 };
 
-const SubNavItem = ({ href, label }: { href: string; label: string }) => {
+const SubNavItem = ({ href, label, badge }: { href: string; label: string; badge?: number }) => {
     const pathname = usePathname();
     const isActive = pathname === href;
     return (
@@ -323,6 +339,11 @@ const SubNavItem = ({ href, label }: { href: string; label: string }) => {
                 isActive ? "text-white font-bold bg-white/5" : "text-slate-500 hover:text-indigo-300 hover:bg-white/5"
             )}>
                 <span className="truncate text-sm">{label}</span>
+                {badge && badge > 0 ? (
+                    <span className="flex h-5 min-w-[20px] px-1.5 items-center justify-center rounded-full bg-rose-600 text-[10px] font-black text-white shadow-lg">
+                        {badge > 9 ? '+9' : badge}
+                    </span>
+                ) : null}
             </div>
         </Link>
     );

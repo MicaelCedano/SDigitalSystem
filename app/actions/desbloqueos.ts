@@ -211,7 +211,16 @@ export async function qcRevisarSolicitud(
         // Notificar a admins por Telegram
         if (aprobados > 0) {
             try {
-                const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID || process.env.TELEGRAM_CHAT_ID;
+                const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID?.trim()
+                    || process.env.TELEGRAM_CHAT_ID?.trim();
+                const maskChatId = (id?: string) =>
+                    id ? `${id.slice(0, 4)}***${id.slice(-2)} (len=${id.length})` : "(vacío)";
+                console.log(
+                    `[Telegram desbloqueo] Solicitud ${solicitud.codigo} → notificando admin. ` +
+                    `TELEGRAM_ADMIN_CHAT_ID=${maskChatId(process.env.TELEGRAM_ADMIN_CHAT_ID)}, ` +
+                    `TELEGRAM_CHAT_ID=${maskChatId(process.env.TELEGRAM_CHAT_ID)}, ` +
+                    `usando=${maskChatId(adminChatId)}`
+                );
                 const msg =
                     `🔓 <b>Solicitud de Desbloqueo para tu aprobación</b>\n\n` +
                     `📋 <b>Código:</b> ${escapeHTML(solicitud.codigo)}\n` +
@@ -219,9 +228,20 @@ export async function qcRevisarSolicitud(
                     (rechazados > 0 ? `❌ <b>Rechazados por QC:</b> ${rechazados}\n` : "") +
                     `💵 <b>Pago total al aprobar:</b> RD$${(aprobados * MONTO_POR_DESBLOQUEO * 2).toFixed(2)} (técnico + QC)\n\n` +
                     `👉 <a href="https://sdigitalsystem.vercel.app/admin/desbloqueos">Revisar y aceptar</a>`;
-                await sendTelegramMessage(msg, undefined, adminChatId);
-            } catch (tgErr) {
-                console.warn("[Telegram] Error notificando admin desbloqueo:", tgErr);
+                const tgResult = await sendTelegramMessage(msg, undefined, adminChatId);
+                if (!tgResult.success) {
+                    console.error(
+                        `[Telegram desbloqueo] Fallo enviando msg de ${solicitud.codigo} a ${maskChatId(adminChatId)}:`,
+                        tgResult.error || tgResult.data
+                    );
+                } else {
+                    console.log(`[Telegram desbloqueo] OK msg enviado para ${solicitud.codigo}`);
+                }
+            } catch (tgErr: any) {
+                console.error(
+                    `[Telegram desbloqueo] Excepción enviando msg de ${solicitud.codigo}:`,
+                    tgErr?.message || tgErr
+                );
             }
         }
 
@@ -509,5 +529,26 @@ export async function getSolicitudesDesbloqueo(estado?: string) {
     } catch (error: any) {
         console.error("Error listando solicitudes:", error);
         return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Cuenta cuántas solicitudes están en "Pendiente Admin" (las que Micael debe aceptar).
+ * Solo para admin. Retorna 0 si no hay sesión o no es admin.
+ * Usado por el Sidebar para mostrar un badge rojo cuando hay algo esperando.
+ */
+export async function getPendingAdminDesbloqueosCount(): Promise<number> {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) return 0;
+    if (session.user.role !== "admin") return 0;
+
+    try {
+        const count = await prisma.solicitudDesbloqueo.count({
+            where: { estado: "Pendiente Admin" }
+        });
+        return count;
+    } catch (error: any) {
+        console.error("[desbloqueos] Error contando pendientes admin:", error?.message);
+        return 0;
     }
 }
