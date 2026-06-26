@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Lock, CheckCircle2, XCircle, Loader2, User, DollarSign, Clock } from "lucide-react";
+import { Lock, CheckCircle2, XCircle, Loader2, User, DollarSign, Clock, ClipboardList } from "lucide-react";
+import Link from "next/link";
 import { adminAceptarSolicitud } from "@/app/actions/desbloqueos";
 
 interface ImeiItem {
@@ -45,10 +46,11 @@ interface SolicitudReciente {
 
 interface Props {
     pendientes: SolicitudPendiente[];
+    pendientesQcCount?: number;
     recientes: SolicitudReciente[];
 }
 
-export function AdminDesbloqueosClient({ pendientes, recientes }: Props) {
+export function AdminDesbloqueosClient({ pendientes, pendientesQcCount = 0, recientes }: Props) {
     const router = useRouter();
     const [items, setItems] = useState(pendientes);
     const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -129,6 +131,26 @@ export function AdminDesbloqueosClient({ pendientes, recientes }: Props) {
                         <p className="text-sm text-slate-500 mt-1">
                             Cuando el QC revise solicitudes aparecerán aquí para tu aprobación.
                         </p>
+                        {pendientesQcCount > 0 && (
+                            <div className="mt-6 inline-flex items-start gap-3 rounded-2xl bg-amber-50 border border-amber-200 p-4 text-left max-w-md mx-auto">
+                                <ClipboardList className="text-amber-600 shrink-0 mt-0.5" size={20} />
+                                <div className="text-xs text-amber-900">
+                                    <p className="font-black uppercase tracking-wider text-[10px] text-amber-700 mb-1">
+                                        Esperando revisión del QC
+                                    </p>
+                                    <p>
+                                        Hay <strong>{pendientesQcCount} solicitud{pendientesQcCount === 1 ? "" : "es"}</strong> en estado <em>"Pendiente QC"</em>.
+                                        Avísale a tu QC para que las revise y aparezcan acá para tu aprobación.
+                                    </p>
+                                    <Link
+                                        href="/qc/desbloqueos"
+                                        className="inline-block mt-2 font-bold text-amber-700 hover:text-amber-900 underline underline-offset-2"
+                                    >
+                                        Ver la cola del QC &rarr;
+                                    </Link>
+                                </div>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             ) : (

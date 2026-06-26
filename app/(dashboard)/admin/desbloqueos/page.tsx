@@ -22,6 +22,11 @@ export default async function AdminDesbloqueosPage() {
         }
     });
 
+    // Cuantas estan atrapadas en "Pendiente QC" para el empty state contextual
+    const pendientesQcCount = await prisma.solicitudDesbloqueo.count({
+        where: { estado: "Pendiente QC" }
+    });
+
     const recientes = await prisma.solicitudDesbloqueo.findMany({
         where: { estado: { in: ["Aprobado", "Rechazado"] } },
         orderBy: { fechaAdmin: "desc" },
@@ -56,6 +61,7 @@ export default async function AdminDesbloqueosPage() {
                     },
                     qc: s.qc ? { id: s.qc.id, name: s.qc.name || s.qc.username } : null
                 }))}
+                pendientesQcCount={pendientesQcCount}
                 recientes={recientes.map(s => ({
                     id: s.id,
                     codigo: s.codigo,
