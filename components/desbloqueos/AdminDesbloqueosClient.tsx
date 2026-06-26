@@ -6,9 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Lock, CheckCircle2, XCircle, Loader2, User, DollarSign, Clock, ClipboardList } from "lucide-react";
+import { Lock, CheckCircle2, XCircle, Loader2, User, DollarSign, Clock, ClipboardList, Bell, Send } from "lucide-react";
 import Link from "next/link";
-import { adminAceptarSolicitud } from "@/app/actions/desbloqueos";
+import { adminAceptarSolicitud, recordarQCsDesbloqueos } from "@/app/actions/desbloqueos";
 
 interface ImeiItem {
     imei: string;
@@ -59,6 +59,8 @@ export function AdminDesbloqueosClient({ pendientes, pendientesQcCount = 0, reci
     const [isPending, startTransition] = useTransition();
     const [error, setError] = useState<string | null>(null);
     const [confirmaAccion, setConfirmaAccion] = useState<{ id: number; accion: "aceptar" | "rechazar" } | null>(null);
+    const [recordatorioPending, setRecordatorioPending] = useState(false);
+    const [recordatorioMsg, setRecordatorioMsg] = useState<{ tipo: "ok" | "err"; texto: string } | null>(null);
 
     const formatDate = (iso: string | null) => {
         if (!iso) return "—";
@@ -101,6 +103,21 @@ export function AdminDesbloqueosClient({ pendientes, pendientesQcCount = 0, reci
         });
     };
 
+    const handleRecordarQC = () => {
+        setRecordatorioMsg(null);
+        setRecordatorioPending(true);
+        startTransition(async () => {
+            const res = await recordarQCsDesbloqueos();
+            if (res.success) {
+                setRecordatorioMsg({ tipo: "ok", texto: res.message || "Recordatorio enviado" });
+                router.refresh();
+            } else {
+                setRecordatorioMsg({ tipo: "err", texto: res.error || "Error al enviar recordatorio" });
+            }
+            setRecordatorioPending(false);
+        });
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex items-center gap-3">
@@ -132,24 +149,56 @@ export function AdminDesbloqueosClient({ pendientes, pendientesQcCount = 0, reci
                             Cuando el QC revise solicitudes aparecerán aquí para tu aprobación.
                         </p>
                         {pendientesQcCount > 0 && (
-                            <div className="mt-6 inline-flex items-start gap-3 rounded-2xl bg-amber-50 border border-amber-200 p-4 text-left max-w-md mx-auto">
-                                <ClipboardList className="text-amber-600 shrink-0 mt-0.5" size={20} />
-                                <div className="text-xs text-amber-900">
-                                    <p className="font-black uppercase tracking-wider text-[10px] text-amber-700 mb-1">
-                                        Esperando revisión del QC
-                                    </p>
-                                    <p>
-                                        Hay <strong>{pendientesQcCount} solicitud{pendientesQcCount === 1 ? "" : "es"}</strong> en estado <em>"Pendiente QC"</em>.
-                                        Avísale a tu QC para que las revise y aparezcan acá para tu aprobación.
-                                    </p>
-                                    <Link
-                                        href="/qc/desbloqueos"
-                                        className="inline-block mt-2 font-bold text-amber-700 hover:text-amber-900 underline underline-offset-2"
-                                    >
-                                        Ver la cola del QC &rarr;
-                                    </Link>
+                            <>
+                                <div className="mt-6 inline-flex items-start gap-3 rounded-2xl bg-amber-50 border border-amber-200 p-4 text-left max-w-md mx-auto">
+                                    <ClipboardList className="text-amber-600 shrink-0 mt-0.5" size={20} />
+                                    <div className="text-xs text-amber-900">
+                                        <p className="font-black uppercase tracking-wider text-[10px] text-amber-700 mb-1">
+                                            Esperando revisión del QC
+                                        </p>
+                                        <p>
+                                            Hay <strong>{pendientesQcCount} solicitud{pendientesQcCount === 1 ? "" : "es"}</strong> en estado <em>"Pendiente QC"</em>.
+                                            Avísale a tu QC para que las revise y aparezcan acá para tu aprobación.
+                                        </p>
+                                        <Link
+                                            href="/qc/desbloqueos"
+                                            className="inline-block mt-2 font-bold text-amber-700 hover:text-amber-900 underline underline-offset-2"
+                                        >
+                                            Ver la cola del QC &rarr;
+                                        </Link>
+                                    </div>
                                 </div>
-                            </div>
+                                <div className="mt-4">
+                                    <Button
+                                        onClick={handleRecordarQC}
+                                        disabled={recordatorioPending || isPending}
+                                        className="h-12 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white font-black uppercase tracking-wider text-sm shadow-lg shadow-amber-200"
+                                    >
+                                        {recordatorioPending ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                Enviando...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Bell className="mr-2 h-4 w-4" />
+                                                Recordar al QC ahora
+                                            </>
+                                        )}
+                                    </Button>
+                                </div>
+                                {recordatorioMsg && (
+                                    <div
+                                        className={`mt-3 mx-auto max-w-md rounded-2xl p-3 text-xs font-bold ${
+                                            recordatorioMsg.tipo === "ok"
+                                                ? "bg-emerald-50 text-emerald-900 border border-emerald-200"
+                                                : "bg-rose-50 text-rose-900 border border-rose-200"
+                                        }`}
+                                    >
+                                        {recordatorioMsg.texto}
+                                    </div>
+                                )}
+                            </>
                         )}
                     </CardContent>
                 </Card>

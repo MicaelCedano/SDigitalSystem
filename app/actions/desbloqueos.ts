@@ -552,3 +552,112 @@ export async function getPendingAdminDesbloqueosCount(): Promise<number> {
         return 0;
     }
 }
+
+/**
+ * Recordatorio manual a todos los QCs activos sobre solicitudes de desbloqueo
+ * atrapadas en estado "Pendiente QC".
+ *
+ * - Crea una notification in-app por cada QC activo (les aparece en su panel
+ *   de notificaciones y suma al badge del Sidebar via getUnreadCount).
+ * - Manda un Telegram al admin (Micael) confirmando cuántos QCs fueron notificados.
+ * - Retorna conteos para que la UI muestre feedback inmediato.
+ *
+ * Solo el admin puede ejecutar esto. Sin migracion: usa la tabla `notification`
+ * existente.
+ */
+export async function recordarQCsDesbloqueos() {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) return { success: false, error: "No autenticado" };
+    if (session.user.role !== "admin") return { success: false, error: "Solo el administrador puede enviar recordatorios" };
+
+    const adminId = Number(session.user.id);
+
+    try {
+        // 1. Solicitudes atrapadas
+        const solicitudesAtrapadas = await prisma.solicitudDesbloqueo.findMany({
+            where: { estado: "Pendiente QC" },
+            select: {
+                id: true,
+                codigo: true,
+                totalEquipos: true,
+                tecnico: { select: { name: true, username: true } }
+            }
+        });
+
+        if (solicitudesAtrapadas.length === 0) {
+            return { success: true, qcsNotificados: 0, solicitudes: 0, message: "No hay solicitudes pendientes de QC" };
+        }
+
+        // 2. QCs activos
+        const qcs = await prisma.user.findMany({
+            where: { role: "control_calidad", isActive: true },
+            select: { id: true, name: true, username: true }
+        });
+
+        if (qcs.length === 0) {
+            return { success: false, error: "No hay QCs activos en el sistema" };
+        }
+
+        // 3. Crear notification in-app para cada QC
+        const totalEquipos = solicitudesAtrapadas.reduce((acc, s) => acc + s.totalEquipos, 0);
+        const titulo = "Solicitudes de desbloqueo pendientes de revision";
+        const mensajeBase = `Hay ${solicitudesAtrapadas.length} solicitud(es) de desbloqueo esperando tu revision (${totalEquipos} equipo(s) en total). ` +
+            `Codigos: ${solicitudesAtrapadas.map(s => s.codigo).join(", ")}. ` +
+            `Entra a /qc/desbloqueos para revisarlas.`;
+
+        await prisma.notification.createMany({
+            data: qcs.map(qc => ({
+                tecnicoId: qc.id,
+                tipo: "desbloqueo_recordatorio",
+                titulo,
+                mensaje: mensajeBase,
+                leida: false,
+                fecha: new Date(),
+                fromUserId: adminId,
+                redirectUrl: "/qc/desbloqueos"
+            }))
+        });
+
+        // 4. Telegram al admin (Micael) confirmando
+        try {
+            const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID?.trim() || process.env.TELEGRAM_CHAT_ID?.trim();
+            const maskChatId = (id?: string) =>
+                id ? `${id.slice(0, 4)}***${id.slice(-2)} (len=${id.length})` : "(vacio)";
+            console.log(
+                `[Telegram recordatorio QC] ${qcs.length} QC(s) notificados in-app, ` +
+                `${solicitudesAtrapadas.length} solicitud(es) pendiente(s). ` +
+                `TELEGRAM_ADMIN_CHAT_ID=${maskChatId(process.env.TELEGRAM_ADMIN_CHAT_ID)}, ` +
+                `usando=${maskChatId(adminChatId)}`
+            );
+            const qcsNombres = qcs.map(q => q.name || q.username).join(", ");
+            const tgMsg =
+                `🔔 <b>Recordatorio QC enviado</b>\n\n` +
+                `📋 <b>Solicitudes atrapadas:</b> ${solicitudesAtrapadas.length} (${totalEquipos} IMEIs)\n` +
+                `👥 <b>QCs notificados in-app:</b> ${qcsNombres}\n\n` +
+                `<a href="https://sdigitalsystem.vercel.app/admin/desbloqueos">Ver solicitudes</a>`;
+            const tgResult = await sendTelegramMessage(tgMsg, undefined, adminChatId);
+            if (!tgResult.success) {
+                console.error(
+                    `[Telegram recordatorio QC] Fallo enviando confirmacion a ${maskChatId(adminChatId)}:`,
+                    tgResult.error || tgResult.data
+                );
+            }
+        } catch (tgErr: any) {
+            console.error("[Telegram recordatorio QC] Excepcion:", tgErr?.message || tgErr);
+        }
+
+        revalidatePath("/qc/desbloqueos");
+        revalidatePath("/admin/desbloqueos");
+        revalidatePath("/notificaciones");
+
+        return {
+            success: true,
+            qcsNotificados: qcs.length,
+            solicitudes: solicitudesAtrapadas.length,
+            message: `Recordatorio enviado a ${qcs.length} QC(s) por ${solicitudesAtrapadas.length} solicitud(es).`
+        };
+    } catch (error: any) {
+        console.error("[desbloqueos] Error en recordarQCsDesbloqueos:", error);
+        return { success: false, error: error.message || "Error al enviar recordatorio" };
+    }
+}
