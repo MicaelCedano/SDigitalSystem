@@ -39,3 +39,4 @@ Seguimos el sistema de diseño **"Glassy-Solid Hybrid"**.
 ## 📌 Pendientes
 - Revisar consistencia de otros modales del dashboard.
 - Optimizar la carga de tablas grandes.
+- [ ] **PWA mobile-first para aprobación de bauchers por el jefe (2026-06-27, diferido)**: PWA en `/bauchers-jefe` o `/aprobar` para que el jefe de Micael apruebe bauchers con 1 toque desde su iPhone. Reutiliza server action de aprobación existente, agrega `canApproveBauchers: boolean` a `User`, notificación push a Micael por Telegram. Cost: $0, 2-3 días. **NO arrancar** sin validación previa con el jefe (¿usaría la PWA? ¿iPhone iOS 16.4+?). Spec completa en `wiki/proyectos/sdigital-movil-futuro` (wiki de Micael).
