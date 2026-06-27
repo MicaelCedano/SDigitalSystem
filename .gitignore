@@ -46,3 +46,7 @@ dev.db
 
 .vercel
 .env*.local
+
+
+# Auditoría Kiwi 2026-06-27 — backups de remediación
+*.audit-backup
