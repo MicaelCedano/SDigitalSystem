@@ -13,18 +13,16 @@ export default async function AdminDesbloqueosPage() {
     if (!session) redirect("/login");
     if (session.user.role !== "admin") redirect("/");
 
+    // 2026-06-27: ya no hay paso de QC. Todas las solicitudes nuevas nacen
+    // en "Pendiente Admin" y aparecen acá. "Pendiente QC" se incluye solo
+    // por compat con datos viejos pendientes de migración retroactiva.
     const solicitudes = await prisma.solicitudDesbloqueo.findMany({
-        where: { estado: "Pendiente Admin" },
+        where: { estado: { in: ["Pendiente Admin", "Pendiente QC"] } },
         orderBy: { fechaCreacion: "asc" },
         include: {
             tecnico: { select: { id: true, name: true, username: true, profileImage: true } },
             qc: { select: { id: true, name: true, username: true } }
         }
-    });
-
-    // Cuantas estan atrapadas en "Pendiente QC" para el empty state contextual
-    const pendientesQcCount = await prisma.solicitudDesbloqueo.count({
-        where: { estado: "Pendiente QC" }
     });
 
     const recientes = await prisma.solicitudDesbloqueo.findMany({
@@ -61,7 +59,6 @@ export default async function AdminDesbloqueosPage() {
                     },
                     qc: s.qc ? { id: s.qc.id, name: s.qc.name || s.qc.username } : null
                 }))}
-                pendientesQcCount={pendientesQcCount}
                 recientes={recientes.map(s => ({
                     id: s.id,
                     codigo: s.codigo,

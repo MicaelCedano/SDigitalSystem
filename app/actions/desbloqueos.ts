@@ -23,6 +23,11 @@ const MONTO_POR_DESBLOQUEO = 25;
  * IMPORTANTE: este flujo es un MÓDULO INDEPENDIENTE. Los IMEIs NO se persisten
  * en la tabla `equipo`. Se persisten en `UnlockRecord` recién cuando el admin
  * aprueba la solicitud. Hasta entonces, viven sólo en el JSON de la solicitud.
+ *
+ * CAMBIO 2026-06-27: se eliminó el paso de QC. La solicitud se crea
+ * directamente en estado "Pendiente Admin" para que Micael la apruebe y se
+ * pague al técnico en un solo paso. La validación anti-doble-pago contra
+ * UnlockRecord se mantiene exactamente al crear (mismo momento, mismo rigor).
  */
 export async function crearSolicitudDesbloqueo(imeis: string[], modelo: string, observacion?: string) {
     const session = await getServerSession(authOptions);
@@ -128,7 +133,7 @@ export async function crearSolicitudDesbloqueo(imeis: string[], modelo: string, 
                 tecnicoId: userId,
                 modelo: modeloLimpio,
                 imeis: imeisJson as any,
-                estado: "Pendiente QC",
+                estado: "Pendiente Admin",
                 observacion: observacion || null,
                 totalEquipos: imeisLimpios.length,
                 equiposAprobados: 0,
@@ -139,14 +144,13 @@ export async function crearSolicitudDesbloqueo(imeis: string[], modelo: string, 
         });
 
         revalidatePath("/desbloqueos");
-        revalidatePath("/qc/desbloqueos");
         revalidatePath("/admin/desbloqueos");
 
         return {
             success: true,
             solicitudId: solicitud.id,
             codigo: solicitud.codigo,
-            message: `Solicitud ${codigo} creada con ${imeisLimpios.length} equipo(s). Pendiente de revisión QC.`
+            message: `Solicitud ${codigo} creada con ${imeisLimpios.length} equipo(s). Pendiente de aprobación del administrador.`
         };
     } catch (error: any) {
         console.error("Error creando solicitud de desbloqueo:", error);
@@ -155,119 +159,10 @@ export async function crearSolicitudDesbloqueo(imeis: string[], modelo: string, 
 }
 
 /**
- * QC revisa una solicitud: aprueba o rechaza IMEIs individuales.
- * Cambia el estado a "Pendiente Admin" si hay al menos un IMEI aprobado.
- */
-export async function qcRevisarSolicitud(
-    solicitudId: number,
-    decisiones: { imei: string; aprobado: boolean; motivo?: string }[],
-    observacionQc?: string
-) {
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) return { success: false, error: "No autenticado" };
-    if (session.user.role !== "control_calidad" && session.user.role !== "admin") {
-        return { success: false, error: "No autorizado" };
-    }
-
-    const qcId = Number(session.user.id);
-
-    try {
-        const solicitud = await prisma.solicitudDesbloqueo.findUnique({ where: { id: solicitudId } });
-        if (!solicitud) return { success: false, error: "Solicitud no encontrada" };
-        if (solicitud.estado !== "Pendiente QC") {
-            return { success: false, error: "Esta solicitud ya fue revisada por QC" };
-        }
-
-        const imeisActuales = (solicitud.imeis as any[]) || [];
-        const map = new Map(imeisActuales.map((x: any) => [x.imei, x]));
-
-        let aprobados = 0;
-        let rechazados = 0;
-        for (const d of decisiones) {
-            if (map.has(d.imei)) {
-                const item: any = map.get(d.imei);
-                item.estado = d.aprobado ? "Aprobado" : "Rechazado";
-                item.motivo = d.motivo || null;
-                if (d.aprobado) aprobados++;
-                else rechazados++;
-            }
-        }
-
-        const nuevoEstado = aprobados > 0 ? "Pendiente Admin" : "Rechazado";
-
-        await prisma.solicitudDesbloqueo.update({
-            where: { id: solicitudId },
-            data: {
-                imeis: imeisActuales as any,
-                qcId,
-                fechaQc: new Date(),
-                observacionQc: observacionQc || null,
-                estado: nuevoEstado,
-                equiposAprobados: aprobados,
-                equiposRechazados: rechazados
-            }
-        });
-
-        // Notificar a admins por Telegram
-        if (aprobados > 0) {
-            try {
-                const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID?.trim()
-                    || process.env.TELEGRAM_CHAT_ID?.trim();
-                const maskChatId = (id?: string) =>
-                    id ? `${id.slice(0, 4)}***${id.slice(-2)} (len=${id.length})` : "(vacío)";
-                // Desglose del pago que se hará al aprobar. RD$25/IMEI al técnico y
-                // otros RD$25/IMEI al QC (si QC != técnico). En la fase de revisión QC
-                // todavía no sabemos con certeza si serán personas distintas, pero el
-                // sistema siempre dispersa ambos al aprobar, así que mostramos el caso
-                // peor para que el admin vea el costo total real.
-                const montoTecnico = aprobados * MONTO_POR_DESBLOQUEO;
-                const montoQc = aprobados * MONTO_POR_DESBLOQUEO;
-                console.log(
-                    `[Telegram desbloqueo] Solicitud ${solicitud.codigo} → notificando admin. ` +
-                    `TELEGRAM_ADMIN_CHAT_ID=${maskChatId(process.env.TELEGRAM_ADMIN_CHAT_ID)}, ` +
-                    `TELEGRAM_CHAT_ID=${maskChatId(process.env.TELEGRAM_CHAT_ID)}, ` +
-                    `usando=${maskChatId(adminChatId)}`
-                );
-                const msg =
-                    `🔓 <b>Solicitud de Desbloqueo para tu aprobación</b>\n\n` +
-                    `📋 <b>Código:</b> ${escapeHTML(solicitud.codigo)}\n` +
-                    `✅ <b>Aprobados por QC:</b> ${aprobados}\n` +
-                    (rechazados > 0 ? `❌ <b>Rechazados por QC:</b> ${rechazados}\n` : "") +
-                    `💵 <b>Se dispersará al aprobar:</b> RD$${montoTecnico.toFixed(2)} (técnico) + RD$${montoQc.toFixed(2)} (QC) = RD$${(montoTecnico + montoQc).toFixed(2)} total\n\n` +
-                    `👉 <a href="https://sdigitalsystem.vercel.app/admin/desbloqueos">Revisar y aceptar</a>`;
-                const tgResult = await sendTelegramMessage(msg, undefined, adminChatId);
-                if (!tgResult.success) {
-                    console.error(
-                        `[Telegram desbloqueo] Fallo enviando msg de ${solicitud.codigo} a ${maskChatId(adminChatId)}:`,
-                        tgResult.error || tgResult.data
-                    );
-                } else {
-                    console.log(`[Telegram desbloqueo] OK msg enviado para ${solicitud.codigo}`);
-                }
-            } catch (tgErr: any) {
-                console.error(
-                    `[Telegram desbloqueo] Excepción enviando msg de ${solicitud.codigo}:`,
-                    tgErr?.message || tgErr
-                );
-            }
-        }
-
-        revalidatePath("/qc/desbloqueos");
-        revalidatePath("/admin/desbloqueos");
-
-        return {
-            success: true,
-            message: `Revisión QC guardada. ${aprobados} aprobado(s), ${rechazados} rechazado(s). Estado: ${nuevoEstado}.`
-        };
-    } catch (error: any) {
-        console.error("Error revisando solicitud QC:", error);
-        return { success: false, error: error.message };
-    }
-}
-
-/**
  * Admin (Micael) acepta o rechaza final.
- * Al aceptar, dispara los pagos a wallet del técnico y del QC que revisó.
+ * Al aceptar, dispara el pago a wallet del técnico (RD$25 × IMEIs aprobados).
+ * Si la solicitud pasó por QC antes del cambio 2026-06-27, se conserva el QC
+ * en el campo `qcId` (auditoría histórica) pero NO se le paga nada extra.
  */
 export async function adminAceptarSolicitud(
     solicitudId: number,
@@ -337,21 +232,31 @@ export async function adminAceptarSolicitud(
         }
 
         // ============ ACEPTAR: acreditar pagos a wallet ============
+        // 2026-06-27: ya no hay paso de QC, todos los IMEIs de la solicitud
+        // se aprueban en bloque al hacer clic. La validación anti-doble-pago
+        // ocurrió en `crearSolicitudDesbloqueo` contra `unlockRecord`. Si por
+        // una carrera un IMEI ya existe en UnlockRecord, la constraint @unique
+        // falla y la transacción hace rollback completo (no se pagan las wallets).
         const imeisActuales = (solicitud.imeis as any[]) || [];
-        const imeisAprobados = imeisActuales.filter((x: any) => x.estado === "Aprobado");
-        const cantidadAprobados = imeisAprobados.length;
+        // Tomamos TODOS los IMEIs (ya están validados al crear). Si la solicitud
+        // es retroactiva del flujo viejo con estado="Aprobado" en algunos items,
+        // esos se respetan; los "Pendiente" se cuentan también.
+        const imeisAcreditar = imeisActuales
+            .filter((x: any) => x.estado !== "Rechazado")
+            .map((x: any) => x.imei);
+        const cantidadAprobados = imeisAcreditar.length;
 
         if (cantidadAprobados === 0) {
-            return { success: false, error: "No hay IMEIs aprobados para pagar" };
+            return { success: false, error: "No hay IMEIs válidos para pagar" };
         }
 
         const montoPorUnidad = MONTO_POR_DESBLOQUEO;
         const montoTotal = cantidadAprobados * montoPorUnidad;
 
-        const qcId = solicitud.qcId;
-
         await prisma.$transaction(async (tx) => {
-            // Acreditar al TÉCNICO que desbloqueó
+            // Acreditar SOLO al TÉCNICO que desbloqueó.
+            // 2026-06-27: se eliminó el pago al QC. La aprobación la hace
+            // Micael directamente, no hay rol intermedio que cobrar.
             await acreditarWallet(
                 tx,
                 solicitud.tecnicoId,
@@ -359,34 +264,27 @@ export async function adminAceptarSolicitud(
                 `Desbloqueo ${solicitud.codigo} - ${cantidadAprobados} equipo(s)`
             );
 
-            // Acreditar al QC que revisó (si existe)
-            if (qcId && qcId !== solicitud.tecnicoId) {
-                await acreditarWallet(
-                    tx,
-                    qcId,
-                    montoTotal,
-                    `QC revisión desbloqueo ${solicitud.codigo} - ${cantidadAprobados} equipo(s)`
-                );
-            }
-
-            // Persistir cada IMEI aprobado en UnlockRecord (módulo aparte, NO toca Equipo).
-            // Si por una carrera un IMEI ya existe en UnlockRecord, la constraint @unique falla
-            // y la transacción hace rollback completo (no se pagan las wallets).
+            // Persistir cada IMEI en UnlockRecord (módulo aparte, NO toca Equipo).
             const now = new Date();
             await tx.unlockRecord.createMany({
-                data: imeisAprobados.map((x: any) => ({
-                    imei: x.imei,
+                data: imeisAcreditar.map((imei: string) => ({
+                    imei,
                     modelo: solicitud.modelo,
                     solicitudId: solicitudId,
                     tecnicoId: solicitud.tecnicoId,
-                    qcId: qcId && qcId !== solicitud.tecnicoId ? qcId : null,
+                    qcId: solicitud.qcId, // histórico: si pasó por QC antes, se conserva
                     adminId,
                     createdAt: now,
                     paidAt: now
                 }))
             });
 
-            // Cerrar la solicitud
+            // Cerrar la solicitud y marcar todos los IMEIs como Aprobado en el JSON
+            const imeisCerrados = imeisActuales.map((x: any) => ({
+                imei: x.imei,
+                estado: x.estado === "Rechazado" ? "Rechazado" : "Aprobado",
+                motivo: x.motivo || null
+            }));
             await tx.solicitudDesbloqueo.update({
                 where: { id: solicitudId },
                 data: {
@@ -394,49 +292,36 @@ export async function adminAceptarSolicitud(
                     adminId,
                     fechaAdmin: new Date(),
                     observacionAdmin: observacionAdmin || null,
-                    montoTotalPagado: qcId && qcId !== solicitud.tecnicoId ? montoTotal * 2 : montoTotal
+                    imeis: imeisCerrados as any,
+                    equiposAprobados: imeisCerrados.filter((x: any) => x.estado === "Aprobado").length,
+                    equiposRechazados: imeisCerrados.filter((x: any) => x.estado === "Rechazado").length,
+                    montoTotalPagado: montoTotal
                 }
             });
         });
 
-        // Notificar a ambos
-        await prisma.notification.createMany({
-            data: [
-                {
-                    tecnicoId: solicitud.tecnicoId,
-                    tipo: "desbloqueo_aprobado",
-                    titulo: "¡Desbloqueo Aprobado!",
-                    mensaje: `Tu solicitud ${solicitud.codigo} fue aprobada. +RD$${montoTotal.toFixed(2)} a tu wallet.`,
-                    monto: montoTotal,
-                    leida: false,
-                    fecha: new Date(),
-                    fromUserId: adminId,
-                    redirectUrl: "/desbloqueos"
-                },
-                ...(qcId && qcId !== solicitud.tecnicoId
-                    ? [{
-                        tecnicoId: qcId,
-                        tipo: "desbloqueo_aprobado",
-                        titulo: "¡QC Desbloqueo Aprobado!",
-                        mensaje: `La solicitud ${solicitud.codigo} que revisaste fue aprobada. +RD$${montoTotal.toFixed(2)} a tu wallet.`,
-                        monto: montoTotal,
-                        leida: false,
-                        fecha: new Date(),
-                        fromUserId: adminId,
-                        redirectUrl: "/qc/desbloqueos"
-                    }]
-                    : [])
-            ]
+        // Notificar SOLO al técnico (ya no al QC, no aplica)
+        await prisma.notification.create({
+            data: {
+                tecnicoId: solicitud.tecnicoId,
+                tipo: "desbloqueo_aprobado",
+                titulo: "¡Desbloqueo Aprobado!",
+                mensaje: `Tu solicitud ${solicitud.codigo} fue aprobada. +RD$${montoTotal.toFixed(2)} a tu wallet.`,
+                monto: montoTotal,
+                leida: false,
+                fecha: new Date(),
+                fromUserId: adminId,
+                redirectUrl: "/desbloqueos"
+            }
         });
 
         revalidatePath("/admin/desbloqueos");
         revalidatePath("/desbloqueos");
-        revalidatePath("/qc/desbloqueos");
         revalidatePath("/wallet");
 
         return {
             success: true,
-            message: `Aprobado. Pagados RD$${montoTotal.toFixed(2)} al técnico${qcId && qcId !== solicitud.tecnicoId ? " y al QC" : ""}.`
+            message: `Aprobado. Pagados RD$${montoTotal.toFixed(2)} al técnico.`
         };
     } catch (error: any) {
         console.error("Error aceptando solicitud admin:", error);
@@ -550,8 +435,11 @@ export async function getPendingAdminDesbloqueosCount(): Promise<number> {
     if (session.user.role !== "admin") return 0;
 
     try {
+        // 2026-06-27: ya no hay paso de QC, todas las solicitudes nuevas nacen
+        // en "Pendiente Admin". El "Pendiente QC" se incluye por retro-compat:
+        // solicitudes creadas antes de este cambio que aún nadie aprobó.
         const count = await prisma.solicitudDesbloqueo.count({
-            where: { estado: "Pendiente Admin" }
+            where: { estado: { in: ["Pendiente Admin", "Pendiente QC"] } }
         });
         return count;
     } catch (error: any) {
@@ -560,111 +448,7 @@ export async function getPendingAdminDesbloqueosCount(): Promise<number> {
     }
 }
 
-/**
- * Recordatorio manual a todos los QCs activos sobre solicitudes de desbloqueo
- * atrapadas en estado "Pendiente QC".
- *
- * - Crea una notification in-app por cada QC activo (les aparece en su panel
- *   de notificaciones y suma al badge del Sidebar via getUnreadCount).
- * - Manda un Telegram al admin (Micael) confirmando cuántos QCs fueron notificados.
- * - Retorna conteos para que la UI muestre feedback inmediato.
- *
- * Solo el admin puede ejecutar esto. Sin migracion: usa la tabla `notification`
- * existente.
- */
-export async function recordarQCsDesbloqueos() {
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) return { success: false, error: "No autenticado" };
-    if (session.user.role !== "admin") return { success: false, error: "Solo el administrador puede enviar recordatorios" };
-
-    const adminId = Number(session.user.id);
-
-    try {
-        // 1. Solicitudes atrapadas
-        const solicitudesAtrapadas = await prisma.solicitudDesbloqueo.findMany({
-            where: { estado: "Pendiente QC" },
-            select: {
-                id: true,
-                codigo: true,
-                totalEquipos: true,
-                tecnico: { select: { name: true, username: true } }
-            }
-        });
-
-        if (solicitudesAtrapadas.length === 0) {
-            return { success: true, qcsNotificados: 0, solicitudes: 0, message: "No hay solicitudes pendientes de QC" };
-        }
-
-        // 2. QCs activos
-        const qcs = await prisma.user.findMany({
-            where: { role: "control_calidad", isActive: true },
-            select: { id: true, name: true, username: true }
-        });
-
-        if (qcs.length === 0) {
-            return { success: false, error: "No hay QCs activos en el sistema" };
-        }
-
-        // 3. Crear notification in-app para cada QC
-        const totalEquipos = solicitudesAtrapadas.reduce((acc, s) => acc + s.totalEquipos, 0);
-        const titulo = "Solicitudes de desbloqueo pendientes de revision";
-        const mensajeBase = `Hay ${solicitudesAtrapadas.length} solicitud(es) de desbloqueo esperando tu revision (${totalEquipos} equipo(s) en total). ` +
-            `Codigos: ${solicitudesAtrapadas.map(s => s.codigo).join(", ")}. ` +
-            `Entra a /qc/desbloqueos para revisarlas.`;
-
-        await prisma.notification.createMany({
-            data: qcs.map(qc => ({
-                tecnicoId: qc.id,
-                tipo: "desbloqueo_recordatorio",
-                titulo,
-                mensaje: mensajeBase,
-                leida: false,
-                fecha: new Date(),
-                fromUserId: adminId,
-                redirectUrl: "/qc/desbloqueos"
-            }))
-        });
-
-        // 4. Telegram al admin (Micael) confirmando
-        try {
-            const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID?.trim() || process.env.TELEGRAM_CHAT_ID?.trim();
-            const maskChatId = (id?: string) =>
-                id ? `${id.slice(0, 4)}***${id.slice(-2)} (len=${id.length})` : "(vacio)";
-            console.log(
-                `[Telegram recordatorio QC] ${qcs.length} QC(s) notificados in-app, ` +
-                `${solicitudesAtrapadas.length} solicitud(es) pendiente(s). ` +
-                `TELEGRAM_ADMIN_CHAT_ID=${maskChatId(process.env.TELEGRAM_ADMIN_CHAT_ID)}, ` +
-                `usando=${maskChatId(adminChatId)}`
-            );
-            const qcsNombres = qcs.map(q => q.name || q.username).join(", ");
-            const tgMsg =
-                `🔔 <b>Recordatorio QC enviado</b>\n\n` +
-                `📋 <b>Solicitudes atrapadas:</b> ${solicitudesAtrapadas.length} (${totalEquipos} IMEIs)\n` +
-                `👥 <b>QCs notificados in-app:</b> ${qcsNombres}\n\n` +
-                `<a href="https://sdigitalsystem.vercel.app/admin/desbloqueos">Ver solicitudes</a>`;
-            const tgResult = await sendTelegramMessage(tgMsg, undefined, adminChatId);
-            if (!tgResult.success) {
-                console.error(
-                    `[Telegram recordatorio QC] Fallo enviando confirmacion a ${maskChatId(adminChatId)}:`,
-                    tgResult.error || tgResult.data
-                );
-            }
-        } catch (tgErr: any) {
-            console.error("[Telegram recordatorio QC] Excepcion:", tgErr?.message || tgErr);
-        }
-
-        revalidatePath("/qc/desbloqueos");
-        revalidatePath("/admin/desbloqueos");
-        revalidatePath("/notificaciones");
-
-        return {
-            success: true,
-            qcsNotificados: qcs.length,
-            solicitudes: solicitudesAtrapadas.length,
-            message: `Recordatorio enviado a ${qcs.length} QC(s) por ${solicitudesAtrapadas.length} solicitud(es).`
-        };
-    } catch (error: any) {
-        console.error("[desbloqueos] Error en recordarQCsDesbloqueos:", error);
-        return { success: false, error: error.message || "Error al enviar recordatorio" };
-    }
-}
+// 2026-06-27: se eliminó la función `recordarQCsDesbloqueos` porque ya no
+// existe el paso de QC en el flujo de desbloqueos. El técnico crea la
+// solicitud → Micael aprueba y paga directo. No hay cuello de botella que
+// recordar.
