@@ -212,6 +212,26 @@ export async function manualCredit(targetUserId: number, amount: number, descrip
                 data: { saldo: { increment: amount } }
             });
 
+            // Notificar al técnico que recibió una acreditación manual del admin (in-app, badge Sidebar).
+            // La falla de la noti NO revierte la transacción: el balance ya cambió.
+            try {
+                await tx.notification.create({
+                    data: {
+                        tecnicoId: targetUserId,
+                        tipo: "PAGO",
+                        titulo: "💰 Acreditación recibida",
+                        mensaje: `El administrador te acreditó RD$${amount.toFixed(2)}. Concepto: ${descripcion}. Tu balance ya refleja el incremento.`,
+                        monto: amount,
+                        fromUserId: Number(session.user.id),
+                        leida: false,
+                        fecha: new Date(),
+                        redirectUrl: "/wallet"
+                    }
+                });
+            } catch (notifErr: any) {
+                console.error("[manualCredit] No se pudo crear la notificación para el técnico:", notifErr?.message);
+            }
+
             return { success: true };
         });
     } catch (error: any) {
@@ -268,6 +288,27 @@ export async function adminManualWithdrawal(targetUserId: number, amount: number
                 where: { id: wallet.id },
                 data: { saldo: { decrement: amount } }
             });
+
+            // Notificar al técnico que recibió un pago manual del admin (in-app, badge Sidebar).
+            // La falla de la noti NO revierte la transacción de wallet: el balance ya cambió
+            // y el técnico lo ve de todas formas. Logueamos con console.error por si pasa.
+            try {
+                await tx.notification.create({
+                    data: {
+                        tecnicoId: targetUserId,
+                        tipo: "PAGO",
+                        titulo: "💸 Pago recibido",
+                        mensaje: `El administrador te pagó RD$${amount.toFixed(2)}. Concepto: ${concepto}. Tu balance ya refleja el descuento.`,
+                        monto: -amount,
+                        fromUserId: Number(session.user.id),
+                        leida: false,
+                        fecha: new Date(),
+                        redirectUrl: "/wallet"
+                    }
+                });
+            } catch (notifErr: any) {
+                console.error("[adminManualWithdrawal] No se pudo crear la notificación para el técnico:", notifErr?.message);
+            }
 
             return { success: true };
         });
