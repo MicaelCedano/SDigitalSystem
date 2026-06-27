@@ -11,6 +11,53 @@ import { sendTelegramMessage, escapeHTML } from "@/lib/telegram";
 const MONTO_POR_DESBLOQUEO = 25;
 
 /**
+ * Valida formato de IMEI con checksum Luhn + checks anti-basura.
+ *
+ * - Debe tener exactamente 15 dígitos numéricos.
+ * - No todos los dígitos iguales (atrapa 000000000000000, 111111111111111, etc).
+ * - Checksum Luhn válido: atrapa el ~90% de errores tipográficos y de copia-pega.
+ *
+ * NO valida que el IMEI exista en la tabla `equipo` (módulo desbloqueos es
+ * independiente del inventario, regla del 2026-06-25). El sistema confía en
+ * que el técnico sabe qué IMEI desbloqueó.
+ *
+ * Retorna { valid, error }.
+ */
+function validarImei(imei: string): { valid: boolean; error?: string } {
+    if (!imei || typeof imei !== "string") {
+        return { valid: false, error: "vacío" };
+    }
+    const s = imei.trim();
+    if (!/^\d+$/.test(s)) {
+        return { valid: false, error: "contiene letras o símbolos" };
+    }
+    if (s.length !== 15) {
+        return { valid: false, error: `debe tener 15 dígitos (tiene ${s.length})` };
+    }
+    if (new Set(s).size === 1) {
+        return { valid: false, error: "todos los dígitos son iguales" };
+    }
+    // Luhn: doblar cada 2do dígito desde la derecha, sumar dígitos resultantes.
+    // Suma total debe ser múltiplo de 10.
+    const digits = s.split("").map(Number);
+    let total = 0;
+    for (let i = 0; i < digits.length; i++) {
+        // i=0 es el último dígito (no se duplica), i=1 penúltimo (se duplica), etc.
+        const fromRight = digits.length - 1 - i;
+        let d = digits[fromRight];
+        if (i % 2 === 1) {
+            d *= 2;
+            if (d > 9) d -= 9;
+        }
+        total += d;
+    }
+    if (total % 10 !== 0) {
+        return { valid: false, error: "checksum Luhn inválido" };
+    }
+    return { valid: true };
+}
+
+/**
  * Crea una nueva solicitud de desbloqueo.
  * Accesible para: técnicos y QC.
  * Validaciones:
@@ -67,6 +114,23 @@ export async function crearSolicitudDesbloqueo(imeis: string[], modelo: string, 
             if (c > 1) duplicados.push(imei);
         }
         return { success: false, error: `Hay IMEIs repetidos en la lista: ${duplicados.join(", ")}` };
+    }
+
+    // 3.5 Formato de cada IMEI (Luhn + anti-basura)
+    // 2026-06-27: agregado tras queja de Micael sobre IMEIs inventados. Atrapa:
+    //   - longitud != 15
+    //   - letras o símbolos
+    //   - todos los dígitos iguales (0000..., 1111..., etc)
+    //   - checksum Luhn inválido (errores de tipeo/copia-pega)
+    // NO valida que el IMEI exista en la tabla `equipo` (módulo independiente).
+    for (const imei of imeisLimpios) {
+        const v = validarImei(imei);
+        if (!v.valid) {
+            return {
+                success: false,
+                error: `IMEI inválido (${imei}): ${v.error}`
+            };
+        }
     }
 
     try {
