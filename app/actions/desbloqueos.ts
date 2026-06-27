@@ -215,6 +215,13 @@ export async function qcRevisarSolicitud(
                     || process.env.TELEGRAM_CHAT_ID?.trim();
                 const maskChatId = (id?: string) =>
                     id ? `${id.slice(0, 4)}***${id.slice(-2)} (len=${id.length})` : "(vacío)";
+                // Desglose del pago que se hará al aprobar. RD$25/IMEI al técnico y
+                // otros RD$25/IMEI al QC (si QC != técnico). En la fase de revisión QC
+                // todavía no sabemos con certeza si serán personas distintas, pero el
+                // sistema siempre dispersa ambos al aprobar, así que mostramos el caso
+                // peor para que el admin vea el costo total real.
+                const montoTecnico = aprobados * MONTO_POR_DESBLOQUEO;
+                const montoQc = aprobados * MONTO_POR_DESBLOQUEO;
                 console.log(
                     `[Telegram desbloqueo] Solicitud ${solicitud.codigo} → notificando admin. ` +
                     `TELEGRAM_ADMIN_CHAT_ID=${maskChatId(process.env.TELEGRAM_ADMIN_CHAT_ID)}, ` +
@@ -226,7 +233,7 @@ export async function qcRevisarSolicitud(
                     `📋 <b>Código:</b> ${escapeHTML(solicitud.codigo)}\n` +
                     `✅ <b>Aprobados por QC:</b> ${aprobados}\n` +
                     (rechazados > 0 ? `❌ <b>Rechazados por QC:</b> ${rechazados}\n` : "") +
-                    `💵 <b>Pago total al aprobar:</b> RD$${(aprobados * MONTO_POR_DESBLOQUEO * 2).toFixed(2)} (técnico + QC)\n\n` +
+                    `💵 <b>Se dispersará al aprobar:</b> RD$${montoTecnico.toFixed(2)} (técnico) + RD$${montoQc.toFixed(2)} (QC) = RD$${(montoTecnico + montoQc).toFixed(2)} total\n\n` +
                     `👉 <a href="https://sdigitalsystem.vercel.app/admin/desbloqueos">Revisar y aceptar</a>`;
                 const tgResult = await sendTelegramMessage(msg, undefined, adminChatId);
                 if (!tgResult.success) {
