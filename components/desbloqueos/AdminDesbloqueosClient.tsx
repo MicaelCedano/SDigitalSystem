@@ -6,9 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Lock, CheckCircle2, XCircle, Loader2, User, DollarSign, Clock, ClipboardList, Bell, Send } from "lucide-react";
-import Link from "next/link";
-import { adminAceptarSolicitud, recordarQCsDesbloqueos } from "@/app/actions/desbloqueos";
+import { Lock, CheckCircle2, XCircle, Loader2, User, DollarSign, Clock } from "lucide-react";
+import { adminAceptarSolicitud } from "@/app/actions/desbloqueos";
 
 interface ImeiItem {
     imei: string;
@@ -46,11 +45,10 @@ interface SolicitudReciente {
 
 interface Props {
     pendientes: SolicitudPendiente[];
-    pendientesQcCount?: number;
     recientes: SolicitudReciente[];
 }
 
-export function AdminDesbloqueosClient({ pendientes, pendientesQcCount = 0, recientes }: Props) {
+export function AdminDesbloqueosClient({ pendientes, recientes }: Props) {
     const router = useRouter();
     const [items, setItems] = useState(pendientes);
     const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -59,8 +57,6 @@ export function AdminDesbloqueosClient({ pendientes, pendientesQcCount = 0, reci
     const [isPending, startTransition] = useTransition();
     const [error, setError] = useState<string | null>(null);
     const [confirmaAccion, setConfirmaAccion] = useState<{ id: number; accion: "aceptar" | "rechazar" } | null>(null);
-    const [recordatorioPending, setRecordatorioPending] = useState(false);
-    const [recordatorioMsg, setRecordatorioMsg] = useState<{ tipo: "ok" | "err"; texto: string } | null>(null);
 
     const formatDate = (iso: string | null) => {
         if (!iso) return "—";
@@ -103,21 +99,6 @@ export function AdminDesbloqueosClient({ pendientes, pendientesQcCount = 0, reci
         });
     };
 
-    const handleRecordarQC = () => {
-        setRecordatorioMsg(null);
-        setRecordatorioPending(true);
-        startTransition(async () => {
-            const res = await recordarQCsDesbloqueos();
-            if (res.success) {
-                setRecordatorioMsg({ tipo: "ok", texto: res.message || "Recordatorio enviado" });
-                router.refresh();
-            } else {
-                setRecordatorioMsg({ tipo: "err", texto: res.error || "Error al enviar recordatorio" });
-            }
-            setRecordatorioPending(false);
-        });
-    };
-
     return (
         <div className="space-y-6">
             <div className="flex items-center gap-3">
@@ -146,68 +127,18 @@ export function AdminDesbloqueosClient({ pendientes, pendientesQcCount = 0, reci
                         <CheckCircle2 className="mx-auto text-emerald-300" size={48} />
                         <h3 className="font-black text-lg text-slate-900 mt-4">No hay solicitudes esperando</h3>
                         <p className="text-sm text-slate-500 mt-1">
-                            Cuando el QC revise solicitudes aparecerán aquí para tu aprobación.
+                            Cuando un técnico cree una solicitud de desbloqueo aparecerá acá para tu aprobación.
                         </p>
-                        {pendientesQcCount > 0 && (
-                            <>
-                                <div className="mt-6 inline-flex items-start gap-3 rounded-2xl bg-amber-50 border border-amber-200 p-4 text-left max-w-md mx-auto">
-                                    <ClipboardList className="text-amber-600 shrink-0 mt-0.5" size={20} />
-                                    <div className="text-xs text-amber-900">
-                                        <p className="font-black uppercase tracking-wider text-[10px] text-amber-700 mb-1">
-                                            Esperando revisión del QC
-                                        </p>
-                                        <p>
-                                            Hay <strong>{pendientesQcCount} solicitud{pendientesQcCount === 1 ? "" : "es"}</strong> en estado <em>"Pendiente QC"</em>.
-                                            Avísale a tu QC para que las revise y aparezcan acá para tu aprobación.
-                                        </p>
-                                        <Link
-                                            href="/qc/desbloqueos"
-                                            className="inline-block mt-2 font-bold text-amber-700 hover:text-amber-900 underline underline-offset-2"
-                                        >
-                                            Ver la cola del QC &rarr;
-                                        </Link>
-                                    </div>
-                                </div>
-                                <div className="mt-4">
-                                    <Button
-                                        onClick={handleRecordarQC}
-                                        disabled={recordatorioPending || isPending}
-                                        className="h-12 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white font-black uppercase tracking-wider text-sm shadow-lg shadow-amber-200"
-                                    >
-                                        {recordatorioPending ? (
-                                            <>
-                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                Enviando...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Bell className="mr-2 h-4 w-4" />
-                                                Recordar al QC ahora
-                                            </>
-                                        )}
-                                    </Button>
-                                </div>
-                                {recordatorioMsg && (
-                                    <div
-                                        className={`mt-3 mx-auto max-w-md rounded-2xl p-3 text-xs font-bold ${
-                                            recordatorioMsg.tipo === "ok"
-                                                ? "bg-emerald-50 text-emerald-900 border border-emerald-200"
-                                                : "bg-rose-50 text-rose-900 border border-rose-200"
-                                        }`}
-                                    >
-                                        {recordatorioMsg.texto}
-                                    </div>
-                                )}
-                            </>
-                        )}
                     </CardContent>
                 </Card>
             ) : (
                 <div className="space-y-4">
                     {items.map(s => {
                         const isExpanded = expandedId === s.id;
-                        const totalPago = s.equiposAprobados * s.montoPorEquipo;
-                        const totalPagoConQC = totalPago * 2; // técnico + QC
+                        // 2026-06-27: ya no hay paso de QC. Al aceptar, se pagan
+                        // TODOS los IMEIs (no rechazados) × RD$25 al técnico.
+                        const totalEquiposValidos = s.imeis.filter((i: ImeiItem) => i.estado !== "Rechazado").length;
+                        const totalPago = totalEquiposValidos * s.montoPorEquipo;
 
                         return (
                             <Card key={s.id} className="rounded-[2rem] border-none shadow-xl shadow-slate-200/50">
@@ -234,7 +165,6 @@ export function AdminDesbloqueosClient({ pendientes, pendientesQcCount = 0, reci
                                                 </CardTitle>
                                                 <p className="text-xs text-slate-500">
                                                     Técnico: {s.tecnico.name}
-                                                    {s.qc && ` · QC: ${s.qc.name}`}
                                                     {" · "}
                                                     {formatDate(s.fechaCreacion)}
                                                 </p>
@@ -247,10 +177,7 @@ export function AdminDesbloqueosClient({ pendientes, pendientesQcCount = 0, reci
                                         </div>
                                         <div className="flex items-center gap-3">
                                             <Badge className="bg-indigo-100 text-indigo-700 rounded-full px-3 py-0.5 text-[10px] font-black uppercase">
-                                                {s.equiposAprobados} aprobado{s.equiposAprobados === 1 ? "" : "s"}
-                                            </Badge>
-                                            <Badge className="bg-rose-100 text-rose-700 rounded-full px-3 py-0.5 text-[10px] font-black uppercase">
-                                                {s.equiposRechazados} rechazado{s.equiposRechazados === 1 ? "" : "s"}
+                                                {totalEquiposValidos} IMEI{totalEquiposValidos === 1 ? "" : "s"}
                                             </Badge>
                                             <Button
                                                 onClick={(e) => { e.stopPropagation(); setExpandedId(isExpanded ? null : s.id); }}
@@ -269,41 +196,21 @@ export function AdminDesbloqueosClient({ pendientes, pendientesQcCount = 0, reci
                                                 <strong>Obs. técnico:</strong> {s.observacion}
                                             </div>
                                         )}
-                                        {s.observacionQc && (
-                                            <div className="rounded-2xl bg-indigo-50 p-3 text-sm text-indigo-900">
-                                                <strong>Obs. QC:</strong> {s.observacionQc}
-                                            </div>
-                                        )}
 
                                         <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                                            {s.imeis.map(item => {
-                                                const aprobado = item.estado === "Aprobado";
-                                                return (
-                                                    <div
-                                                        key={item.imei}
-                                                        className={`rounded-xl p-3 flex items-center justify-between gap-3 ${
-                                                            aprobado ? "bg-emerald-50" : "bg-rose-50"
-                                                        }`}
-                                                    >
-                                                        <code className="font-mono text-sm font-bold text-slate-900">
-                                                            {item.imei}
-                                                        </code>
-                                                        <div className="flex items-center gap-2">
-                                                            {aprobado ? (
-                                                                <Badge className="bg-emerald-600 text-white rounded-full px-2 py-0.5 text-[10px] font-black">
-                                                                    <CheckCircle2 size={10} className="mr-1 inline" />
-                                                                    APROBADO
-                                                                </Badge>
-                                                            ) : (
-                                                                <Badge className="bg-rose-600 text-white rounded-full px-2 py-0.5 text-[10px] font-black">
-                                                                    <XCircle size={10} className="mr-1 inline" />
-                                                                    RECHAZADO
-                                                                </Badge>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
+                                            {s.imeis.map(item => (
+                                                <div
+                                                    key={item.imei}
+                                                    className="rounded-xl p-3 flex items-center justify-between gap-3 bg-slate-50"
+                                                >
+                                                    <code className="font-mono text-sm font-bold text-slate-900">
+                                                        {item.imei}
+                                                    </code>
+                                                    <Badge className="bg-slate-200 text-slate-700 rounded-full px-2 py-0.5 text-[10px] font-black">
+                                                        {item.estado}
+                                                    </Badge>
+                                                </div>
+                                            ))}
                                         </div>
 
                                         {/* Resumen pago */}
@@ -311,29 +218,21 @@ export function AdminDesbloqueosClient({ pendientes, pendientesQcCount = 0, reci
                                             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-700 flex items-center gap-1">
                                                 <DollarSign size={12} /> Resumen de Pago al Aceptar
                                             </h4>
-                                            <div className="grid grid-cols-2 gap-3 text-sm">
-                                                <div>
-                                                    <p className="text-slate-600 text-xs">Al técnico</p>
-                                                    <p className="text-2xl font-black text-emerald-700">
-                                                        RD${totalPago.toFixed(2)}
-                                                    </p>
-                                                    <p className="text-[10px] text-slate-500">
-                                                        {s.equiposAprobados} × RD${s.montoPorEquipo}
-                                                    </p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-slate-600 text-xs">Al QC</p>
-                                                    <p className="text-2xl font-black text-indigo-700">
-                                                        RD${totalPago.toFixed(2)}
-                                                    </p>
-                                                </div>
+                                            <div>
+                                                <p className="text-slate-600 text-xs">Se pagará al técnico</p>
+                                                <p className="text-3xl font-black text-emerald-700">
+                                                    RD${totalPago.toFixed(2)}
+                                                </p>
+                                                <p className="text-[10px] text-slate-500">
+                                                    {totalEquiposValidos} × RD${s.montoPorEquipo}
+                                                </p>
                                             </div>
                                             <div className="pt-2 border-t border-slate-200">
-                                                <p className="text-xs text-slate-600">
-                                                    Total a pagar al aceptar:{" "}
-                                                    <strong className="text-slate-900">
-                                                        RD${totalPagoConQC.toFixed(2)}
-                                                    </strong>
+                                                <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">
+                                                    Total a dispersar al aceptar
+                                                </p>
+                                                <p className="text-xl font-black text-slate-900">
+                                                    RD${totalPago.toFixed(2)}
                                                 </p>
                                             </div>
                                         </div>
@@ -358,7 +257,7 @@ export function AdminDesbloqueosClient({ pendientes, pendientesQcCount = 0, reci
                                                 </p>
                                                 {confirmaAccion.accion === "aceptar" && (
                                                     <p className="text-xs text-amber-800">
-                                                        Se pagará <strong>RD${totalPago.toFixed(2)}</strong> al técnico y <strong>RD${totalPago.toFixed(2)}</strong> al QC.
+                                                        Se pagará <strong>RD${totalPago.toFixed(2)}</strong> al técnico y se crearán <strong>{totalEquiposValidos}</strong> registros en UnlockRecord (anti-doble-pago).
                                                     </p>
                                                 )}
                                                 <div className="flex gap-2">
@@ -402,7 +301,7 @@ export function AdminDesbloqueosClient({ pendientes, pendientesQcCount = 0, reci
                                                 </Button>
                                                 <Button
                                                     onClick={() => setConfirmaAccion({ id: s.id, accion: "aceptar" })}
-                                                    disabled={isPending || s.equiposAprobados === 0}
+                                                    disabled={isPending || totalEquiposValidos === 0}
                                                     className="h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-wider"
                                                 >
                                                     <CheckCircle2 className="mr-2 h-4 w-4" />
