@@ -8,7 +8,7 @@ import crypto from "crypto";
 
 export async function getAdminPaymentsDashboardData() {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== "admin") return null;
+    if (!session || !["admin", "lider"].includes(session.user.role)) return null;
 
     try {
         // Fetch all users with technical roles (active only)
@@ -209,7 +209,7 @@ export async function getAdminPaymentsDashboardData() {
 
 export async function markAsRedeemed(transactionId: number) {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== "admin") return { success: false, error: "No autorizado" };
+    if (!session || !["admin", "lider"].includes(session.user.role)) return { success: false, error: "No autorizado" };
 
     try {
         await prisma.walletTransaction.update({
@@ -229,7 +229,7 @@ export async function markAsRedeemed(transactionId: number) {
 
 export async function cancelWithdrawal(transactionId: number) {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== "admin") return { success: false, error: "No autorizado" };
+    if (!session || !["admin", "lider"].includes(session.user.role)) return { success: false, error: "No autorizado" };
 
     try {
         return await prisma.$transaction(async (tx) => {

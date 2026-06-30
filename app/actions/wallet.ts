@@ -157,7 +157,7 @@ export async function requestWithdrawal(amount: number) {
 
 export async function manualCredit(targetUserId: number, amount: number, descripcion: string = 'Acreditación manual por administrador') {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== "admin") return { success: false, error: "No autorizado" };
+    if (!session || !["admin", "lider"].includes(session.user.role)) return { success: false, error: "No autorizado" };
 
     if (amount <= 0) return { success: false, error: "El monto debe ser mayor a 0" };
 
@@ -245,7 +245,7 @@ export async function manualCredit(targetUserId: number, amount: number, descrip
 
 export async function adminManualWithdrawal(targetUserId: number, amount: number, concepto: string = "Pago realizado por administrador") {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== "admin") return { success: false, error: "No autorizado" };
+    if (!session || !["admin", "lider"].includes(session.user.role)) return { success: false, error: "No autorizado" };
 
     if (amount <= 0) return { success: false, error: "El monto debe ser mayor a 0" };
 
@@ -514,7 +514,7 @@ export async function createWalletAccount(name: string, color: string = "blue") 
  */
 export async function toggleTecnicoActivo(tecnicoId: number, activo: boolean) {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== "admin") {
+    if (!session || !["admin", "lider"].includes(session.user.role)) {
         return { success: false, error: "No autorizado" };
     }
 

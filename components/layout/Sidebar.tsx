@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
     LayoutDashboard,
     Briefcase,
+    DollarSign,
     ClipboardList,
     Trophy,
     Wallet,
@@ -96,6 +97,7 @@ const Sidebar = ({ initialUser, forceShow = false }: { initialUser?: any, forceS
 
     const role = user?.role?.toLowerCase() || '';
     const isAdmin = role === 'admin';
+    const isLider = role === 'lider';
     const isQC = role === 'control_calidad' || isAdmin;
     const isGarantiaTec = role === 'tecnico_garantias' || isAdmin;
 
@@ -188,6 +190,14 @@ const Sidebar = ({ initialUser, forceShow = false }: { initialUser?: any, forceS
                             <NavItem href="/ranking" icon={<Trophy size={20} />} label="Ranking" active={pathname === '/ranking'} collapsed={collapsed} user={user} />
                             <NavItem href="/checklist" icon={<ListChecks size={20} />} label="Checklist Revisión" active={pathname === '/checklist'} collapsed={collapsed} user={user} />
                             {isQC && !isAdmin && <NavItem href="/wallet" icon={<Wallet size={20} />} label="Mi Wallet" active={pathname === '/wallet'} collapsed={collapsed} user={user} />}
+                        </div>
+                    )}
+
+                    {isLider && (
+                        <div className="space-y-1">
+                            {!collapsed && <div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-400 mt-4 mb-2 pl-4">Líder de Pagos</div>}
+                            <NavItem href="/garantias/pagos" icon={<DollarSign size={20} />} label="Pagos a Técnicos" active={pathname === '/garantias/pagos' || pathname === '/garantias/pagos/[tecnicoId]'} collapsed={collapsed} user={user} />
+                            <NavItem href="/admin/pagos" icon={<LayoutDashboard size={20} />} label="Dashboard de Pagos" active={pathname === '/admin/pagos' || pathname === '/admin/pagos/[id]'} collapsed={collapsed} user={user} />
                         </div>
                     )}
 

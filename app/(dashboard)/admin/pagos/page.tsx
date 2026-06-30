@@ -11,7 +11,7 @@ export const metadata = {
 export default async function AdminPagosPage() {
     const session = await getServerSession(authOptions);
 
-    if (!session || session.user.role !== "admin") {
+    if (!session || !["admin", "lider"].includes(session.user.role)) {
         redirect("/login");
     }
 

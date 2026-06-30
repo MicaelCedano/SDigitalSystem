@@ -1079,7 +1079,7 @@ export async function getTrabajosPendientesAprobacion() {
  */
 export async function aprobarYPayLoteTrabajo(loteId: number, customMonto?: number, saveAsDefault: boolean = false) {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'admin') return { success: false, error: "No autorizado" };
+    if (!session || !["admin", "lider"].includes(session.user.role)) return { success: false, error: "No autorizado" };
 
     try {
         return await prisma.$transaction(async (tx) => {
