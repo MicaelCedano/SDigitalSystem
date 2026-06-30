@@ -171,6 +171,7 @@ const Sidebar = ({ initialUser, forceShow = false }: { initialUser?: any, forceS
                                         <SubNavItem href="/admin/pagos" label="Gestión de Pagos" />
                                         <SubNavItem href="/admin/penalidades" label="Historial Penalidades" />
                                         <SubNavItem href="/admin/desbloqueos" label="Aprobar Desbloqueos" badge={pendingUnlockCount} />
+                                        <SubNavItem href="/admin/desbloqueos/historial" label="Historial por IMEI" />
                                         <SubNavItem href="/garantias" label="Garantías" />
                                     </div>
                                 )}

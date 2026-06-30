@@ -516,3 +516,73 @@ export async function getPendingAdminDesbloqueosCount(): Promise<number> {
 // existe el paso de QC en el flujo de desbloqueos. El técnico crea la
 // solicitud → Micael aprueba y paga directo. No hay cuello de botella que
 // recordar.
+
+/**
+ * Busca el UnlockRecord (registro de auditoría del desbloqueo) por IMEI exacto.
+ * Solo admin. Devuelve: IMEI, modelo, fecha creación, fecha pago, técnico que pidió
+ * el desbloqueo, QC que revisó (si la solicitud es vieja pre-2026-06-27), admin que
+ * aprobó y pagó, y el id de la solicitud origen para linkear a /admin/desbloqueos.
+ *
+ * El IMEI en UnlockRecord es único → a lo sumo 1 resultado. Si el IMEI nunca
+ * fue desbloqueado/aprobado, retorna { success: true, record: null }.
+ */
+export async function buscarUnlockPorImei(imei: string): Promise<{
+    success: boolean;
+    record?: {
+        imei: string;
+        modelo: string | null;
+        createdAt: string;
+        paidAt: string | null;
+        solicitudId: number;
+        solicitudCodigo: string;
+        tecnico: { id: number; name: string; username: string } | null;
+        qc: { id: number; name: string; username: string } | null;
+        admin: { id: number; name: string; username: string } | null;
+    };
+    error?: string;
+}> {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) return { success: false, error: "No autorizado" };
+    if (session.user.role !== "admin") return { success: false, error: "No autorizado" };
+
+    const imeiLimpio = imei.trim();
+    if (!imeiLimpio) return { success: false, error: "IMEI vacío" };
+
+    try {
+        const record = await prisma.unlockRecord.findUnique({
+            where: { imei: imeiLimpio },
+            include: {
+                tecnico: { select: { id: true, name: true, username: true } },
+                qc: { select: { id: true, name: true, username: true } },
+                admin: { select: { id: true, name: true, username: true } },
+                solicitud: { select: { id: true, codigo: true } }
+            }
+        });
+
+        if (!record) return { success: true, record: undefined };
+
+        return {
+            success: true,
+            record: {
+                imei: record.imei,
+                modelo: record.modelo,
+                createdAt: record.createdAt.toISOString(),
+                paidAt: record.paidAt?.toISOString() || null,
+                solicitudId: record.solicitud.id,
+                solicitudCodigo: record.solicitud.codigo,
+                tecnico: record.tecnico
+                    ? { id: record.tecnico.id, name: record.tecnico.name || record.tecnico.username, username: record.tecnico.username }
+                    : null,
+                qc: record.qc
+                    ? { id: record.qc.id, name: record.qc.name || record.qc.username, username: record.qc.username }
+                    : null,
+                admin: record.admin
+                    ? { id: record.admin.id, name: record.admin.name || record.admin.username, username: record.admin.username }
+                    : null
+            }
+        };
+    } catch (error: any) {
+        console.error("[desbloqueos] Error buscando UnlockRecord por IMEI:", error?.message);
+        return { success: false, error: error?.message || "Error desconocido" };
+    }
+}
