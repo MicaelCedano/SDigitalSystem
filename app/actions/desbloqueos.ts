@@ -214,6 +214,14 @@ export async function crearSolicitudDesbloqueo(imeis: string[], modelo: string, 
         // solo lo ve si está logueado en la web. Mensaje corto, un solo IMEI
         // por línea solo si hay <= 5; si hay más, mostramos la cantidad y el
         // técnico puede ver el detalle completo en /admin/desbloqueos.
+        //
+        // Los botones inline "✅ Aprobar" / "❌ Rechazar" son manejados por
+        // /api/telegram-webhook (callback_data approve_desbloqueo:<id> /
+        // reject_desbloqueo:<id>), que llama a adminAceptarSolicitud.
+        const tgButtons = [[
+            { text: "✅ Aprobar y pagar", callback_data: `approve_desbloqueo:${solicitud.id}` },
+            { text: "❌ Rechazar", callback_data: `reject_desbloqueo:${solicitud.id}` }
+        ]];
         const tgMsg = await sendTelegramMessage(
             `🔓 <b>Nueva solicitud de desbloqueo</b>\n` +
             `\n` +
@@ -224,7 +232,8 @@ export async function crearSolicitudDesbloqueo(imeis: string[], modelo: string, 
             (imeisLimpios.length <= 5
                 ? `\n<code>${imeisLimpios.map(i => escapeHTML(i)).join("\n")}</code>\n`
                 : "") +
-            `\n👉 Aprobar en: https://sdigitalsystem.vercel.app/admin/desbloqueos`
+            `\n💰 <b>Pago al técnico al aprobar:</b> RD$${(imeisLimpios.length * MONTO_POR_DESBLOQUEO).toLocaleString()} (${imeisLimpios.length} × RD$${MONTO_POR_DESBLOQUEO})`,
+            tgButtons
         );
         if (!tgMsg.success) {
             // No revertir: el guardado en BD ya está hecho. Solo loguear para debug.

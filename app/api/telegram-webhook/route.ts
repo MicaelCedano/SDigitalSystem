@@ -410,6 +410,69 @@ export async function POST(req: Request) {
                 return NextResponse.json({ ok: true });
             }
 
+            // ============================================================
+            // SolicitudDesbloqueo: técnico pide desbloqueo de IMEIs.
+            // Botones: approve_desbloqueo:<id> / reject_desbloqueo:<id>
+            // Mismo gate de admin aplicado arriba en callback_query.
+            // Llama a adminAceptarSolicitud() que hace la transición de
+            // estado, acredita la wallet del técnico y persiste UnlockRecord.
+            // ============================================================
+            if (data && (data.startsWith("approve_desbloqueo:") || data.startsWith("reject_desbloqueo:"))) {
+                const isApprove = data.startsWith("approve_desbloqueo:");
+                const solicitudId = parseInt(data.split(":")[1]);
+
+                if (isNaN(solicitudId)) {
+                    await answerCallbackQuery(id, "Error: ID de solicitud inválido");
+                    return NextResponse.json({ ok: true });
+                }
+
+                // Resolver adminId en BD (adminAceptarSolicitud lo requiere)
+                const adminUser = await prisma.user.findFirst({ where: { role: "admin" } });
+                const adminUserId = adminUser?.id || 1;
+
+                const { adminAceptarSolicitud } = await import("@/app/actions/desbloqueos");
+                const result = await adminAceptarSolicitud(solicitudId, isApprove ? "aceptar" : "rechazar", "Aprobado desde Telegram");
+
+                if (!result.success) {
+                    await answerCallbackQuery(id, `❌ ${result.error || "Error"}`);
+                    return NextResponse.json({ ok: true });
+                }
+
+                const solicitud = await prisma.solicitudDesbloqueo.findUnique({
+                    where: { id: solicitudId },
+                    include: {
+                        tecnico: { select: { name: true, username: true } }
+                    }
+                });
+
+                const tecnicoName = solicitud?.tecnico?.name || solicitud?.tecnico?.username || "—";
+                const modelo = solicitud?.modelo || "—";
+                const imeisCount = solicitud?.totalEquipos || 0;
+                const pagoTotal = imeisCount * 25;
+
+                const accion = isApprove ? "APROBADO" : "RECHAZADO";
+                const emoji = isApprove ? "✅" : "❌";
+                const updatedMsg =
+                    `🔓 <b>Solicitud de Desbloqueo ${solicitudId}</b>\n\n` +
+                    `👤 <b>Técnico:</b> ${escapeHTML(tecnicoName)}\n` +
+                    `📱 <b>Modelo:</b> ${escapeHTML(modelo)}\n` +
+                    `🔢 <b>IMEIs:</b> ${imeisCount}\n` +
+                    (isApprove
+                        ? `💰 <b>Pago al técnico:</b> RD$ ${pagoTotal.toLocaleString()} (${imeisCount} × RD$25)\n\n`
+                        : `\n`) +
+                    `${emoji} <b>${accion}</b> por ${escapeHTML(from.first_name || "Admin")}`;
+
+                await editTelegramMessage(message.message_id, updatedMsg, [], message.chat.id);
+                await answerCallbackQuery(
+                    id,
+                    isApprove
+                        ? `✅ Solicitud #${solicitudId} aprobada y pagada`
+                        : `❌ Solicitud #${solicitudId} rechazada`
+                );
+
+                return NextResponse.json({ ok: true });
+            }
+
             if (data && data.startsWith("update_status:")) {
                 // El gate de admin ya se aplicó arriba (en el bloque de
                 // callback_query), así que no hace falta duplicarlo aquí.
