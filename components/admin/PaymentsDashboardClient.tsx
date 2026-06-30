@@ -437,39 +437,39 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                 {pendingRetiros.map((retiro: any) => (
                                     <Card key={retiro.id} className="rounded-[1.5rem] border border-indigo-100 bg-white shadow-lg h-full transition-all hover:bg-slate-50 group">
-                                        <CardContent className="p-5 flex items-center justify-between gap-4">
-                                            <div className="flex items-center gap-4">
-                                                <div className="h-12 w-12 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-black text-sm shadow-md">
+                                        <CardContent className="p-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                                            <div className="flex items-center gap-4 min-w-0">
+                                                <div className="h-12 w-12 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-black text-sm shadow-md shrink-0">
                                                     {(retiro.tecnico.name || retiro.tecnico.username).substring(0, 2).toUpperCase()}
                                                 </div>
-                                                <div>
+                                                <div className="min-w-0 flex-1">
                                                     <Link href={`/admin/pagos/${retiro.tecnicoId}`} className="hover:underline">
-                                                        <p className="font-bold text-slate-900 leading-none mb-1">
+                                                        <p className="font-bold text-slate-900 leading-none mb-1 truncate">
                                                             {retiro.tecnico.name || retiro.tecnico.username}
                                                         </p>
                                                     </Link>
-                                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">{retiro.descripcion || "Retiro de Wallet"}</p>
+                                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest truncate">{retiro.descripcion || "Retiro de Wallet"}</p>
                                                 </div>
                                             </div>
-                                            <div className="text-right flex items-center gap-6">
-                                                <div>
-                                                    <p className="text-2xl font-black text-slate-900 leading-none">RD$ {retiro.monto.toLocaleString()}</p>
-                                                    <p className="text-[10px] text-slate-500 font-bold mt-1 uppercase">Balance actual: <span className="text-indigo-600 font-black">RD$ {retiro.tecnico.wallet?.[0]?.saldo?.toLocaleString() || 0}</span></p>
-                                                    <p className="text-[9px] text-indigo-400 font-bold uppercase mt-1">Token: {retiro.secureToken?.substring(0, 8)}...</p>
+                                            <div className="flex flex-col sm:flex-row lg:flex-row lg:items-center gap-3 lg:gap-4 w-full lg:w-auto">
+                                                <div className="lg:text-right flex lg:flex-col items-baseline lg:items-end justify-between lg:justify-end gap-2 lg:gap-0">
+                                                    <p className="text-2xl font-black text-slate-900 leading-none whitespace-nowrap">RD$ {retiro.monto.toLocaleString()}</p>
+                                                    <p className="text-[10px] text-slate-500 font-bold uppercase">Balance: <span className="text-indigo-600 font-black">RD$ {retiro.tecnico.wallet?.[0]?.saldo?.toLocaleString() || 0}</span></p>
+                                                    <p className="text-[9px] text-indigo-400 font-bold uppercase lg:mt-1">Token: {retiro.secureToken?.substring(0, 8)}...</p>
                                                 </div>
-                                                <div className="flex gap-3">
+                                                <div className="flex gap-2 lg:gap-3 w-full sm:w-auto">
                                                     <Button
                                                         onClick={() => handleCancelWithdrawal(retiro.id)}
                                                         disabled={isProcessing}
                                                         variant="ghost"
-                                                        className="h-12 px-4 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl font-black flex items-center gap-2 border border-rose-100"
+                                                        className="h-12 flex-1 sm:flex-none px-3 lg:px-4 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl font-black flex items-center justify-center gap-2 border border-rose-100"
                                                     >
                                                         <X size={18} /> Anular
                                                     </Button>
                                                     <Button
                                                         onClick={() => handleMarkAsPaid(retiro)}
                                                         disabled={isProcessing}
-                                                        className="h-12 px-6 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black flex items-center gap-2 shadow-lg shadow-emerald-200/50"
+                                                        className="h-12 flex-1 sm:flex-none px-4 lg:px-6 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black flex items-center justify-center gap-2 shadow-lg shadow-emerald-200/50"
                                                     >
                                                         <CheckCircle2 size={18} /> Marcar como Pagado
                                                     </Button>
