@@ -52,6 +52,10 @@ export default async function Home() {
       redirect("/qc");
     } else if (userRole === "tecnico_garantias") {
       redirect("/garantias");
+    } else if (userRole === "lider") {
+      // 2026-06-30: el líder de pagos aterriza directo en el dashboard de pagos,
+      // no en /profile. Su UI es exclusivamente la gestión de bauchers.
+      redirect("/admin/pagos");
     } else if (userRole === "tecnico") {
       // O a donde corresponda en Next.js para un técnico standard
       redirect("/profile");
