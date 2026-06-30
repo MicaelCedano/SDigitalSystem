@@ -365,44 +365,44 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
     return (
         <div className="space-y-8 pb-20 animate-in fade-in duration-700">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
                 <div>
-                    <h1 className="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-                        <div className="p-3 bg-indigo-600 rounded-2xl shadow-lg shadow-indigo-200">
-                            <CreditCard className="w-8 h-8 text-white" />
+                    <h1 className="text-2xl md:text-4xl font-black text-slate-900 tracking-tight flex items-center gap-2 md:gap-3">
+                        <div className="p-2 md:p-3 bg-indigo-600 rounded-2xl shadow-lg shadow-indigo-200 shrink-0">
+                            <CreditCard className="w-6 h-6 md:w-8 md:h-8 text-white" />
                         </div>
                         Gestión de Pagos
                     </h1>
-                    <p className="text-slate-500 font-medium text-lg mt-2 tracking-wide flex items-center gap-2">
+                    <p className="text-slate-500 font-medium text-sm md:text-lg mt-2 tracking-wide">
                         Control total de billeteras, retiros y penalidades.
                     </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 md:gap-3">
                     <Button
                         variant="outline"
                         onClick={() => router.refresh()}
-                        className="h-12 w-12 rounded-2xl border-slate-200 text-slate-500 hover:bg-slate-50 shadow-sm"
+                        className="h-11 w-11 md:h-12 md:w-12 rounded-2xl border-slate-200 text-slate-500 hover:bg-slate-50 shadow-sm"
                     >
                         <RefreshCw className={cn("w-5 h-5", isProcessing && "animate-spin")} />
                     </Button>
-                    <Link href="/garantias/config/pago">
-                        <Button className="h-12 px-6 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold flex items-center gap-2 shadow-lg">
-                            <Settings className="w-4 h-4" /> Configurar Tarifas
+                    <Link href="/garantias/config/pago" className="flex-1 md:flex-none">
+                        <Button className="h-11 md:h-12 w-full md:w-auto px-4 md:px-6 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg text-sm md:text-base">
+                            <Settings className="w-4 h-4" /> <span className="hidden sm:inline">Configurar Tarifas</span><span className="sm:hidden">Tarifas</span>
                         </Button>
                     </Link>
                 </div>
             </div>
 
             <Tabs defaultValue="overview" className="space-y-8">
-                <TabsList className="bg-slate-100 p-1.5 rounded-[1.5rem] h-auto w-full md:w-auto">
-                    <TabsTrigger value="overview" className="rounded-2xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:shadow-xl data-[state=active]:text-indigo-600 transition-all">
-                        <TrendingUp className="w-4 h-4 mr-2" /> Resumen
+                <TabsList className="bg-slate-100 p-1.5 rounded-[1.5rem] h-auto w-full md:w-auto grid grid-cols-3 md:inline-flex">
+                    <TabsTrigger value="overview" className="rounded-2xl px-3 sm:px-8 py-3 font-black text-[10px] sm:text-xs uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:shadow-xl data-[state=active]:text-indigo-600 transition-all">
+                        <TrendingUp className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">Resumen</span>
                     </TabsTrigger>
-                    <TabsTrigger value="technicians" className="rounded-2xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:shadow-xl data-[state=active]:text-indigo-600 transition-all">
-                        <Users className="w-4 h-4 mr-2" /> Técnicos
+                    <TabsTrigger value="technicians" className="rounded-2xl px-3 sm:px-8 py-3 font-black text-[10px] sm:text-xs uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:shadow-xl data-[state=active]:text-indigo-600 transition-all">
+                        <Users className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">Técnicos</span>
                     </TabsTrigger>
-                    <TabsTrigger value="penalties" className="rounded-2xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:shadow-xl data-[state=active]:text-indigo-600 transition-all">
-                        <AlertCircle className="w-4 h-4 mr-2" /> Penalidades
+                    <TabsTrigger value="penalties" className="rounded-2xl px-3 sm:px-8 py-3 font-black text-[10px] sm:text-xs uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:shadow-xl data-[state=active]:text-indigo-600 transition-all">
+                        <AlertCircle className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">Penalidades</span>
                     </TabsTrigger>
                 </TabsList>
 
@@ -493,9 +493,9 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
                 <TabsContent value="technicians" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                     {/* Técnicos Table */}
                     <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-slate-200/50 bg-white overflow-hidden">
-                        <CardHeader className="p-8 pb-4">
+                        <CardHeader className="p-4 md:p-8 pb-4">
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                <CardTitle className="text-2xl font-black text-slate-800">Directorio de Pagos</CardTitle>
+                                <CardTitle className="text-xl md:text-2xl font-black text-slate-800">Directorio de Pagos</CardTitle>
                                 <div className="relative w-full md:w-80">
                                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                     <Input
@@ -507,98 +507,170 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
                                 </div>
                             </div>
                         </CardHeader>
-                        <CardContent className="p-8 pt-0 overflow-x-auto">
-                            <table className="w-full text-left">
-                                <thead>
-                                    <tr className="border-b border-slate-100">
-                                        <th className="pb-4 pt-4 text-[10px] font-black uppercase tracking-widest text-slate-400 px-4">Técnico</th>
-                                        <th className="pb-4 pt-4 text-[10px] font-black uppercase tracking-widest text-slate-400 px-4">Rol</th>
-                                        <th className="pb-4 pt-4 text-[10px] font-black uppercase tracking-widest text-slate-400 px-4 text-right">Balance</th>
-                                        <th className="pb-4 pt-4 text-[10px] font-black uppercase tracking-widest text-slate-400 px-4 text-right">Total Ganado</th>
-                                        <th className="pb-4 pt-4 text-[10px] font-black uppercase tracking-widest text-slate-400 px-4 text-center">Tarifa</th>
-                                        <th className="pb-4 pt-4 text-[10px] font-black uppercase tracking-widest text-slate-400 px-4 text-right">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-50">
-                                    {filteredTecnicos.map((tecnico: any) => (
-                                        <tr key={tecnico.id} className="group hover:bg-slate-50/50 transition-colors">
-                                            <td className="py-5 px-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="h-10 w-10 rounded-xl bg-slate-900 flex items-center justify-center text-white font-black text-xs overflow-hidden">
-                                                        {tecnico.profileImage ? (
-                                                            <img src={tecnico.profileImage} alt={tecnico.username} className="w-full h-full object-cover" />
-                                                        ) : (
-                                                            (tecnico.name || tecnico.username).substring(0, 2).toUpperCase()
-                                                        )}
-                                                    </div>
-                                                    <div>
-                                                        <p className="font-bold text-slate-900">{tecnico.name || tecnico.username}</p>
-                                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{tecnico.username}</p>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="py-5 px-4">
-                                                <Badge variant="outline" className="rounded-lg text-[9px] font-black uppercase px-2 py-0.5 border-slate-200">
-                                                    {tecnico.role.replace('_', ' ')}
-                                                </Badge>
-                                            </td>
-                                            <td className="py-5 px-4 text-right">
-                                                <p className="font-black text-slate-900">RD$ {tecnico.balance.toLocaleString()}</p>
-                                            </td>
-                                            <td className="py-5 px-4 text-right">
-                                                <p className="font-bold text-indigo-600">RD$ {tecnico.totalEarned.toLocaleString()}</p>
-                                            </td>
-                                            <td className="py-5 px-4 text-center">
-                                                {tecnico.config ? (
-                                                    <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 rounded-lg font-black text-[10px]">
-                                                        RD$ {tecnico.config.montoPorReparacion}/eq
-                                                    </Badge>
+                        <CardContent className="p-4 md:p-8 pt-0">
+                            {/* Mobile: cards stacked */}
+                            <div className="md:hidden space-y-3">
+                                {filteredTecnicos.map((tecnico: any) => (
+                                    <div key={tecnico.id} className="bg-slate-50 rounded-2xl p-4 space-y-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-10 w-10 rounded-xl bg-slate-900 flex items-center justify-center text-white font-black text-xs overflow-hidden shrink-0">
+                                                {tecnico.profileImage ? (
+                                                    <img src={tecnico.profileImage} alt={tecnico.username} className="w-full h-full object-cover" />
                                                 ) : (
-                                                    <span className="text-[10px] text-slate-300 font-bold">N/A</span>
+                                                    (tecnico.name || tecnico.username).substring(0, 2).toUpperCase()
                                                 )}
-                                            </td>
-                                            <td className="py-5 px-4 text-right">
-                                                <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <p className="font-bold text-slate-900 truncate">{tecnico.name || tecnico.username}</p>
+                                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider truncate">@{tecnico.username}</p>
+                                            </div>
+                                            <Badge variant="outline" className="rounded-lg text-[9px] font-black uppercase px-2 py-0.5 border-slate-200 shrink-0">
+                                                {tecnico.role.replace('_', ' ')}
+                                            </Badge>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2 text-xs">
+                                            <div className="bg-white rounded-lg p-2">
+                                                <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Balance</p>
+                                                <p className="font-black text-slate-900 text-sm">RD$ {tecnico.balance.toLocaleString()}</p>
+                                            </div>
+                                            <div className="bg-white rounded-lg p-2">
+                                                <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Ganado</p>
+                                                <p className="font-bold text-indigo-600 text-sm">RD$ {tecnico.totalEarned.toLocaleString()}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center justify-between gap-2">
+                                            {tecnico.config ? (
+                                                <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 rounded-lg font-black text-[10px]">
+                                                    RD$ {tecnico.config.montoPorReparacion}/eq
+                                                </Badge>
+                                            ) : (
+                                                <span className="text-[10px] text-slate-300 font-bold">Tarifa N/A</span>
+                                            )}
+                                            <div className="flex items-center gap-1.5 ml-auto">
+                                                <Button
+                                                    variant="ghost" size="icon"
+                                                    className="h-9 w-9 rounded-lg text-emerald-600 bg-emerald-50 hover:bg-emerald-100"
+                                                    onClick={() => { setSelectedTecnico(tecnico); setShowCreditModal(true); }}
+                                                    title="Acreditar Manualmente"
+                                                >
+                                                    <PlusCircle size={16} />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost" size="icon"
+                                                    className="h-9 w-9 rounded-lg text-rose-600 bg-rose-50 hover:bg-rose-100"
+                                                    onClick={() => { setSelectedTecnico(tecnico); setShowWithdrawModal(true); }}
+                                                    title="Retiro Manual"
+                                                >
+                                                    <DollarSign size={16} />
+                                                </Button>
+                                                <Link href={`/admin/pagos/${tecnico.id}`}>
                                                     <Button
-                                                        variant="ghost" size="icon"
-                                                        className="h-8 w-8 rounded-lg text-emerald-600 hover:bg-emerald-50"
-                                                        onClick={() => { setSelectedTecnico(tecnico); setShowCreditModal(true); }}
-                                                        title="Acreditar Manualmente"
+                                                        variant="outline" size="sm"
+                                                        className="h-9 px-3 rounded-lg text-slate-600 hover:bg-slate-100 border-slate-200 font-bold text-[10px] uppercase tracking-wider flex items-center gap-1.5"
+                                                        title="Ver Historial de Pagos"
                                                     >
-                                                        <PlusCircle size={16} />
+                                                        <Clock size={12} /> Historial
                                                     </Button>
-                                                    <Button
-                                                        variant="ghost" size="icon"
-                                                        className="h-8 w-8 rounded-lg text-rose-600 hover:bg-rose-50"
-                                                        onClick={() => { setSelectedTecnico(tecnico); setShowWithdrawModal(true); }}
-                                                        title="Retiro Manual"
-                                                    >
-                                                        <DollarSign size={16} />
-                                                    </Button>
-                                                    <Link href={`/admin/pagos/${tecnico.id}`}>
-                                                        <Button
-                                                            variant="outline" size="sm"
-                                                            className="h-8 px-3 rounded-lg text-slate-600 hover:bg-slate-100 border-slate-200 font-bold text-[10px] uppercase tracking-wider flex items-center gap-1.5"
-                                                            title="Ver Historial de Pagos"
-                                                        >
-                                                            <Clock size={12} /> Historial
-                                                        </Button>
-                                                    </Link>
-                                                </div>
-                                            </td>
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            {/* Desktop: original table */}
+                            <div className="hidden md:block overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead>
+                                        <tr className="border-b border-slate-100">
+                                            <th className="pb-4 pt-4 text-[10px] font-black uppercase tracking-widest text-slate-400 px-4">Técnico</th>
+                                            <th className="pb-4 pt-4 text-[10px] font-black uppercase tracking-widest text-slate-400 px-4">Rol</th>
+                                            <th className="pb-4 pt-4 text-[10px] font-black uppercase tracking-widest text-slate-400 px-4 text-right">Balance</th>
+                                            <th className="pb-4 pt-4 text-[10px] font-black uppercase tracking-widest text-slate-400 px-4 text-right">Total Ganado</th>
+                                            <th className="pb-4 pt-4 text-[10px] font-black uppercase tracking-widest text-slate-400 px-4 text-center">Tarifa</th>
+                                            <th className="pb-4 pt-4 text-[10px] font-black uppercase tracking-widest text-slate-400 px-4 text-right">Acciones</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-50">
+                                        {filteredTecnicos.map((tecnico: any) => (
+                                            <tr key={tecnico.id} className="group hover:bg-slate-50/50 transition-colors">
+                                                <td className="py-5 px-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="h-10 w-10 rounded-xl bg-slate-900 flex items-center justify-center text-white font-black text-xs overflow-hidden">
+                                                            {tecnico.profileImage ? (
+                                                                <img src={tecnico.profileImage} alt={tecnico.username} className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                (tecnico.name || tecnico.username).substring(0, 2).toUpperCase()
+                                                            )}
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-bold text-slate-900">{tecnico.name || tecnico.username}</p>
+                                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{tecnico.username}</p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="py-5 px-4">
+                                                    <Badge variant="outline" className="rounded-lg text-[9px] font-black uppercase px-2 py-0.5 border-slate-200">
+                                                        {tecnico.role.replace('_', ' ')}
+                                                    </Badge>
+                                                </td>
+                                                <td className="py-5 px-4 text-right">
+                                                    <p className="font-black text-slate-900">RD$ {tecnico.balance.toLocaleString()}</p>
+                                                </td>
+                                                <td className="py-5 px-4 text-right">
+                                                    <p className="font-bold text-indigo-600">RD$ {tecnico.totalEarned.toLocaleString()}</p>
+                                                </td>
+                                                <td className="py-5 px-4 text-center">
+                                                    {tecnico.config ? (
+                                                        <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 rounded-lg font-black text-[10px]">
+                                                            RD$ {tecnico.config.montoPorReparacion}/eq
+                                                        </Badge>
+                                                    ) : (
+                                                        <span className="text-[10px] text-slate-300 font-bold">N/A</span>
+                                                    )}
+                                                </td>
+                                                <td className="py-5 px-4 text-right">
+                                                    <div className="flex items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                                        <Button
+                                                            variant="ghost" size="icon"
+                                                            className="h-8 w-8 rounded-lg text-emerald-600 hover:bg-emerald-50"
+                                                            onClick={() => { setSelectedTecnico(tecnico); setShowCreditModal(true); }}
+                                                            title="Acreditar Manualmente"
+                                                        >
+                                                            <PlusCircle size={16} />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost" size="icon"
+                                                            className="h-8 w-8 rounded-lg text-rose-600 hover:bg-rose-50"
+                                                            onClick={() => { setSelectedTecnico(tecnico); setShowWithdrawModal(true); }}
+                                                            title="Retiro Manual"
+                                                        >
+                                                            <DollarSign size={16} />
+                                                        </Button>
+                                                        <Link href={`/admin/pagos/${tecnico.id}`}>
+                                                            <Button
+                                                                variant="outline" size="sm"
+                                                                className="h-8 px-3 rounded-lg text-slate-600 hover:bg-slate-100 border-slate-200 font-bold text-[10px] uppercase tracking-wider flex items-center gap-1.5"
+                                                                title="Ver Historial de Pagos"
+                                                            >
+                                                                <Clock size={12} /> Historial
+                                                            </Button>
+                                                        </Link>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </CardContent>
                     </Card>
                 </TabsContent>
 
                 <TabsContent value="penalties" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
                         {/* Penalty search by IMEI */}
-                        <Card className="lg:col-span-2 rounded-[2.5rem] border-none shadow-2xl bg-white overflow-hidden p-8">
-                            <h3 className="text-2xl font-black text-slate-800 mb-6 flex items-center gap-3">
+                        <Card className="lg:col-span-2 rounded-[2rem] md:rounded-[2.5rem] border-none shadow-2xl bg-white overflow-hidden p-4 md:p-8">
+                            <h3 className="text-xl md:text-2xl font-black text-slate-800 mb-6 flex items-center gap-3">
                                 <Search className="text-indigo-600" /> Aplicar Penalidad por IMEI
                             </h3>
 
@@ -688,7 +760,7 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
 
                         {/* Penalidades Externas / Acciones rápidas */}
                         <div className="space-y-6">
-                            <Card className="rounded-[2.5rem] border-none shadow-2xl bg-slate-900 overflow-hidden text-white p-8 group">
+                            <Card className="rounded-[2rem] md:rounded-[2.5rem] border-none shadow-2xl bg-slate-900 overflow-hidden text-white p-6 md:p-8 group">
                                 <div className="flex flex-col h-full justify-between gap-8">
                                     <div>
                                         <h3 className="text-2xl font-black mb-2 tracking-tight">Penalidad Externa</h3>
@@ -703,7 +775,7 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
                                 </div>
                             </Card>
 
-                            <Card className="rounded-[2.5rem] border-none shadow-2xl bg-white overflow-hidden p-8 border-l-4 border-l-indigo-600">
+                            <Card className="rounded-[2rem] md:rounded-[2.5rem] border-none shadow-2xl bg-white overflow-hidden p-6 md:p-8 border-l-4 border-l-indigo-600">
                                 <h4 className="font-black text-slate-800 mb-2 flex items-center gap-2">
                                     <AlertCircle className="w-4 h-4 text-indigo-600" /> Nota del Sistema
                                 </h4>
@@ -811,15 +883,15 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
 
             {/* Modals */}
             <Dialog open={showExternalPenalty} onOpenChange={setShowExternalPenalty}>
-                <DialogContent className="rounded-[2rem] max-w-lg bg-white border-none shadow-2xl">
+                <DialogContent className="rounded-[2rem] max-w-lg bg-white border-none shadow-2xl w-[95vw] max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle className="text-2xl font-black text-slate-900">Penalidad Externa Manual</DialogTitle>
+                        <DialogTitle className="text-xl md:text-2xl font-black text-slate-900">Penalidad Externa Manual</DialogTitle>
                         <DialogDescription className="font-bold text-slate-500">
                             Completa los datos para sancionar a un técnico manualmente.
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="grid grid-cols-2 gap-4 py-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
                         <div className="space-y-2">
                             <label className="text-[10px] font-black uppercase text-slate-400 ml-1">IMEI (Manual)</label>
                             <Input value={extImei} onChange={(e) => setExtImei(e.target.value)} placeholder="0000000..." className="h-12 rounded-xl focus:ring-indigo-600 font-bold" />
@@ -866,9 +938,9 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
 
             {/* Modals */}
             <Dialog open={showCreditModal} onOpenChange={setShowCreditModal}>
-                <DialogContent className="rounded-[2rem] bg-white border-none shadow-2xl">
+                <DialogContent className="rounded-[2rem] bg-white border-none shadow-2xl w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle className="text-2xl font-black text-slate-900">Acreditar Saldo</DialogTitle>
+                        <DialogTitle className="text-xl md:text-2xl font-black text-slate-900">Acreditar Saldo</DialogTitle>
                         <DialogDescription className="font-bold text-slate-700">
                             Ingresa el monto que deseas sumar al balance de <span className="text-indigo-600">{(selectedTecnico?.name || selectedTecnico?.username)}</span>.
                         </DialogDescription>
@@ -963,9 +1035,9 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
             </Dialog>
 
             <Dialog open={showWithdrawModal} onOpenChange={setShowWithdrawModal}>
-                <DialogContent className="rounded-[2rem] bg-white border-none shadow-2xl">
+                <DialogContent className="rounded-[2rem] bg-white border-none shadow-2xl w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle className="text-2xl font-black text-slate-900">Retiro Manual</DialogTitle>
+                        <DialogTitle className="text-xl md:text-2xl font-black text-slate-900">Retiro Manual — {selectedTecnico?.name || selectedTecnico?.username}</DialogTitle>
                         <DialogDescription className="font-bold text-rose-600 bg-rose-50 p-4 rounded-2xl flex items-start gap-3">
                             <AlertCircle size={20} className="mt-0.5 flex-shrink-0" />
                             <span>Esto descontará dinero del balance actual del técnico. Úsalo cuando realices pagos fuera del sistema.</span>
@@ -1006,7 +1078,7 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
             </Dialog>
 
             <Dialog open={showPayConfirmModal} onOpenChange={setShowPayConfirmModal}>
-                <DialogContent className="rounded-[2.5rem] bg-white border-none shadow-2xl p-0 overflow-hidden max-w-md max-h-[90vh] flex flex-col">
+                <DialogContent className="rounded-[2rem] md:rounded-[2.5rem] bg-white border-none shadow-2xl p-0 overflow-hidden w-[95vw] max-w-md max-h-[90vh] flex flex-col">
                     <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-8 relative bg-white group">
                         <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
                             <Receipt className="w-48 h-48 text-indigo-900" />
@@ -1121,13 +1193,13 @@ export function PaymentsDashboardClient({ data }: { data: any }) {
 function StatCard({ label, value, icon: Icon, color, bg }: any) {
     return (
         <Card className="rounded-[2rem] border-none shadow-xl shadow-slate-200/50 bg-white overflow-hidden group">
-            <CardContent className="p-6 flex items-center gap-6">
-                <div className={cn("p-4 rounded-2xl shadow-inner transition-transform group-hover:scale-110 duration-500", bg, color)}>
-                    <Icon className="w-6 h-6" />
+            <CardContent className="p-4 sm:p-6 flex flex-row sm:flex-row items-center gap-3 sm:gap-6">
+                <div className={cn("p-3 sm:p-4 rounded-2xl shadow-inner transition-transform group-hover:scale-110 duration-500 shrink-0", bg, color)}>
+                    <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
-                <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">{label}</p>
-                    <p className={cn("text-3xl font-black tracking-tighter", color)}>{value}</p>
+                <div className="min-w-0 flex-1">
+                    <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1 truncate">{label}</p>
+                    <p className={cn("text-xl sm:text-3xl font-black tracking-tighter truncate", color)}>{value}</p>
                 </div>
             </CardContent>
         </Card>
