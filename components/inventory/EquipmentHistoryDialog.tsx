@@ -71,13 +71,14 @@ export function EquipmentHistoryDialog({ equipmentId, open, onOpenChange }: Equi
         }
     }, [open, equipmentId]);
 
-    // Calculate Last QC (Skip admins, as they perform administrative approvals, not technical reviews)
-    const lastQC = details?.historial?.find((h: any) =>
-        (['Revisado', 'Control de Calidad', 'Verificado'].includes(h.estado) ||
-            h.user?.role?.toUpperCase().includes('CALIDAD') ||
-            h.user?.role?.toUpperCase().includes('QUALITY')) &&
-        h.user?.role?.toLowerCase() !== 'admin'
-    );
+    // Calculate Last QC: the user whose role is the QC role. Skip admins (administrative
+    // approvals, not technical reviews) and lider/tecnico_garantias (lot approvals from
+    // Telegram/UI, not actual QC verdicts). Only `control_calidad` is the technical reviewer.
+    const QC_ROLES = ['control_calidad', 'quality_control', 'qc', 'calidad'];
+    const lastQC = details?.historial?.find((h: any) => {
+        const role = (h.user?.role || '').toLowerCase();
+        return QC_ROLES.includes(role);
+    });
 
     // Prioritize the detailed observation from the equipment if the history entry is generic
     const effectiveObservation = (() => {
