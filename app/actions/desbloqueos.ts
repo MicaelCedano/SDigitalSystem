@@ -207,6 +207,30 @@ export async function crearSolicitudDesbloqueo(imeis: string[], modelo: string, 
             }
         });
 
+        // 8. Notificar al admin (Micael) por Telegram
+        // 2026-06-30: restaurado tras la eliminación del paso de QC (27-06).
+        // Es la única señal pasiva que tiene Micael de que hay una solicitud
+        // esperando aprobación; el badge rojo del Sidebar también existe pero
+        // solo lo ve si está logueado en la web. Mensaje corto, un solo IMEI
+        // por línea solo si hay <= 5; si hay más, mostramos la cantidad y el
+        // técnico puede ver el detalle completo en /admin/desbloqueos.
+        const tgMsg = await sendTelegramMessage(
+            `🔓 <b>Nueva solicitud de desbloqueo</b>\n` +
+            `\n` +
+            `📋 <b>${escapeHTML(codigo)}</b>\n` +
+            `👤 Técnico: <b>${escapeHTML(user?.name || user?.username || "—")}</b> (@${escapeHTML(user?.username || "—")})\n` +
+            `📱 Modelo: <b>${escapeHTML(modeloLimpio)}</b>\n` +
+            `🔢 IMEIs: <b>${imeisLimpios.length}</b>\n` +
+            (imeisLimpios.length <= 5
+                ? `\n<code>${imeisLimpios.map(i => escapeHTML(i)).join("\n")}</code>\n`
+                : "") +
+            `\n👉 Aprobar en: https://sdigitalsystem.vercel.app/admin/desbloqueos`
+        );
+        if (!tgMsg.success) {
+            // No revertir: el guardado en BD ya está hecho. Solo loguear para debug.
+            console.error("[desbloqueos] No se pudo notificar al admin por Telegram:", tgMsg.error);
+        }
+
         revalidatePath("/desbloqueos");
         revalidatePath("/admin/desbloqueos");
 
