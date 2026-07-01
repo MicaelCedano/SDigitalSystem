@@ -139,11 +139,10 @@ export function PurchaseDashboardDetail({ purchase, deviceModels }: PurchaseDeta
                                 <Badge
                                     className={cn(
                                         "rounded-xl px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.15em] border-none shadow-sm",
-                                        purchase.estado === 'borrador' ? 'bg-amber-100 text-amber-700' :
-                                            isCompleted ? 'bg-emerald-100 text-emerald-700' : 'bg-indigo-600 text-white shadow-indigo-200'
+                                        isCompleted ? 'bg-emerald-100 text-emerald-700' : 'bg-indigo-600 text-white shadow-indigo-200'
                                     )}
                                 >
-                                    {purchase.estado === 'borrador' ? 'Borrador' : isCompleted ? 'Completado' : 'En Proceso'}
+                                    {isCompleted ? 'Completado' : 'En Proceso'}
                                 </Badge>
                             </div>
                             <div className="flex flex-wrap items-center gap-6 mt-4">

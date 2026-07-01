@@ -109,13 +109,13 @@ export async function createPurchase(data: z.infer<typeof CreatePurchaseSchema>)
 
         // Transaction Phase
         const finalPurchase = await prisma.$transaction(async (tx) => {
-            // 1. Create Purchase
+            // 1. Create Purchase (active immediately; no drafts step)
             const purchase = await tx.purchase.create({
                 data: {
                     supplierId,
                     purchaseDate: new Date(purchaseDate),
                     totalQuantity: items.reduce((acc, item) => acc + item.quantity, 0),
-                    estado: 'borrador'
+                    estado: 'activa'
                 }
             });
 
@@ -240,7 +240,6 @@ export async function createPurchase(data: z.infer<typeof CreatePurchaseSchema>)
         });
 
         revalidatePath("/compras");
-        revalidatePath("/compras/borradores");
         return { success: true, purchaseId: finalPurchase.id };
 
     } catch (error: any) {
@@ -253,9 +252,8 @@ export async function createPurchase(data: z.infer<typeof CreatePurchaseSchema>)
 }
 
 export async function getPurchases() {
-    // Mimic the Python logic: Active separated from History
+    // Active purchases only (drafts step removed)
     const purchases = await prisma.purchase.findMany({
-        where: { estado: { not: "borrador" } },
         orderBy: { id: 'desc' },
         include: {
             supplier: true
@@ -310,21 +308,6 @@ export async function getPurchases() {
     return { active, history };
 }
 
-export async function getDraftPurchases() {
-    const drafts = await prisma.purchase.findMany({
-        where: { estado: "borrador" },
-        orderBy: { id: 'desc' },
-        include: {
-            supplier: true,
-            _count: {
-                select: { equipos: true, items: true }
-            }
-        }
-    }) as any[];
-    return drafts;
-}
-
-
 export async function deletePurchase(id: number) {
     try {
         await prisma.$transaction(async (tx) => {
@@ -350,60 +333,10 @@ export async function deletePurchase(id: number) {
         });
 
         revalidatePath("/compras");
-        revalidatePath("/compras/borradores");
         return { success: true };
     } catch (error: any) {
         console.error("Error deleting purchase:", error);
         return { success: false, error: error.message || "Error al eliminar la compra." };
-    }
-}
-export async function deleteDraft(id: number) {
-    try {
-        const draft = await prisma.purchase.findUnique({
-            where: { id },
-            select: { id: true, estado: true }
-        });
-
-        if (!draft) {
-            return { success: false, error: "El borrador no existe." };
-        }
-
-        if (draft.estado !== "borrador") {
-            return { success: false, error: `La compra #${id} no está en borrador.` };
-        }
-
-        return await deletePurchase(id);
-    } catch (error) {
-        console.error("Error deleting draft:", error);
-        return { success: false, error: "Error al eliminar el borrador." };
-    }
-}
-
-export async function activateDraft(id: number) {
-    try {
-        const draft = await prisma.purchase.findUnique({
-            where: { id },
-            select: { id: true, estado: true }
-        });
-
-        if (!draft) {
-            return { success: false, error: "La compra no existe." };
-        }
-
-        if (draft.estado !== "borrador") {
-            return { success: false, error: `La compra #${id} no está en borrador (estado actual: ${draft.estado}).` };
-        }
-
-        await prisma.purchase.update({
-            where: { id },
-            data: { estado: 'activa' }
-        });
-        revalidatePath("/compras/borradores");
-        revalidatePath("/compras");
-        return { success: true };
-    } catch (error: any) {
-        console.error("Error activating draft:", error);
-        return { success: false, error: error?.message || "Error al activar la compra." };
     }
 }
 

@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { getPurchases, getDraftPurchases } from "@/app/actions/purchase";
+import { getPurchases } from "@/app/actions/purchase";
 import { PurchaseDashboardUI } from "@/components/purchases/PurchaseDashboardUI";
 import { Metadata } from "next";
 
@@ -12,7 +12,6 @@ export const dynamic = 'force-dynamic';
 
 export default async function PurchasesPage() {
     const { active, history } = await getPurchases();
-    const drafts = await getDraftPurchases();
 
     return (
         <div className="space-y-6">
@@ -20,7 +19,6 @@ export default async function PurchasesPage() {
                 <PurchaseDashboardUI
                     activePurchases={active}
                     historyPurchases={history}
-                    draftCount={drafts.length}
                 />
             </Suspense>
         </div>

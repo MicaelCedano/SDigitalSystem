@@ -41,10 +41,9 @@ import { useRouter } from "next/navigation";
 interface PurchaseDashboardUIProps {
     activePurchases: PurchaseWithProgress[];
     historyPurchases: PurchaseWithProgress[];
-    draftCount: number;
 }
 
-export function PurchaseDashboardUI({ activePurchases, historyPurchases, draftCount }: PurchaseDashboardUIProps) {
+export function PurchaseDashboardUI({ activePurchases, historyPurchases }: PurchaseDashboardUIProps) {
     const router = useRouter();
     const [navigatingId, setNavigatingId] = useState<number | null>(null);
 
@@ -61,7 +60,8 @@ export function PurchaseDashboardUI({ activePurchases, historyPurchases, draftCo
             badgeColor: "bg-blue-100 text-blue-700",
             icon: Activity,
             iconColor: "text-blue-500",
-            bgColor: "bg-white"
+            bgColor: "bg-white",
+            link: "/compras"
         },
         {
             title: "COMPLETADAS",
@@ -70,19 +70,10 @@ export function PurchaseDashboardUI({ activePurchases, historyPurchases, draftCo
             badgeColor: "bg-emerald-100 text-emerald-700",
             icon: CheckCircle2,
             iconColor: "text-emerald-500",
-            bgColor: "bg-white"
-        },
-        {
-            title: "BORRADORES",
-            value: draftCount,
-            badge: draftCount > 0 ? "Pendientes" : "Todo al día",
-            badgeColor: draftCount > 0 ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500",
-            icon: FileText,
-            iconColor: "text-amber-500",
             bgColor: "bg-white",
-            link: "/compras/borradores"
-        }
-    ], [activePurchases.length, historyPurchases.length, draftCount]);
+            link: "/compras?tab=history"
+        },
+    ], [activePurchases.length, historyPurchases.length]);
 
     return (
         <div className="space-y-10 animate-in fade-in duration-700">
