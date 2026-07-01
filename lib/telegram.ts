@@ -9,7 +9,11 @@ export function escapeHTML(str: string) {
 
 export async function sendTelegramMessage(message: string, buttons?: any, chatIdOverride?: string) {
     const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
-    const chatId = chatIdOverride || process.env.TELEGRAM_CHAT_ID?.trim();
+    // 2026-06-30: priorizar TELEGRAM_ADMIN_CHAT_ID (chat personal de Micael) sobre
+    // TELEGRAM_CHAT_ID (grupo/canal legado). Antes caía siempre al grupo y Micael
+    // no veía las solicitudes en su Telegram personal. Mismo patrón que
+    // sendTelegramDocument (más abajo). El chatIdOverride gana sobre ambos.
+    const chatId = chatIdOverride || process.env.TELEGRAM_ADMIN_CHAT_ID?.trim() || process.env.TELEGRAM_CHAT_ID?.trim();
 
     if (!token || !chatId) {
         console.warn("[Telegram] Bot Token o Chat ID no configurados");
@@ -73,7 +77,10 @@ export async function sendTelegramMessage(message: string, buttons?: any, chatId
 
 export async function editTelegramMessage(messageId: number, message: string, buttons?: any, chatIdOverride?: string | number) {
     const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
-    const chatId = String(chatIdOverride || process.env.TELEGRAM_CHAT_ID?.trim() || "");
+    // 2026-06-30: misma prioridad que sendTelegramMessage — TELEGRAM_ADMIN_CHAT_ID
+    // primero, TELEGRAM_CHAT_ID fallback. En la práctica, los call sites pasan
+    // message.chat.id explícito, así que esta rama casi nunca corre.
+    const chatId = String(chatIdOverride || process.env.TELEGRAM_ADMIN_CHAT_ID?.trim() || process.env.TELEGRAM_CHAT_ID?.trim() || "");
 
     if (!token || !chatId) return { success: false, error: "Missing token or chat_id" };
 
